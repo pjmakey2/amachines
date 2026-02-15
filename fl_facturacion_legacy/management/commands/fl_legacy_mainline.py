@@ -255,31 +255,60 @@ class Command(BaseCommand):
 
         try:
             import pymysql
+            from pymysql.cursors import SSCursor
         except ImportError:
             self.stdout.write(self.style.ERROR(
                 'pymysql no está instalado. Ejecute: pip install pymysql'
             ))
             return
 
+        CHUNK_SIZE = 5000
+        CONNECT_KWARGS = dict(
+            host=remote_host,
+            user=remote_user,
+            password=remote_pass,
+            database=remote_db,
+            charset='utf8',
+            ssl_disabled=True,
+            connect_timeout=30,
+            read_timeout=300,
+            write_timeout=300,
+        )
+
+        def get_connection():
+            conn = pymysql.connect(**CONNECT_KWARGS)
+            conn.cursor().execute("SET NET_READ_TIMEOUT=600")
+            conn.cursor().execute("SET NET_WRITE_TIMEOUT=600")
+            return conn
+
+        def escape_value(v):
+            if v is None:
+                return "NULL"
+            elif isinstance(v, (int, float)):
+                return str(v)
+            elif isinstance(v, bytes):
+                return "X'" + v.hex() + "'"
+            else:
+                s = str(v)
+                s = s.replace("\\", "\\\\")
+                s = s.replace("'", "\\'")
+                s = s.replace("\n", "\\n")
+                s = s.replace("\r", "\\r")
+                s = s.replace("\x00", "")
+                return "'" + s + "'"
+
         # 1. Conectar al servidor remoto
         self.stdout.write('\n1. Conectando al servidor remoto...')
         try:
-            remote_conn = pymysql.connect(
-                host=remote_host,
-                user=remote_user,
-                password=remote_pass,
-                database=remote_db,
-                charset='utf8',
-                ssl_disabled=True,
-            )
+            remote_conn = get_connection()
         except pymysql.Error as e:
             self.stdout.write(self.style.ERROR(f'   Error de conexión: {e}'))
             return
 
         self.stdout.write(self.style.SUCCESS('   Conectado'))
 
-        # 2. Generar dump a archivo temporal
-        self.stdout.write('\n2. Generando dump...')
+        # 2. Obtener lista de tablas y conteos
+        self.stdout.write('\n2. Analizando tablas...')
         dump_file = os.path.join(tempfile.gettempdir(), f'{remote_db}_dump.sql')
 
         try:
@@ -291,65 +320,80 @@ class Command(BaseCommand):
             if exclude_tables:
                 self.stdout.write(f'   Excluidas: {", ".join(sorted(exclude_tables))}')
 
+            # Obtener conteo de filas para progreso
+            table_counts = {}
+            for table in tables:
+                cur.execute(f"SELECT COUNT(*) FROM `{table}`")
+                table_counts[table] = cur.fetchone()[0]
+            cur.close()
+            remote_conn.close()
+
+            total_rows = sum(table_counts.values())
+            self.stdout.write(f'   Total: {total_rows:,} filas')
+
+            # 3. Dump tabla por tabla con conexión fresca por tabla
+            self.stdout.write('\n3. Generando dump...')
             with open(dump_file, 'w', encoding='utf-8') as f:
                 f.write("SET NAMES utf8;\n")
                 f.write("SET FOREIGN_KEY_CHECKS=0;\n")
                 f.write("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO';\n\n")
 
                 for table in tables:
-                    self.stdout.write(f'   Dumping: {table}...', ending=' ')
+                    expected = table_counts[table]
+                    self.stdout.write(f'   Dumping: {table} ({expected:,} filas)...', ending=' ')
                     sys.stdout.flush()
 
-                    # CREATE TABLE
-                    cur.execute(f"SHOW CREATE TABLE `{table}`")
-                    create_sql = cur.fetchone()[1]
+                    # Conexión fresca por tabla para evitar timeouts
+                    conn = get_connection()
+
+                    # CREATE TABLE (cursor normal)
+                    meta_cur = conn.cursor()
+                    meta_cur.execute(f"SHOW CREATE TABLE `{table}`")
+                    create_sql = meta_cur.fetchone()[1]
+                    meta_cur.close()
+
                     f.write(f"DROP TABLE IF EXISTS `{table}`;\n")
                     f.write(f"{create_sql};\n\n")
 
-                    # DATA
-                    cur.execute(f"SELECT * FROM `{table}`")
-                    rows = cur.fetchall()
-                    desc = cur.description
-                    row_count = len(rows)
+                    if expected > 0:
+                        # SSCursor: streaming server-side, no carga todo en RAM
+                        ss_cur = conn.cursor(SSCursor)
+                        ss_cur.execute(f"SELECT * FROM `{table}`")
 
-                    if rows:
+                        row_count = 0
                         batch = []
-                        for row in rows:
-                            vals = []
-                            for i, v in enumerate(row):
-                                if v is None:
-                                    vals.append("NULL")
-                                elif isinstance(v, (int, float)):
-                                    vals.append(str(v))
-                                elif isinstance(v, bytes):
-                                    vals.append("X'" + v.hex() + "'")
-                                else:
-                                    s = str(v)
-                                    s = s.replace("\\", "\\\\")
-                                    s = s.replace("'", "\\'")
-                                    s = s.replace("\n", "\\n")
-                                    s = s.replace("\r", "\\r")
-                                    s = s.replace("\x00", "")
-                                    vals.append("'" + s + "'")
-                            batch.append("(" + ",".join(vals) + ")")
 
-                            if len(batch) >= 1000:
-                                f.write(f"INSERT INTO `{table}` VALUES\n")
-                                f.write(",\n".join(batch))
-                                f.write(";\n")
-                                batch = []
+                        while True:
+                            rows = ss_cur.fetchmany(CHUNK_SIZE)
+                            if not rows:
+                                break
+
+                            for row in rows:
+                                batch.append(
+                                    "(" + ",".join(escape_value(v) for v in row) + ")"
+                                )
+                                row_count += 1
+
+                                if len(batch) >= 1000:
+                                    f.write(f"INSERT INTO `{table}` VALUES\n")
+                                    f.write(",\n".join(batch))
+                                    f.write(";\n")
+                                    batch = []
 
                         if batch:
                             f.write(f"INSERT INTO `{table}` VALUES\n")
                             f.write(",\n".join(batch))
                             f.write(";\n")
 
+                        ss_cur.close()
+                    else:
+                        row_count = 0
+
+                    conn.close()
                     f.write("\n")
-                    self.stdout.write(f'{row_count} filas')
+                    self.stdout.write(self.style.SUCCESS(f'{row_count:,} OK'))
 
                 f.write("SET FOREIGN_KEY_CHECKS=1;\n")
-
-            remote_conn.close()
 
             file_size = os.path.getsize(dump_file)
             self.stdout.write(self.style.SUCCESS(
@@ -357,12 +401,11 @@ class Command(BaseCommand):
             ))
 
         except Exception as e:
-            remote_conn.close()
             self.stdout.write(self.style.ERROR(f'\n   Error durante dump: {e}'))
             return
 
-        # 3. Crear BD local y usuario
-        self.stdout.write(f'\n3. Preparando BD local "{local_db}"...')
+        # 4. Crear BD local y usuario
+        self.stdout.write(f'\n4. Preparando BD local "{local_db}"...')
         try:
             # Usar root via sudo para crear BD y usuario
             setup_sql = (
@@ -387,8 +430,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'   Error preparando BD local: {e}'))
             return
 
-        # 4. Importar dump
-        self.stdout.write(f'\n4. Importando dump en "{local_db}"...')
+        # 5. Importar dump
+        self.stdout.write(f'\n5. Importando dump en "{local_db}"...')
         try:
             with open(dump_file, 'r') as f:
                 result = subprocess.run(
@@ -403,8 +446,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'   Error importando: {e}'))
             return
 
-        # 5. Verificar
-        self.stdout.write('\n5. Verificando...')
+        # 6. Verificar
+        self.stdout.write('\n6. Verificando...')
         try:
             result = subprocess.run(
                 ['sudo', 'mariadb', local_db, '-e',
