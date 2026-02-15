@@ -309,7 +309,9 @@ class Command(BaseCommand):
 
         # 2. Obtener lista de tablas y conteos
         self.stdout.write('\n2. Analizando tablas...')
-        dump_file = os.path.join(tempfile.gettempdir(), f'{remote_db}_dump.sql')
+        from django.conf import settings
+        dump_dir = getattr(settings, 'BASE_DIR', os.getcwd())
+        dump_file = os.path.join(dump_dir, f'{remote_db}_dump.sql')
 
         try:
             cur = remote_conn.cursor()
