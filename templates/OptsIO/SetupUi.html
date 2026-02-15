@@ -213,34 +213,15 @@
             submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Validando...';
 
             try {
-                // Primero validar la conexión
+                // Validar conexión (también guarda config en archivo en el server)
                 const formData = getFormData();
                 const response = await axios.post(validateUrl, formData, {
                     headers: {'Content-Type': 'application/json'}
                 });
 
                 if (response.data.success) {
-                    showMessage('Conexión validada. Guardando configuración...', 'success');
-
-                    // Enviar a step2 via POST para guardar en sesión
-                    const postData = new FormData();
-                    postData.append('db_host', formData.db_host);
-                    postData.append('db_port', formData.db_port);
-                    postData.append('db_name', formData.db_name);
-                    postData.append('db_user', formData.db_user);
-                    postData.append('db_password', formData.db_password);
-                    postData.append('save_session_only', '1');
-
-                    const saveResponse = await axios.post(step2Url, postData);
-
-                    if (saveResponse.data.success) {
-                        // Redirigir a step2 GET para mostrar formulario
-                        window.location.href = step2Url;
-                    } else {
-                        showMessage(saveResponse.data.message, 'danger');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Continuar al Paso 2 <i class="mdi mdi-arrow-right"></i>';
-                    }
+                    showMessage('Conexión validada. Redirigiendo...', 'success');
+                    window.location.href = step2Url;
                 } else {
                     showMessage(response.data.message, 'danger');
                     submitBtn.disabled = false;

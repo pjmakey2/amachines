@@ -54,6 +54,11 @@ def setup_validate_database(request):
 
         success, message = setup_manager.validate_database_connection(db_config)
 
+        # Si la validación es exitosa, guardar config en archivo
+        # (las sesiones no funcionan antes del setup: no existe django_session)
+        if success:
+            setup_manager.save_db_config(db_config)
+
         return JsonResponse({
             'success': success,
             'message': message
@@ -79,8 +84,8 @@ def setup_step2(request):
         return redirect('glogin')
 
     if request.method == 'GET':
-        # Obtener configuración de BD de la sesión
-        db_config = request.session.get('setup_db_config')
+        # Obtener configuración de BD desde archivo (sesiones no funcionan antes del setup)
+        db_config = setup_manager.load_db_config()
 
         if not db_config:
             return redirect('setup_index')
@@ -106,14 +111,14 @@ def setup_step2(request):
                 'DB_PORT': request.POST.get('db_port', '5432')
             }
 
-            # Guardar config de BD en sesión
-            request.session['setup_db_config'] = db_config
+            # Guardar config de BD en archivo
+            setup_manager.save_db_config(db_config)
 
-            # Si solo estamos guardando la sesión (viene de step 1)
+            # Si solo estamos guardando la config (viene de step 1)
             if request.POST.get('save_session_only') == '1':
                 return JsonResponse({
                     'success': True,
-                    'message': 'Configuración de BD guardada en sesión'
+                    'message': 'Configuración de BD guardada'
                 })
 
             # Validar conexión nuevamente

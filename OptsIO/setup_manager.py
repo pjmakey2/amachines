@@ -25,6 +25,34 @@ class SetupManager:
         self.setup_flag = self.base_dir / '.setup_completed'
         self.admin_config_file = self.base_dir / '.setup_admin_config.json'
 
+    def save_db_config(self, db_config: Dict[str, str]) -> bool:
+        """
+        Guarda la configuración de BD en un archivo temporal.
+        Necesario porque las sesiones de Django no funcionan antes del setup
+        (no existe django_session en SQLite).
+        """
+        try:
+            import json
+            db_config_file = self.base_dir / '.setup_db_config.json'
+            with open(db_config_file, 'w') as f:
+                json.dump(db_config, f)
+            return True
+        except Exception as e:
+            logger.exception("Error guardando db config")
+            return False
+
+    def load_db_config(self) -> Dict[str, str]:
+        """Carga la configuración de BD desde el archivo temporal."""
+        try:
+            import json
+            db_config_file = self.base_dir / '.setup_db_config.json'
+            if db_config_file.exists():
+                with open(db_config_file, 'r') as f:
+                    return json.load(f)
+        except Exception as e:
+            logger.exception("Error cargando db config")
+        return {}
+
     def save_admin_config(self, admin_config: Dict[str, str]) -> bool:
         """
         Guarda la configuración del admin en un archivo temporal.
@@ -54,13 +82,16 @@ class SetupManager:
 
     def cleanup_admin_config(self):
         """
-        Elimina el archivo temporal de configuración del admin.
+        Elimina los archivos temporales de configuración del setup.
         """
         try:
             if self.admin_config_file.exists():
                 self.admin_config_file.unlink()
+            db_config_file = self.base_dir / '.setup_db_config.json'
+            if db_config_file.exists():
+                db_config_file.unlink()
         except Exception as e:
-            logger.exception("Error eliminando admin config file")
+            logger.exception("Error eliminando config files")
 
     def save_temp_logo(self, logo_file) -> Optional[str]:
         """
