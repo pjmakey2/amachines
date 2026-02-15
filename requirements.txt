@@ -54,6 +54,7 @@ matplotlib-inline==0.2.1
 minify_html==0.18.1
 msgpack==1.1.2
 mysqlclient==2.2.7
+pymysql==1.1.1
 num2words==0.5.14
 numpy==2.3.4
 openpyxl==3.1.5
