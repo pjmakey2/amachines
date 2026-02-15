@@ -227,7 +227,7 @@ class Plugin(BasePlugin):
         # Cargar desde Excel
         file_path = f'{settings.BASE_DIR}/Sifen/rf/CODIGO DE REFERENCIA GEOGRAFICA.xlsx'
         try:
-            dfg = pd.read_excel(file_path)
+            dfg = pd.read_excel(file_path, dtype=str)
             dfg.fillna('', inplace=True)
         except Exception as e:
             return False, f"Error leyendo archivo Excel: {e}", stats
