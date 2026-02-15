@@ -1,0 +1,214 @@
+<div class="anime_ui_container container-fluid">
+    <div ="anime_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_anime" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_anime" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_anime" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_anime_ui"></div>
+</div>
+<script type="text/javascript">
+    anime_home_be = function (data, settings) {
+        tt = qelem(`#table_anime_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        //Agarra de inputs / select definidos como parametros de busqueda si los hubiera
+        //para crear el mquery
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_anime = `dtable_${OptsIO.s4generate()}`;
+    dt_anime_pc = Grid.datatables_wrapper({
+          t_guid: t_anime,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de animes',
+          tselector: 'table_anime_ui',
+          app_name: 'Anime',
+          model_name: 'Anime',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: anime_home_be,
+          detail_objs: [
+            {
+                'dset': 'character_set',
+                'dfilter': {},
+                'sfields': [
+                    'id',
+                    'name',
+                    'role',
+                    'descripcion',
+                ],
+                'order_by': ['id']
+            },
+          ],
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              //dom: 'itp',
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false, 
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-anime-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true, 
+                 gre: true, 
+                 btyp: 'fdb', 
+                 idx: 'title', 
+                 tit: 'Titulo', 
+                 cls: 'align-left', 
+                 dtyp: 'str', 
+                 hide: false
+              },
+              { fdis: true, 
+                 gre: true, 
+                 btyp: 'fdb', 
+                 idx: 'genre', 
+                 tit: 'Genero', 
+                 cls: 'align-left', 
+                 dtyp: 'str', 
+                 hide: false
+              },
+
+              { fdis: true, 
+                 gre: true, 
+                 btyp: 'fdb', 
+                 idx: 'release_date', 
+                 tit: 'Fecha de lanzamiento', 
+                 cls: 'align-left', 
+                 dtyp: 'str', 
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'rating',
+                 tit: 'Calificación',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+          ]
+      })
+
+    $(`#${t_anime} tbody`).on('click', '.tr-anime-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_anime}`).DataTable().row( elerow ).data()
+        anime_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_anime').addEventListener('click', function() {
+          anime_form_crud();
+      });
+
+    anime_form_crud = (pk) => {
+        dattrs = {
+            //modal_selector: `#${mid}`,
+            title: 'Crear Anime',
+            t_guid: t_anime,
+            sui_rr: '{{ rr }}',
+            from_AnimeUi: true,
+            offcanvasglobal: true
+        }
+        
+        tps = {
+            model_app_name: 'Anime',
+            model_name: 'Anime',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Anime/AnimeCreateUi.html',
+            raw: true,
+            
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Anime';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#btn_borrar_anime').addEventListener('click', function() {
+        let table = $(`#${t_anime}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info',
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Anime');
+            gbe.append('package', 'mng_anime');
+            gbe.append('attr', 'MAnime');
+            gbe.append('mname', 'delete_anime');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensage recibo del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_anime}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    $(`#${t_anime}`).on('draw.dt', function() {
+        tt = qelem(`#table_anime_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+
+      
+</script>

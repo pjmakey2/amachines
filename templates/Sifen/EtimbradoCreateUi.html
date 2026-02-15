@@ -1,0 +1,246 @@
+<div class="ui_etimbrado">
+    <form id="form_etimbrado_{{ rr }}" class="form_etimbrado">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <div class="row">
+            <div class="col-md-8">
+                <label class="required">RUC</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="ruc"
+                        class="form-control"
+                        placeholder="Ej: 80012345"
+                        required
+                        {% if mobj %} value="{{ mobj.ruc }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="required">DV</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="dv"
+                        class="form-control"
+                        placeholder="Ej: 6"
+                        required
+                        maxlength="2"
+                        {% if mobj %} value="{{ mobj.dv }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label class="required">Timbrado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="timbrado"
+                        class="form-control"
+                        placeholder="Ej: 12345678"
+                        required
+                        {% if mobj %} value="{{ mobj.timbrado }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="required">Serie</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="serie"
+                        class="form-control"
+                        placeholder="Ej: A"
+                        required
+                        {% if mobj %} value="{{ mobj.serie }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label class="required">Fecha Inicio</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="date"
+                        name="inicio"
+                        class="form-control"
+                        required
+                        {% if mobj %} value="{{ mobj.inicio|date:'Y-m-d' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="required">Fecha Vencimiento</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="date"
+                        name="vencimiento"
+                        class="form-control"
+                        required
+                        {% if mobj %} value="{{ mobj.vencimiento|date:'Y-m-d' }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label class="required">FCSC (Codigo de Seguridad)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="fcsc"
+                        class="form-control"
+                        placeholder="Codigo de seguridad del contribuyente"
+                        required
+                        {% if mobj %} value="{{ mobj.fcsc }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="required">SCSC (Segundo Codigo)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="scsc"
+                        class="form-control"
+                        placeholder="Segundo codigo de seguridad"
+                        required
+                        {% if mobj %} value="{{ mobj.scsc }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+
+        {% if mobj %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="card bg-light">
+                    <div class="card-body py-2">
+                        <small class="text-muted">
+                            <strong>Cargado:</strong> {{ mobj.cargado_fecha|date:"d/m/Y H:i" }} por {{ mobj.cargado_usuario|default:"-" }}
+                            {% if mobj.actualizado_fecha %}
+                            <br><strong>Actualizado:</strong> {{ mobj.actualizado_fecha|date:"d/m/Y H:i" }} por {{ mobj.actualizado_usuario|default:"-" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                    id="btn_save_etimbrado_{{ rr }}"
+                >
+                    <i class="mdi mdi-content-save"></i>
+                    {% if mobj %}Actualizar{% else %}Guardar{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Editar Timbrado: {{ mobj.timbrado }}{% else %}Nuevo Timbrado{% endif %}`;
+
+    save_etimbrado = (target) => {
+        var fdata = new FormData();
+
+        // Agregar campos para process_record
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Etimbrado');
+        fdata.append('dbcon', 'default');
+
+        log.info(`#form_etimbrado_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+
+        log.info(`#form_etimbrado_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'Sifen',
+                'package': 'mng_etimbrado',
+                'attr': 'MEtimbrado',
+                'mname': 'save_etimbrado',
+            },
+        ]));
+        fdata.append('a_vals', jfy([]));
+
+        // Set overlay
+        document.querySelector('#form_etimbrado_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_etimbrado_{{ rr }}').classList.add('overlay');
+
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            {
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken'),
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_etimbrado_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_etimbrado_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_etimbrado_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 3000,
+                offcanvasglobal: true
+            })
+            return {msgs: msgs, got_error: got_error};
+        }).then((result)=>{
+            if (result.got_error === false) {
+                log.success(`#form_etimbrado_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+                // Cerrar offcanvas despues de exito
+                setTimeout(() => {
+                    bootstrap.Offcanvas.getInstance('#offcanvasGlobalUi').hide();
+                }, 1500);
+            }
+        }).catch((err)=>{
+            log.error(`#form_etimbrado_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError('Error al guardar el timbrado: ' + (err.response?.data?.error || err.message || 'Error desconocido'));
+        }).finally(()=>{
+            log.info(`#form_etimbrado_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_etimbrado_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_etimbrado_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_etimbrado_{{ rr }} Submitting form`);
+        save_etimbrado(event.target);
+    })
+
+</script>

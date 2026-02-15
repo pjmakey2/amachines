@@ -1,0 +1,413 @@
+<div class="ui_business">
+    <form id="form_business_{{ rr }}" class="form_business" enctype="multipart/form-data">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+
+        <h5 class="mb-3">Información del Negocio</h5>
+
+        <div class="row">
+            <div class="col-md-8">
+                <label>Nombre del Negocio</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="name" class="form-control" placeholder="Nombre del negocio"
+                        {% if mobj %} value="{{ mobj.name }}" {% endif %} required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Abreviación</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="abbr" class="form-control" placeholder="Abreviación"
+                        {% if mobj %} value="{{ mobj.abbr }}" {% endif %} />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-8">
+                <label>RUC</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="ruc" class="form-control" placeholder="RUC"
+                        {% if mobj %} value="{{ mobj.ruc }}" {% endif %} required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>DV</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="number" name="ruc_dv" class="form-control" placeholder="Dígito Verificador"
+                        {% if mobj %} value="{{ mobj.ruc_dv }}" {% endif %} readonly />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Nombre para Factura</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombrefactura" class="form-control" placeholder="Nombre para factura"
+                        {% if mobj %} value="{{ mobj.nombrefactura }}" {% endif %} />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Nombre de Fantasía</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombrefantasia" class="form-control" placeholder="Nombre de fantasía"
+                        {% if mobj %} value="{{ mobj.nombrefantasia }}" {% endif %} />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Tipo de Contribuyente</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="contribuyenteobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h5 class="mb-3">Dirección y Contacto</h5>
+
+        <div class="row">
+            <div class="col-md-8">
+                <label>Dirección</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="direccion" class="form-control" placeholder="Dirección principal"
+                        {% if mobj %} value="{{ mobj.direccion }}" {% endif %} />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Número de Casa</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="number" name="numero_casa" class="form-control" placeholder="Nro."
+                        {% if mobj %} value="{{ mobj.numero_casa }}" {% endif %} />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Complemento Dirección 1</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="dir_comp_uno" class="form-control" placeholder="Ej: Barrio, Referencias"
+                        {% if mobj %} value="{{ mobj.dir_comp_uno }}" {% endif %} />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Complemento Dirección 2</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="dir_comp_dos" class="form-control" placeholder="Complemento adicional"
+                        {% if mobj %} value="{{ mobj.dir_comp_dos }}" {% endif %} />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Ciudad</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="ciudadobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Teléfono</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="telefono" class="form-control" placeholder="Teléfono"
+                        {% if mobj %} value="{{ mobj.telefono }}" {% endif %} />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Celular</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="celular" class="form-control" placeholder="Celular"
+                        {% if mobj %} value="{{ mobj.celular }}" {% endif %} />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Correo Electrónico</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="email" name="correo" class="form-control" placeholder="Email"
+                        {% if mobj %} value="{{ mobj.correo }}" {% endif %} />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Sitio Web</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="url" name="web" class="form-control" placeholder="https://www.ejemplo.com"
+                        {% if mobj %} value="{{ mobj.web }}" {% endif %} />
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h5 class="mb-3">Información Adicional</h5>
+
+        <div class="row">
+            <div class="col-md-12">
+                <label>Denominación</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="denominacion" class="form-control" placeholder="Denominación"
+                        {% if mobj %} value="{{ mobj.denominacion }}" {% endif %} />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Actividad Económica</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="actividadecoobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Logo del Negocio <small class="text-muted">(Este logo se usará en la interfaz del sistema)</small></label>
+                <div class="input-group">
+                    <input type="file" name="logo" class="form-control" accept="image/*" />
+                </div>
+                {% if mobj and mobj.logo %}
+                <div class="mt-2">
+                    <img src="{{ mobj.logo.url }}" alt="Logo del negocio" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h5 class="mb-3">Personalización de Documentos</h5>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>Favicon <small class="text-muted">(Icono de la pestaña del navegador)</small></label>
+                <div class="input-group">
+                    <input type="file" name="favicon" class="form-control" accept="image/*,.ico" />
+                </div>
+                {% if mobj and mobj.favicon %}
+                <div class="mt-2">
+                    <img src="{{ mobj.favicon.url }}" alt="Favicon" style="max-width: 64px; max-height: 64px; border: 1px solid #ddd; padding: 5px; border-radius: 4px;">
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <label>Logo para Facturas <small class="text-muted">(Logo que aparece en PDFs de facturas)</small></label>
+                <div class="input-group">
+                    <input type="file" name="logo_invoice" class="form-control" accept="image/*" />
+                </div>
+                {% if mobj and mobj.logo_invoice %}
+                <div class="mt-2">
+                    <img src="{{ mobj.logo_invoice.url }}" alt="Logo factura" style="max-width: 150px; max-height: 150px; border: 1px solid #ddd; padding: 10px; border-radius: 8px;">
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>CSS Personalizado para Facturas <small class="text-muted">(Archivo .css para personalizar el estilo de las facturas)</small></label>
+                <div class="input-group">
+                    <input type="file" name="css_invoice" class="form-control" accept=".css,text/css" />
+                </div>
+                {% if mobj and mobj.css_invoice %}
+                <div class="mt-2">
+                    <span class="badge bg-success"><i class="mdi mdi-file-code"></i> {{ mobj.css_invoice.name|cut:"business/css/" }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+
+    </form>
+</div>
+
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = 'Configuración del Negocio';
+
+    qelem('#form_business_{{ rr }} input[name=ruc]').addEventListener('blur', function() {
+        if (this.value) {
+            form_input.calculate_dv('#form_business_{{ rr }} input[name=ruc]', '#form_business_{{ rr }} input[name=ruc_dv]');
+        }
+    });
+
+    var dropdownParentEl = $('#offcanvasGlobalUi');
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_business_{{ rr }} select[name=contribuyenteobj_id]',
+        app_name: 'Sifen',
+        model_name: 'TipoContribuyente',
+        field_display: ['tipo'],
+        field_id: ['id'],
+        db_fields: ['id', 'tipo'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        dropdownParent: dropdownParentEl
+    }).then(() => {
+        {% if mobj %}
+        $('#form_business_{{ rr }} select[name=contribuyenteobj_id]').val('{{ mobj.contribuyenteobj_id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_business_{{ rr }} select[name=ciudadobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Ciudades',
+        field_display: ['nombre_ciudad'],
+        field_id: ['id'],
+        db_fields: ['id', 'nombre_ciudad'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        startRow: 0,
+        endRow: 500,
+        dropdownParent: dropdownParentEl
+    }).then(() => {
+        {% if mobj %}
+        $('#form_business_{{ rr }} select[name=ciudadobj_id]').val('{{ mobj.ciudadobj_id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_business_{{ rr }} select[name=actividadecoobj_id]',
+        app_name: 'Sifen',
+        model_name: 'ActividadEconomica',
+        field_display: ['nombre_actividad'],
+        field_id: ['id'],
+        db_fields: ['id', 'nombre_actividad', 'codigo_actividad'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        startRow: 0,
+        endRow: 500,
+        dropdownParent: dropdownParentEl
+    }).then(() => {
+        {% if mobj %}
+        $('#form_business_{{ rr }} select[name=actividadecoobj_id]').val('{{ mobj.actividadecoobj_id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_business = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Business');
+        fdata.append('dbcon', 'default');
+
+        log.info('#form_business_{{ rr }} Preparing data to be sent to the backend');
+        var formData = new FormData(target);
+        var edata = form_serials.form_to_json(formData);
+
+        var seldis = ['contribuyenteobj_id', 'ciudadobj_id', 'actividadecoobj_id'];
+        seldis.forEach((idx) => {
+            var vv = qelem('#form_business_{{ rr }} select[name=' + idx + ']').value;
+            if (vv !== undefined && vv !== '') {
+                edata[idx] = vv;
+            }
+        });
+
+        log.info('#form_business_{{ rr }} edata to be sent: ' + jfy(edata));
+        fdata.append('uc_fields', jfy(edata));
+
+        // Handle file uploads
+        var logoFile = qelem('#form_business_{{ rr }} input[name=logo]').files[0];
+        if (logoFile) {
+            fdata.append('logo', logoFile);
+        }
+
+        var faviconFile = qelem('#form_business_{{ rr }} input[name=favicon]').files[0];
+        if (faviconFile) {
+            fdata.append('favicon', faviconFile);
+        }
+
+        var logoInvoiceFile = qelem('#form_business_{{ rr }} input[name=logo_invoice]').files[0];
+        if (logoInvoiceFile) {
+            fdata.append('logo_invoice', logoInvoiceFile);
+        }
+
+        var cssInvoiceFile = qelem('#form_business_{{ rr }} input[name=css_invoice]').files[0];
+        if (cssInvoiceFile) {
+            fdata.append('css_invoice', cssInvoiceFile);
+        }
+
+        log.info('#form_business_{{ rr }} Set overlay to the form');
+        qelem('#form_business_{{ rr }}').classList.add('overlay-container');
+        qelem('#form_business_{{ rr }}').classList.add('overlay');
+
+        return axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            var msgs = rsp.data.msgs;
+            log.info('#form_business_{{ rr }} Response msgs: ' + jfy(msgs));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            var got_error = false;
+            msgs.forEach((ee) => {
+                if (ee.error) {
+                    log.error('#form_business_{{ rr }} There is an error from the backend ' + jfy(ee));
+                    got_error = true;
+                }
+            });
+            log.info('#form_business_{{ rr }} Compiling messages to show to the user ' + jfy(msgs));
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            });
+            return msgs;
+        }).catch((err) => {
+            log.error('#form_business_{{ rr }} Error: ' + jfy(err));
+            UiB.MsgError('Error al actualizar el negocio');
+        }).finally(() => {
+            var ft = qelem('#form_business_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_business_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        log.info('#form_business_{{ rr }} Submitting form');
+        save_business(event.target);
+    });
+
+</script>
+
+<style>
+.ui_business {
+    padding: 20px;
+}
+
+.ui_business h5 {
+    color: #333;
+    font-weight: 600;
+}
+
+.ui_business .am_focus_highlight input:focus,
+.ui_business .am_focus_highlight select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+</style>

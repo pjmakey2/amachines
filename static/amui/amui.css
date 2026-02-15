@@ -1,0 +1,482 @@
+html, body {
+    font-family: 'Inter', 'Literata', 'Roboto', sans-serif !important;
+}
+
+.am_body {
+    overflow: auto !important;
+}
+
+.btn-am-toolbar-pos {
+    margin-top: 20px !important;
+}
+
+.btn-am-toolbar {
+    height: 46px;
+}
+
+.btn-am-xs {
+    height: 35px;
+}
+
+
+
+.btn-am-xxl {
+    height: 55px !important;
+}
+
+
+.am_input:required {
+  border-color: #ff9b9b !important;
+  border-width: 0.5px !important;
+}
+
+.am_input[readonly] {
+    background-color: #f1f1f1 !important;
+    border-width: 0.8px !important;
+    color: black !important;
+}
+
+
+.am_select:required {
+  border-color: #ff9b9b !important;
+  border-width: 0.5px !important;
+}
+
+.am_focus_highlight:focus-within input {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.am_focus_highlight:focus-within select {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.am_focus_highlight:focus-within textarea {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.am_focus_highlight:focus-within .select2-selection {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.am_focus_highlight:focus {
+    border:  rgb(247, 1, 255) solid 2px !important;
+}
+
+.am_checkbox {
+    height: 30px;
+    width: 30px;
+}
+
+.am_input-group-checkbox  {
+    background-color: black !important;
+}
+
+#fl_datatable-packages_info {
+      font-weight: bold !important;
+      color: black !important;
+}
+
+
+#fl_reception_table_container .dt-buttons {
+    padding-left: 30px !important;
+}
+
+.dt_row_danger {
+    background-color: #f8d7da !important;
+}
+
+.am_modal {
+    max-width: 1700px !important;
+    width: 90% !important;
+}
+
+
+/* Reset some default styles for better consistency */
+/* fl_rpt */
+.am_rpt table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 5px;
+    
+}
+
+/* Style for table rows */
+.am_rpt tr {
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+/* Style for table header */
+.am_rpt th {
+    /* background-color: #f2f2f2; */
+    color: black;
+    font-size: 16px !important;
+    /* font-weight: bold; */
+    padding: 0px;
+    text-align: left;
+}
+
+/* Style for table cells */
+.am_rpt td {
+    padding: 0px;
+    border-bottom: 1px solid #ddd; /* Soft gray border */
+}
+
+/* Hover effect for table rows */
+.am_rpt tr:hover {
+    background-color: #f5f5f5; /* Lighter gray background on hover */
+}
+
+.am_group_title {
+    margin-top: 10px !important;
+    margin-bottom: 0px !important;
+    margin-left: 10px !important;
+    float: left !important;
+}
+
+.am_group_metrics {
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    margin-left: 15px !important;
+    float: left !important;
+    
+}
+
+/* table.dataTable tbody > tr.selected,
+fl_table.dataTable tbody > tr > .selected {
+    background-color: rgba(116, 5, 101, 0.138) !important;
+  }
+table.dataTable tbody > tr.selected td,
+table.dataTable tbody > tr > .selected td {
+    border-color: black !important;
+} */
+
+.am_tall_select {
+    height: 400px !important;
+}
+
+.am_medium_tall_select {
+    height: 200px !important;
+}
+
+.am_main_content {
+    margin-left: 12px;
+}
+
+/* select2 personalization */
+.select2-container {
+    display: block !important;
+}
+
+.overlay-container {
+    position: relative;
+}
+
+.overlay-container.overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.overlay-container.overlay::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 4.8px;
+    background: #FFF;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    z-index: 2;
+    animation: animFw 2s ease-in-out infinite;
+}
+
+.loader {
+    width: 0;
+    height: 4.8px;
+    display: inline-block;
+    position: relative;
+    background: #FFF;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    box-sizing: border-box;
+    animation: animFw 8s linear infinite;
+}
+
+.loader::after,
+.loader::before {
+    content: '';
+    width: 10px;
+    height: 1px;
+    background: #FFF;
+    position: absolute;
+    top: 9px;
+    right: -2px;
+    opacity: 0;
+    transform: rotate(-45deg) translateX(0px);
+    box-sizing: border-box;
+    animation: coli1 0.3s linear infinite;
+}
+
+.loader::before {
+    top: -4px;
+    transform: rotate(45deg);
+    animation: coli2 0.3s linear infinite;
+}
+
+
+div.dts div.dataTables_scrollBody table {
+    background-color: inherit !important;
+    z-index: 2;
+}
+
+.table-sm th, .table-sm td {
+    padding: 0.25rem 0.25rem !important;
+}
+
+.table-esm th, .table-esm td {
+    padding: 0.20rem 0.20rem !important;
+}
+
+.table-sesm th, .table-sesm td {
+    padding: 0.15rem 0.15rem !important;
+}
+
+.text-lower-12 {
+    font-size: 12px !important;
+}
+
+.btn-recepcion-paquete {
+    height: 75px !important;
+    width: 140px !important;
+}
+
+@keyframes animFw {
+    0% {
+        width: 0;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+@keyframes coli1 {
+    0% {
+        transform: rotate(-45deg) translateX(0px);
+        opacity: 0.7;
+    }
+    100% {
+        transform: rotate(-45deg) translateX(-45px);
+        opacity: 0;
+    }
+}
+
+@keyframes coli2 {
+    0% {
+        transform: rotate(45deg) translateX(0px);
+        opacity: 1;
+    }
+    100% {
+        transform: rotate(45deg) translateX(-45px);
+        opacity: 0.7;
+    }
+}
+
+.am_paq_depo_baja {
+    background-color: #f1416cb0!important;
+}
+
+.am_paq_carga {
+    background-color: #5094eeb0!important;
+}
+
+.am_paq_proceso {
+    background-color: #ffc10794!important;
+}
+
+.am_paq_recepcion {
+    background-color: #d1ffd7b0!important;
+}
+
+.am_paq_resuelto {
+    background-color: #d1ffd7b0!important
+}
+
+.fs-extra-lg {
+    font-size: 23.332px !important;
+}
+
+.fs-icon-menu {
+    font-size: 28px !important;
+}
+
+.sub-menu-icon {
+    color: #7c01ff !important;
+}
+
+.am_cursor {
+    cursor: pointer;
+}
+
+.swal2-modal {
+    display: inline-table !important;
+}
+
+table.dataTable>tbody>tr.selected>* {
+    box-shadow: inset 0 0 0 9999px #b5d6ff47 !important;
+    color: var(--bs-text-inverse) !important;
+}
+
+table.dataTable>tbody>tr.selected:hover>* {
+    box-shadow: inset 0 0 0 9999px #b5d6ff47 !important;
+    color: var(--bs-text-inverse) !important;
+}
+
+table.dataTable.hover>tbody>tr.selected:hover>*, table.dataTable.display>tbody>tr.selected:hover>* {
+    box-shadow: inset 0 0 0 9999px #b5d6ff47 !important;
+    box-shadow: inset 0 0 0 9999px  #b5d6ff47 !important;
+}
+
+.ele-edit:hover {
+    cursor:grab;
+}
+
+.btn-close-modal {
+    position: absolute;
+    z-index: 9999;
+    
+}
+
+.floating-btn {
+    position: fixed;
+
+    z-index: 1000; /* Ensures it's above other elements */
+}
+
+/* Floating Label for Select2 */
+.form-floating-select2 {
+    position: relative;
+}
+
+.form-floating-select2 > label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    padding: 1rem 0.75rem;
+    pointer-events: none;
+    border: 1px solid transparent;
+    transform-origin: 0 0;
+    transition: opacity .1s ease-in-out, transform .1s ease-in-out;
+    color: rgba(var(--bs-body-color-rgb), 0.65);
+    z-index: 2;
+}
+
+.form-floating-select2 > .select2-container {
+    height: calc(3.5rem + 2px);
+}
+
+.form-floating-select2 > .select2-container .select2-selection {
+    height: 100%;
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+}
+
+.form-floating-select2 > .select2-container .select2-selection__rendered {
+    padding-left: 0.75rem;
+    line-height: 1.5;
+}
+
+.form-floating-select2 > .select2-container .select2-selection__arrow {
+    height: 100%;
+}
+
+/* Label floats when select2 has value or is focused */
+.form-floating-select2.has-value > label,
+.form-floating-select2.select2-focused > label {
+    opacity: 0.65;
+    transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+}
+
+/* Small variant */
+.form-floating-select2-sm > .select2-container {
+    height: calc(2.5rem + 2px);
+}
+
+.form-floating-select2-sm > label {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.form-floating-select2-sm > .select2-container .select2-selection {
+    padding-top: 1.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.form-floating-select2-sm.has-value > label,
+.form-floating-select2-sm.select2-focused > label {
+    transform: scale(0.85) translateY(-0.35rem) translateX(0.15rem);
+}
+
+/* Compact form floating - reduces height */
+.form-floating.form-floating-sm {
+    height: 65px !important;
+}
+
+.form-floating.form-floating-sm > .form-control,
+.form-floating.form-floating-sm > .form-select {
+    height: 65px !important;
+    min-height: 65px !important;
+    padding: 0.75rem 0.75rem !important;
+    padding-top: 1.5rem !important;
+    font-size: 0.875rem !important;
+}
+
+.form-floating.form-floating-sm > label {
+    padding: 0.75rem 0.75rem !important;
+    font-size: 0.875rem !important;
+}
+
+.form-floating.form-floating-sm > .form-control:focus ~ label,
+.form-floating.form-floating-sm > .form-control:not(:placeholder-shown) ~ label,
+.form-floating.form-floating-sm > .form-select ~ label {
+    transform: scale(0.75) translateY(-0.4rem) translateX(0.15rem) !important;
+}
+
+/* Compact Select2 floating */
+.form-floating-select2.form-floating-select2-sm > .select2-container {
+    height: 65px !important;
+}
+
+.form-floating-select2.form-floating-select2-sm > label {
+    padding: 0.75rem 0.75rem !important;
+    font-size: 0.875rem !important;
+}
+
+.form-floating-select2.form-floating-select2-sm > .select2-container .select2-selection {
+    height: 100% !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 0.25rem !important;
+    font-size: 0.875rem !important;
+}
+
+.form-floating-select2.form-floating-select2-sm.has-value > label,
+.form-floating-select2.form-floating-select2-sm.select2-focused > label {
+    transform: scale(0.75) translateY(-0.4rem) translateX(0.15rem) !important;
+}
+
+/* Reduce row gutter */
+.row {
+    --bs-gutter-x: 0.5rem !important;
+}
+
+.msg_pdv_ruc {
+    font-size: 12px !important;
+}

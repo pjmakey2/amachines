@@ -1,0 +1,183 @@
+codigo|descripcion|partida
+1|Accesorios de gym|9506.91.00.000L
+2|Filtro de Aceite|8421.31.00.000K
+3|Amplificador de audio|8518.50.00.000R
+4|paragolpe plastico|8708.10.00.000C
+5|Carrito de Bebe|8715.00.00.000D
+6|canilla o plomeria|8481.80.19.000W
+7|espejo/mirror|7009.92.00.000D
+8|tubos de Plastico/ caños|3926.90.90.000C
+9|ventiladores/fan / cooler|8414.51.20.000T
+10|Campana extractor|8414.60.00.000A
+11|Rulemanes y Autopartes|8482.10.90.000A
+12|mesas o mueble|3926.90.90.000C
+13|filtro o depurador de agua|8421.21.00.000W
+14|cargador o fuente A/C|8504.31.19.000J
+15|A/C fuente|8504.40.60.000R
+16|Pilas alcalinas|8506.10.10.000M
+17|Bateria|8507.60.00.000R
+18|Afeitadora/Clippers|8512.30.00.000C
+19|limpia parabrisas o acc|8512.40.10.000B
+20|Planchas|8516.40.00.000Q
+21|piano o teclado|9503.00.97.000H
+22|microscopio|9011.10.00.000G
+23|Basurero|3926.90.90.000C
+24|Raqueta|9506.51.00.000E
+25|patines/ roller blades|9506.70.00.000W
+26|brochas para maquillar|9603.30.00.000Q
+27|maniquies|9618.00.00.000L
+28|diaper/pañal|9619.00.00.100K
+29|Bolsos o cartera|4202.29.00.000W
+30|boot/ bota|6402.99.90.000N
+31|tools / destornillador|8205.40.00.000G
+32|tripod|9620.00.00.000J
+33|Compresor de auto|8414.40.90.000K
+34|antenna|8529.10.90.000M
+35|Alfombra|5702.49.00.000Q
+36|carburador y acc|8409.91.13.000J
+37|Bumper/ envolvente|4202.29.00.000W
+38|ruedas de bicicleta|4011.50.00.000V
+39|Aspiradora |8508.60.00.000K
+40|Gato Hidraulico/ car jack|8425.49.00.000K
+41|Llaves y herramientas|8204.12.00.000V
+42|Boxing gloves y/o Acc|9506.91.00.000L
+43|Ropa|6117.80.10.000G
+44|Pelucas|6703.00.00.000D
+45|Cinturon de seguridad|8708.21.00.000D 
+46|Panel de instrumento para auto|8708.29.14.000P
+47|Frenos|6813.81.10.000Q
+48|Embrague|6813.89.10.000L
+49|turbo|8414.80.29.000R
+50|scale/ balanza|8423.10.00.000G
+51|Extintor de incendio|8424.10.00.000A
+52|repuesto intercooler|8425.42.00.000K
+53|UPS para Computadora|8504.40.40.000X
+54|Pilotin para lluvia|3926.90.90.000C
+55|Alterador para auto|8511.50.10.000X
+56|Bobinas de incendidos|8511.30.20.000D
+57|Bomba de Aceite|8413.30.30.000U
+58|Bujias|8511.10.00.000F
+59|Peluche|9503.00.31.000D
+60|Auriculares|8518.30.00.000N
+61|Parlantes|8518.21.00.000L
+62|Cintas decorativas|9505.10.00.000T
+63|televisor/ monitor|8529.90.20.000G
+64|despertador/ clock|9103.10.00.000E
+65|Video juego|9504.50.00.100L
+66|soccer cleats / botines|6402.19.00.000M
+67|Esencia|3304.99.90.000T
+68|Cables|8544.49.00.000Y
+69|Teclado de computadora|8471.60.52.000H
+70|Casita de juguete|9503.00.99.000Y
+71|Caja de Plastico|3923.10.10.000F
+72|Bicicleta|8712.0010.000H
+73|toy /Juguetes en general|9503.00.99.000Y
+74|Celular|8473.50.90.000E
+75|MicroFono|9207.90.90.000L
+76|tazas|7323.99.00.000M
+77|pestañas y/o nails|9603.40.90.000T
+78|Make up/Maquillaje|6309.00.90.000B
+79|Herramienta/ tool kit|8205.59.00.000D
+80|Accesorio de Musica|9207.90.90.000L
+81|luces/leds|8512.20.29.000B
+82|Accesorio de limpieza|9603.29.00.000J
+83|Accesorio de Mascota/ pet toy|4205.00.00.000Q
+84|Sneakers/ calzado deportivo|6402.19.00.000M
+85|stilleto/ womens shoe|6402.19.00.000M
+86|zapatos para hombre|6402.19.00.000M
+87|Reloj/ smart wach|9101.19.00.000A
+88|electronica (art. De comunicacion)|8517.62.49.000U
+89|ropa de bebe|6117.80.10.000G
+90|camisa|6117.80.10.000G
+91|pantalon|6117.80.10.000G
+92|chaquetas/ camperas|6117.80.10.000G
+93|cubiertas/ wheel|4011.10.00.000N
+94|llantas/ rims|8708.70.90.000A
+95|paragolpes|8708.10.00.000C
+96|repuestos electricos|8473.50.90.000E
+97|repuestos mecanicos|8708.99.90.000L
+98|ropa interior|6117.80.10.000G
+99|parabrisas|7007.11.00.000R
+100|bijouterie|7117.19.00.000P
+101|cosmeticos|3304.99.90.000T
+102|cargadores|8504.40.10.000T
+103|pendrive|8523.51.90.000V
+104|accesorios de estetica facial|8543.90.10.000C
+105|casco / helmet|6506.10.00.000K
+106|accesorios de bicicleta o moto|8714.99.90.000H
+107|accesorios de arqueria|9506.99.00.000G
+108|Case/ protector para celulares|3926.90.90.000C
+109|perfumes|3304.99.90.000T
+110|herramientas plasticas|8205.59.00.000D
+111|herramientas metalicas|8205.59.00.000D
+112|ODB scanner|8205.59.00.000D
+113|instrumentos musicales electricos|9207.90.90.000L
+114|instrumentos musicales acusticos|9205.90.00.000L
+115|jeans|6117.80.10.000G
+116|accesorios para instrumentos|9209.99.00.000T
+117|accesorios para vehiculos|8708.99.90.000L
+118|aromatizantes/ Desodorantes|3304.99.90.000T
+119|Articulos eroticos|3926.90.90.000C
+120|juegos de mesa|9403.89.00.000F
+121|consolas de video juego y acc|9504.50.00.290W
+122|accesorios informaticos|8473.50.90.000E
+123|sunglasses/ lentes|9004.10.00.000R
+124|televisores|8473.50.90.000E
+125|monitores|8473.50.90.000E
+126|celulares|8473.50.90.000E
+127|laptop/computadora|8473.50.90.000E
+128|tablet|8473.50.90.000E
+129|paraguas / umbrella|6601.99.00.000V
+130|cigarrillos electronicos|8473.50.90.000E
+131|CD|8523.29.19.900M
+132|vinilos / LP|8523.29.19.900M
+133|linternas |8513.10.10.000C
+134|stickers|3919.90.90.000M
+135|parlantes/ speaker|8518.21.00.000L
+136|controles|8543.70.99.000W
+137|palo de golf|9506.31.00.000B
+138|tabla de wake board|9506.59.00.000A
+139|pelota de tenis |9506.61.00.000U
+140|raqueta de tenis |9506.51.00.000E
+141|cuerdas de tennis|9506.69.00.000P
+142|Book/ libros |4901.99.00.000X
+143|drone battery y acc|8507.80.00.000V
+144|elastic band/ elasctico deportivo|3919.90.90.000M
+145|posters |3926.90.90.000C
+146|sandal/ zapatilla|6402.19.00.000M
+147|carteles luminosos|8473.50.90.000E
+148|remeras ocasionales |6117.80.10.000G
+149|Soprt uniform/ jersey|6117.80.10.000G
+150|soporte de pared|7326.90.90.000Y
+151|camaras fotografica|8473.50.90.000E
+152|accesorios para camaras fotograficas|9006.91.90.000R
+153|camisa de jean |6109.90.00.000C
+154|golosinas |1704.90.20.000A
+155|termos |3926.90.90.000C
+156| llaveros|7117.19.00.000P
+157|marcos para anteojos|9003.11.00.000K
+158|tupper|3926.90.90.000C
+159|candados|8301.10.00.000X
+160|decoraciones para el hogar|3926.90.90.000C
+161|decoraciones para el baño|3926.90.90.000C
+162|cuadros|3919.90.90.000M
+163|accesorios de fotografia|9006.91.90.000R
+164|juegos de cama|6302.21.00.000Z
+165|office supply/ insumos de oficina|8470.90.90.000F
+166|impresoras|8443.32.39.000Y
+167|mochilas bolsos|4202.29.00.000W
+168|gorros|6505.00.21.000E
+169|drones|8473.50.90.000E
+170|pelotas|9506.62.00.000F
+171|componesntes de computadoras|8473.50.90.000E
+172|collectible cards|3926.90.90.000C
+173|disfraz / costume|6402.19.00.000M
+174|baston|6602.00.00.000D
+175|router|8517.62.49.000U
+176|utencilios de cocina|3924.90.00.000C
+177|accesorio de reposteria|3924.90.00.000C
+178|manguera/ hose|4016.99.90.000P
+179|filtros|8421.23.00.000V
+180|habanos/tabaco|2402.90.00.000H
+181|envelope|3926.90.90.000C
+182|memorabilia|3926.90.90.000C

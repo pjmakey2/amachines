@@ -1,0 +1,942 @@
+<!--
+    FLFacturarUi.html - Registro de Facturas / Facturar
+    Equivalente a facturar.php del sistema Frontliner
+
+    DIFERENCIA CLAVE: El número de factura se obtiene AUTOMÁTICAMENTE de SIFEN
+-->
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="mdi mdi-receipt me-2"></i>Registro de Facturas
+                <span id="fl_titulo_cliente" class="ms-3" style="display: none;"></span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <!-- Búsqueda de Acuse con Select2 -->
+            <div class="row mb-2">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Cliente o Nro. Acuse</label>
+                    <select id="fl_select_acuse" class="form-control" style="width: 100%;">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Acuse Seleccionado</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Nro.</span>
+                        <input type="text" id="fl_acuse_id" class="form-control form-control-lg" readonly>
+                        <span class="input-group-text">Cant. Paquetes:</span>
+                        <input type="text" id="fl_cant_paquetes" class="form-control form-control-lg" readonly style="max-width: 100px;">
+                    </div>
+                    <input type="hidden" id="fl_cliente_codigo_hidden">
+                </div>
+            </div>
+
+            <!-- Datos del Cliente para Factura -->
+            <div class="row mb-2" id="fl_seccion_cliente" style="display: none;">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold" id="fl_label_ruc">
+                        RUC para Factura
+                        <i id="fl_ruc_check" class="mdi mdi-check-circle text-success ms-1" style="display: none;" title="RUC validado en SIFEN"></i>
+                        <i id="fl_ruc_error" class="mdi mdi-alert-circle text-danger ms-1" style="display: none;" title="RUC no encontrado en SIFEN"></i>
+                        <span id="fl_ruc_loading" class="spinner-border spinner-border-sm text-primary ms-1" style="display: none;"></span>
+                    </label>
+                    <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC">
+                    <small id="fl_ruc_nombre_sifen" class="text-muted" style="display: none;"></small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold" id="fl_label_nombre">
+                        Nombre para Factura
+                        <i id="fl_nombre_check" class="mdi mdi-check-circle text-success ms-1" style="display: none;" title="Nombre obtenido de SIFEN"></i>
+                    </label>
+                    <input type="text" id="fl_nombre_factura" class="form-control" placeholder="Razón Social / Nombre">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" id="fl_label_correo">
+                        Correo
+                        <i id="fl_correo_check" class="mdi mdi-check-circle text-success ms-1" style="display: none;" title="Correo obtenido de SIFEN"></i>
+                    </label>
+                    <input required type="text" id="fl_correo_factura" class="form-control" placeholder="Correo Electrónico">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Establecimiento</label>
+                    <select id="fl_establecimiento" class="form-select">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Panel de Información -->
+            <div class="row mb-2" id="fl_panel_info" style="display: none;">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center py-2">
+                            <small class="text-muted d-block">Cotización USD</small>
+                            <h5 class="mb-0" id="fl_cotizacion_display">Gs. 0</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center py-2">
+                            <small class="text-muted d-block">Monto Gs</small>
+                            <h5 class="mb-0" id="fl_monto_gs_display">Gs. 0</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center py-2">
+                            <small class="text-muted d-block">Monto USD</small>
+                            <h5 class="mb-0" id="fl_monto_usd_display">$ 0.00</h5>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body text-center py-2">
+                            <small class="d-block">Deuda Cliente</small>
+                            <h5 class="mb-0" id="fl_deuda_display">Gs. 0</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formas de Pago y Resumen -->
+            <div class="row mb-4" id="fl_seccion_pagos" style="display: none;">
+                <!-- Columna Izquierda: Tabla de Formas de Pago (COMPACTA) -->
+                <div class="col-md-5">
+                    <h6 class="fw-bold mb-2"><i class="mdi mdi-cash-multiple me-2"></i>Forma de Pago</h6>
+                    <table class="table table-bordered table-sm mb-0">
+                        <thead class="table-secondary">
+                            <tr>
+                                <th></th>
+                                <th>Guaraníes</th>
+                                <th>USD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><i class="mdi mdi-cash"></i> Efectivo</td>
+                                <td><input type="text" id="fl_efectivo_gs" class="form-control form-control-sm fl-pago-input fl-pago-gs" value="0"></td>
+                                <td><input type="text" id="fl_efectivo_usd" class="form-control form-control-sm fl-pago-input fl-pago-usd" value="0"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="mdi mdi-credit-card"></i> Tarjeta Crédito</td>
+                                <td><input type="text" id="fl_tc_gs" class="form-control form-control-sm fl-pago-input fl-pago-gs" value="0"></td>
+                                <td><input type="text" id="fl_tc_usd" class="form-control form-control-sm fl-pago-input fl-pago-usd" value="0"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="mdi mdi-credit-card-outline"></i> Tarjeta Débito</td>
+                                <td><input type="text" id="fl_td_gs" class="form-control form-control-sm fl-pago-input fl-pago-gs" value="0"></td>
+                                <td><input type="text" id="fl_td_usd" class="form-control form-control-sm fl-pago-input fl-pago-usd" value="0"></td>
+                            </tr>
+                            <tr>
+                                <td><i class="mdi mdi-checkbook"></i> Cheque</td>
+                                <td><input type="text" id="fl_cheque_gs" class="form-control form-control-sm fl-pago-input fl-pago-gs" value="0"></td>
+                                <td><input type="text" id="fl_cheque_usd" class="form-control form-control-sm fl-pago-input fl-pago-usd" value="0"></td>
+                            </tr>
+                            <tr class="table-info">
+                                <td><i class="mdi mdi-percent"></i> Descuento</td>
+                                <td colspan="2"><input type="text" id="fl_descuento" class="form-control form-control-sm fl-pago-input fl-pago-gs" value="0"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Columna Derecha: Totales, Observaciones y Botones -->
+                <div class="col-md-7">
+                    <!-- Fila 1: Totales y Observaciones -->
+                    <div class="row mb-2">
+                        <!-- Columna: Totales -->
+                        <div class="col-md-4">
+                            <div class="mb-2">
+                                <strong>Total Pagado:</strong><br>
+                                <span id="fl_total_pagado" class="fs-5">Gs. 0</span>
+                            </div>
+                            <div>
+                                <strong>Monto Pendiente:</strong><br>
+                                <span id="fl_monto_pendiente" class="fs-5 text-danger">Gs. 0</span>
+                            </div>
+                        </div>
+                        <!-- Columna: Observaciones -->
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold mb-1">Observaciones</label>
+                            <textarea id="fl_observaciones" class="form-control form-control-sm" rows="4" placeholder="Observaciones..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Botón Pago Confirmado -->
+                    <div class="mb-2" id="fl_seccion_botones" style="display: none;">
+                        <button class="btn btn-warning w-100" id="fl_btn_confirmar_pago">
+                            <i class="mdi mdi-check-circle me-2"></i>Pago Confirmado
+                        </button>
+                    </div>
+
+                    <!-- Condición de Venta -->
+                    <div class="row mb-1" id="fl_seccion_condicion_venta" style="display: none;">
+                        <div class="col-6">
+                            <div class="form-floating form-floating-sm">
+                                <select
+                                    required
+                                    name="doc_cre_tipo_cod"
+                                    id="fl_doc_cre_tipo_cod"
+                                    class="form-select form-select-sm"
+                                >
+                                    <option value="1" selected>Contado</option>
+                                    <option value="2">Crédito</option>
+                                </select>
+                                <label>Cond. Venta</label>
+                            </div>
+                        </div>
+                        <div id="fl_doc_vencimiento_container" class="col-6 d-none">
+                            <div class="form-floating form-floating-sm">
+                                <input
+                                    required
+                                    type="date"
+                                    name="doc_vencimiento"
+                                    id="fl_doc_vencimiento"
+                                    class="form-control form-control-sm"
+                                    placeholder="Vto"
+                                />
+                                <label>Vto</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón Generar Factura -->
+                    <div id="fl_seccion_factura" style="display: none;">
+                        <button class="btn btn-success w-100" id="fl_btn_generar_factura" disabled>
+                            <i class="mdi mdi-receipt me-2"></i>Generar Factura Electrónica
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resultado de Factura -->
+            <div id="fl_resultado_factura" class="mt-4" style="display: none;">
+                <div class="alert alert-success">
+                    <h5><i class="mdi mdi-check-circle me-2"></i>Factura Generada Exitosamente</h5>
+                    <p class="mb-1"><strong>Nro. Factura:</strong> <span id="fl_resultado_numero" class="fs-5"></span></p>
+                    <p class="mb-1 text-muted"><small><strong>CDC:</strong> <span id="fl_resultado_cdc"></span></small></p>
+                    <button class="btn btn-primary mt-2" id="fl_btn_nueva_factura">
+                        <i class="mdi mdi-plus"></i> Nueva Factura
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+(function() {
+    const MODULE = 'fl_facturacion_legacy';
+    const PACKAGE = 'mng_fl';
+    const ATTR = 'MFLFacturacion';
+
+    let facturaActual = null;
+    let pagoConfirmado = false;
+    let cotizacionUsd = 7500;
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState !== 'loading') init();
+
+    function init() {
+        // Configurar jQuery AJAX para incluir CSRF token
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", OptsIO.getCookie('csrftoken'));
+                }
+            }
+        });
+
+        inicializarInputMasks();
+        inicializarSelect2();
+        setupEventListeners();
+
+        // Verificar si viene un acuse_id desde otra pantalla
+        const urlParams = new URLSearchParams(window.location.search);
+        let acuseId = urlParams.get('acuse_id');
+
+        // También verificar en sessionStorage (para navegación SPA)
+        if (!acuseId) {
+            acuseId = sessionStorage.getItem('fl_acuse_id_facturar');
+            if (acuseId) {
+                sessionStorage.removeItem('fl_acuse_id_facturar');
+            }
+        }
+
+        if (acuseId) {
+            cargarAcuse(acuseId);
+        }
+    }
+
+    // Inicializar máscaras de entrada para campos de pago
+    function inicializarInputMasks() {
+        // Máscara para Guaraníes (sin decimales, separador de miles con punto)
+        const maskGs = {
+            alias: 'numeric',
+            groupSeparator: '.',
+            radixPoint: ',',
+            autoGroup: true,
+            digits: 0,
+            digitsOptional: true,
+            allowMinus: false,
+            rightAlign: true,
+            placeholder: '0'
+        };
+
+        // Máscara para USD (con 2 decimales)
+        const maskUsd = {
+            alias: 'numeric',
+            groupSeparator: '.',
+            radixPoint: ',',
+            autoGroup: true,
+            digits: 2,
+            digitsOptional: true,
+            allowMinus: false,
+            rightAlign: true,
+            placeholder: '0'
+        };
+
+        // Aplicar máscaras a campos Gs
+        document.querySelectorAll('.fl-pago-gs').forEach(input => {
+            Inputmask(maskGs).mask(input);
+        });
+
+        // Aplicar máscaras a campos USD
+        document.querySelectorAll('.fl-pago-usd').forEach(input => {
+            Inputmask(maskUsd).mask(input);
+        });
+    }
+
+    // Helper para obtener valor numérico de input con máscara
+    function getUnmaskedValue(inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return 0;
+        // Remover separadores de miles (.) y cambiar coma decimal por punto
+        let value = input.value.replace(/\./g, '').replace(',', '.');
+        return parseFloat(value) || 0;
+    }
+
+    // Inicializar Select2 para búsqueda de acuses
+    function inicializarSelect2() {
+        $('#fl_select_acuse').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Buscar por nombre de cliente o número de acuse...',
+            allowClear: true,
+            minimumInputLength: 2,
+            ajax: {
+                url: '/io/iom/',
+                type: 'POST',
+                dataType: 'json',
+                delay: 400,
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-CSRFToken', OptsIO.getCookie('csrftoken'));
+                },
+                data: function(params) {
+                    return {
+                        module: MODULE,
+                        package: PACKAGE,
+                        attr: ATTR,
+                        mname: 'buscar_acuses_select2',
+                        q: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data, params) {
+                    params.page = params.page || 1;
+                    console.log('Select2 acuses response:', data);
+                    return {
+                        results: data.items || [],
+                        pagination: {
+                            more: (params.page * 30) < (data.total_count || 0)
+                        }
+                    };
+                },
+                error: function(xhr, status, error) {
+                    console.error('Select2 AJAX error:', status, error, xhr.responseText);
+                },
+                cache: true
+            },
+            escapeMarkup: function(markup) {
+                return markup;
+            },
+            templateResult: function(data) {
+                if (data.loading) return 'Buscando...';
+                return data.text || data.id;
+            },
+            templateSelection: function(data) {
+                return data.text || data.id;
+            }
+        });
+
+        // Evento al seleccionar acuse
+        $('#fl_select_acuse').on('select2:select', function(e) {
+            const data = e.params.data;
+            cargarAcuse(data.id);
+        });
+
+        // Evento al limpiar selección
+        $('#fl_select_acuse').on('select2:clear', function(e) {
+            nuevaFactura();
+        });
+    }
+
+    function setupEventListeners() {
+        // Inputs de pago
+        document.querySelectorAll('.fl-pago-input').forEach(input => {
+            input.addEventListener('input', calcularTotales);
+        });
+
+        // Listener para cambio de condición de venta
+        const selectCreTipo = document.getElementById('fl_doc_cre_tipo_cod');
+        if (selectCreTipo) {
+            selectCreTipo.addEventListener('change', function(evt) {
+                const tipoCod = evt.target.value;
+                const vencimientoContainer = document.getElementById('fl_doc_vencimiento_container');
+                if (tipoCod === '2' || tipoCod === 2) {
+                    vencimientoContainer.classList.remove('d-none');
+                } else {
+                    vencimientoContainer.classList.add('d-none');
+                }
+            });
+        }
+
+        // Validación de RUC: solo permitir números
+        const rucInput = document.getElementById('fl_ruc_factura');
+        rucInput.addEventListener('input', function(e) {
+            // Remover caracteres que no sean números, puntos o guiones
+            let valor = e.target.value;
+            let valorLimpio = valor.replace(/[^\d.-]/g, '');
+
+            if (valor !== valorLimpio) {
+                e.target.value = valorLimpio;
+                // Mostrar mensaje temporal
+                const errorIcon = document.getElementById('fl_ruc_error');
+                errorIcon.style.display = 'inline';
+                errorIcon.title = 'Solo se permiten números en el RUC';
+                setTimeout(() => {
+                    errorIcon.style.display = 'none';
+                }, 2000);
+            }
+        });
+
+        // Validación de RUC al perder foco
+        rucInput.addEventListener('blur', validarRucSifen);
+
+        // Botones
+        document.getElementById('fl_btn_confirmar_pago').addEventListener('click', confirmarPago);
+        document.getElementById('fl_btn_generar_factura').addEventListener('click', generarFactura);
+        document.getElementById('fl_btn_nueva_factura').addEventListener('click', nuevaFactura);
+    }
+
+    // Variable para evitar validaciones duplicadas
+    let ultimoRucValidado = '';
+
+    // Validar RUC contra SIFEN
+    async function validarRucSifen() {
+        const rucInput = document.getElementById('fl_ruc_factura');
+        const ruc = rucInput.value.trim();
+
+        const checkIcon = document.getElementById('fl_ruc_check');
+        const errorIcon = document.getElementById('fl_ruc_error');
+        const loadingIcon = document.getElementById('fl_ruc_loading');
+        const nombreSifen = document.getElementById('fl_ruc_nombre_sifen');
+        const nombreCheck = document.getElementById('fl_nombre_check');
+
+        // Ocultar todos los iconos
+        checkIcon.style.display = 'none';
+        errorIcon.style.display = 'none';
+        loadingIcon.style.display = 'none';
+        nombreSifen.style.display = 'none';
+        nombreCheck.style.display = 'none';
+
+        // No validar si está vacío o es el mismo que ya se validó
+        if (!ruc || ruc === ultimoRucValidado) {
+            return;
+        }
+
+        // Validar formato básico (debe tener al menos algunos dígitos)
+        if (!/^\d+(-\d)?$/.test(ruc) && !/^\d{6,}$/.test(ruc)) {
+            return;
+        }
+
+        // Mostrar loading
+        loadingIcon.style.display = 'inline-block';
+
+        try {
+            const fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'validate_ruc');
+            fdata.append('ruc', ruc);
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            loadingIcon.style.display = 'none';
+
+            if (response.data.success) {
+                // RUC válido
+                checkIcon.style.display = 'inline';
+                ultimoRucValidado = ruc;
+
+                // Mostrar nombre de SIFEN debajo del input
+                if (response.data.pdv_nombrefactura) {
+                    nombreSifen.textContent = 'SIFEN: ' + response.data.pdv_nombrefactura;
+                    nombreSifen.style.display = 'block';
+
+                    // Actualizar campo nombre con datos de SIFEN
+                    const nombreInput = document.getElementById('fl_nombre_factura');
+                    nombreInput.value = response.data.pdv_nombrefactura;
+                    nombreCheck.style.display = 'inline';
+                }
+
+                // Aplicar estilo verde al input
+                rucInput.classList.remove('is-invalid');
+                rucInput.classList.add('is-valid');
+            } else {
+                // RUC no encontrado
+                errorIcon.style.display = 'inline';
+                errorIcon.title = response.data.error || 'RUC no encontrado en SIFEN';
+                rucInput.classList.remove('is-valid');
+                rucInput.classList.add('is-invalid');
+                ultimoRucValidado = '';
+            }
+
+        } catch (error) {
+            loadingIcon.style.display = 'none';
+            console.error('Error validando RUC:', error);
+            // No mostrar error, solo no validar
+            ultimoRucValidado = '';
+        }
+    }
+
+    async function cargarAcuse(acuseId) {
+        try {
+            const fdata = new FormData();
+            fdata.append('module', MODULE);
+            fdata.append('package', PACKAGE);
+            fdata.append('attr', ATTR);
+            fdata.append('mname', 'get_factura_detalle');
+            fdata.append('acuse_id', acuseId);
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            if (response.data.error) {
+                Swal.fire('Error', response.data.error, 'error');
+                return;
+            }
+
+            facturaActual = response.data.factura;
+            cotizacionUsd = facturaActual.cotizacion || 7500;
+
+            // Verificar si ya está facturado
+            if (facturaActual.facturado) {
+                Swal.fire({
+                    title: 'Acuse ya facturado',
+                    html: `<p>Este acuse ya tiene factura emitida:</p><p><strong>${facturaActual.id_factura}</strong></p>`,
+                    icon: 'info'
+                });
+                return;
+            }
+
+            mostrarDatosAcuse(response.data);
+
+        } catch (error) {
+            console.error('Error cargando acuse:', error);
+            Swal.fire('Error', 'Error al cargar acuse', 'error');
+        }
+    }
+
+    function mostrarDatosAcuse(data) {
+        const f = data.factura;
+
+        // Mostrar datos básicos
+        document.getElementById('fl_acuse_id').value = f.acuse_id;
+        document.getElementById('fl_cant_paquetes').value = data.total_paquetes;
+        document.getElementById('fl_cliente_codigo_hidden').value = f.cliente_codigo;
+
+        // Actualizar título con información del cliente
+        const tituloCliente = document.getElementById('fl_titulo_cliente');
+        tituloCliente.textContent = `- Cliente: ${f.cliente_codigo} - ${f.cliente_nombre}`;
+        tituloCliente.style.display = 'inline';
+
+        // Datos para factura
+        document.getElementById('fl_ruc_factura').value = f.ruc_factura || f.cliente_ruc || '';
+        document.getElementById('fl_nombre_factura').value = f.nombre_factura || f.cliente_nombre || '';
+        document.getElementById('fl_correo_factura').value = f.correo_factura || f.cliente_email || '';
+
+        // Mostrar check si el correo viene de Sifen (correo_factura indica que vino del modelo Clientes)
+        const correoCheck = document.getElementById('fl_correo_check');
+        if (f.correo_factura) {
+            correoCheck.style.display = 'inline';
+        } else {
+            correoCheck.style.display = 'none';
+        }
+
+        // Panel de información
+        document.getElementById('fl_cotizacion_display').textContent = `Gs. ${UiN.formatNumberU(cotizacionUsd.toFixed(0))}`;
+        document.getElementById('fl_monto_gs_display').textContent = `Gs. ${UiN.formatNumberU(f.monto_gs.toFixed(0))}`;
+        document.getElementById('fl_monto_usd_display').textContent = `$ ${f.monto_usd.toFixed(2)}`;
+        document.getElementById('fl_deuda_display').textContent = `Gs. ${UiN.formatNumberU((f.cliente_deuda || 0).toFixed(0))}`;
+
+        // Cargar pagos si ya hay (estado = 2)
+        if (f.estado === 2) {
+            document.getElementById('fl_efectivo_gs').value = f.efectivo_gs || 0;
+            document.getElementById('fl_efectivo_usd').value = f.efectivo_usd || 0;
+            document.getElementById('fl_tc_gs').value = f.tc_gs || 0;
+            document.getElementById('fl_tc_usd').value = f.tc_usd || 0;
+            document.getElementById('fl_td_gs').value = f.td_gs || 0;
+            document.getElementById('fl_td_usd').value = f.td_usd || 0;
+            document.getElementById('fl_cheque_gs').value = f.cheque_gs || 0;
+            document.getElementById('fl_cheque_usd').value = f.cheque_usd || 0;
+            document.getElementById('fl_descuento').value = f.descuento || 0;
+
+            pagoConfirmado = true;
+            document.getElementById('fl_btn_confirmar_pago').disabled = true;
+            document.getElementById('fl_btn_confirmar_pago').innerHTML = '<i class="mdi mdi-check-circle me-2"></i>Pago Confirmado';
+            document.getElementById('fl_btn_generar_factura').disabled = false;
+        } else {
+            // Limpiar pagos
+            document.querySelectorAll('.fl-pago-input').forEach(input => input.value = 0);
+            pagoConfirmado = false;
+            document.getElementById('fl_btn_confirmar_pago').disabled = false;
+            document.getElementById('fl_btn_confirmar_pago').innerHTML = '<i class="mdi mdi-check-circle me-2"></i>Confirmar Pago/Entrega';
+            document.getElementById('fl_btn_generar_factura').disabled = true;
+        }
+
+        document.getElementById('fl_observaciones').value = f.observacion || '';
+
+        // Inicializar doc_vencimiento a 30 días desde hoy
+        const vencimientoInput = document.getElementById('fl_doc_vencimiento');
+        vencimientoInput.value = new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0];
+
+        // Mostrar secciones
+        document.getElementById('fl_seccion_cliente').style.display = 'flex';
+        document.getElementById('fl_panel_info').style.display = 'flex';
+        document.getElementById('fl_seccion_pagos').style.display = 'flex';
+        document.getElementById('fl_seccion_botones').style.display = 'block';
+        document.getElementById('fl_seccion_condicion_venta').style.display = 'flex';
+        document.getElementById('fl_seccion_factura').style.display = 'block';
+        document.getElementById('fl_resultado_factura').style.display = 'none';
+
+        calcularTotales();
+    }
+
+    function calcularTotales() {
+        if (!facturaActual) return;
+
+        const efectivoGs = getUnmaskedValue('fl_efectivo_gs');
+        const efectivoUsd = getUnmaskedValue('fl_efectivo_usd');
+        const tcGs = getUnmaskedValue('fl_tc_gs');
+        const tcUsd = getUnmaskedValue('fl_tc_usd');
+        const tdGs = getUnmaskedValue('fl_td_gs');
+        const tdUsd = getUnmaskedValue('fl_td_usd');
+        const chequeGs = getUnmaskedValue('fl_cheque_gs');
+        const chequeUsd = getUnmaskedValue('fl_cheque_usd');
+        const descuento = getUnmaskedValue('fl_descuento');
+
+        const totalPagado = efectivoGs + (efectivoUsd * cotizacionUsd) +
+                           tcGs + (tcUsd * cotizacionUsd) +
+                           tdGs + (tdUsd * cotizacionUsd) +
+                           chequeGs + (chequeUsd * cotizacionUsd) +
+                           descuento;
+
+        const montoPendiente = Math.max(0, facturaActual.monto_gs - totalPagado);
+
+        document.getElementById('fl_total_pagado').textContent = `Gs. ${UiN.formatNumberU(totalPagado.toFixed(0))}`;
+        document.getElementById('fl_monto_pendiente').textContent = `Gs. ${UiN.formatNumberU(montoPendiente.toFixed(0))}`;
+
+        // Cambiar color según pendiente
+        const pendienteEl = document.getElementById('fl_monto_pendiente');
+        if (montoPendiente > 0) {
+            pendienteEl.className = 'fs-5 text-danger';
+        } else {
+            pendienteEl.className = 'fs-5 text-success';
+        }
+    }
+
+    async function confirmarPago() {
+        if (!facturaActual) {
+            Swal.fire('Aviso', 'Primero seleccione un acuse', 'warning');
+            return;
+        }
+
+        const rucFactura = document.getElementById('fl_ruc_factura').value.trim();
+        const nombreFactura = document.getElementById('fl_nombre_factura').value.trim();
+
+        if (!nombreFactura) {
+            Swal.fire('Aviso', 'Ingrese el nombre para la factura', 'warning');
+            return;
+        }
+
+        // Validar que se ingrese al menos un monto de pago
+        const efectivoGs = getUnmaskedValue('fl_efectivo_gs');
+        const efectivoUsd = getUnmaskedValue('fl_efectivo_usd');
+        const tcGs = getUnmaskedValue('fl_tc_gs');
+        const tcUsd = getUnmaskedValue('fl_tc_usd');
+        const tdGs = getUnmaskedValue('fl_td_gs');
+        const tdUsd = getUnmaskedValue('fl_td_usd');
+        const chequeGs = getUnmaskedValue('fl_cheque_gs');
+        const chequeUsd = getUnmaskedValue('fl_cheque_usd');
+        const descuento = getUnmaskedValue('fl_descuento');
+
+        const totalPagos = efectivoGs + efectivoUsd + tcGs + tcUsd + tdGs + tdUsd + chequeGs + chequeUsd + descuento;
+
+        if (totalPagos <= 0) {
+            Swal.fire('Aviso', 'Debe ingresar al menos un monto de pago (Efectivo, Tarjeta, Cheque o Descuento)', 'warning');
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: '¿Confirmar Pago/Entrega?',
+            text: 'Esta acción registrará el pago del cliente',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, Confirmar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            const fdata = new FormData();
+            fdata.append('module', MODULE);
+            fdata.append('package', PACKAGE);
+            fdata.append('attr', ATTR);
+            fdata.append('mname', 'confirmar_pago');
+            fdata.append('acuse_id', facturaActual.acuse_id);
+            fdata.append('efectivo_gs', efectivoGs);
+            fdata.append('efectivo_usd', efectivoUsd);
+            fdata.append('tc_gs', tcGs);
+            fdata.append('tc_usd', tcUsd);
+            fdata.append('td_gs', tdGs);
+            fdata.append('td_usd', tdUsd);
+            fdata.append('cheque_gs', chequeGs);
+            fdata.append('cheque_usd', chequeUsd);
+            fdata.append('descuento', descuento);
+            fdata.append('ruc_factura', rucFactura);
+            fdata.append('nombre_factura', nombreFactura);
+            fdata.append('observaciones', document.getElementById('fl_observaciones').value);
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            if (response.data.error) {
+                Swal.fire('Error', response.data.error, 'error');
+                return;
+            }
+
+            pagoConfirmado = true;
+            document.getElementById('fl_btn_confirmar_pago').disabled = true;
+            document.getElementById('fl_btn_confirmar_pago').innerHTML = '<i class="mdi mdi-check-circle me-2"></i>Pago Confirmado';
+            document.getElementById('fl_btn_generar_factura').disabled = false;
+
+            Swal.fire({
+                title: 'Pago Confirmado',
+                text: 'Ahora puede generar la factura electrónica',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+
+        } catch (error) {
+            console.error('Error confirmando pago:', error);
+            Swal.fire('Error', 'Error al confirmar pago', 'error');
+        }
+    }
+
+    async function generarFactura() {
+        if (!facturaActual || !pagoConfirmado) {
+            Swal.fire('Aviso', 'Primero confirme el pago', 'warning');
+            return;
+        }
+
+        const rucFactura = document.getElementById('fl_ruc_factura').value.trim();
+        const nombreFactura = document.getElementById('fl_nombre_factura').value.trim();
+        const correoFactura = document.getElementById('fl_correo_factura').value.trim();
+
+        // Validar que el RUC sea solo números
+        if (rucFactura && rucFactura !== '0') {
+            const rucLimpio = rucFactura.replace(/\./g, '').replace(/-/g, '');
+            const rucSinDV = rucLimpio.split('-')[0];
+            if (!/^\d+$/.test(rucSinDV)) {
+                Swal.fire('Aviso', 'El RUC debe contener solo números', 'warning');
+                document.getElementById('fl_ruc_factura').focus();
+                return;
+            }
+        }
+
+        if (!rucFactura) {
+            Swal.fire('Aviso', 'Debe ingresar el RUC para la factura', 'warning');
+            document.getElementById('fl_ruc_factura').focus();
+            return;
+        }
+
+        if (!nombreFactura) {
+            Swal.fire('Aviso', 'Debe ingresar el Nombre/Razón Social para la factura', 'warning');
+            document.getElementById('fl_nombre_factura').focus();
+            return;
+        }
+
+        if (!correoFactura) {
+            Swal.fire('Aviso', 'Debe ingresar el correo electrónico para la factura', 'warning');
+            document.getElementById('fl_correo_factura').focus();
+            return;
+        }
+
+        // Validar formato de correo
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correoFactura)) {
+            Swal.fire('Aviso', 'El correo electrónico no tiene un formato válido', 'warning');
+            document.getElementById('fl_correo_factura').focus();
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: '¿Generar Factura Electrónica?',
+            html: `<p>Se generará una factura electrónica SIFEN para el acuse <strong>#${facturaActual.acuse_id}</strong></p>
+                   <p class="text-info"><small>El número de factura se asignará automáticamente</small></p>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="mdi mdi-receipt"></i> Generar Factura',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!result.isConfirmed) return;
+
+        // Mostrar loading
+        Swal.fire({
+            title: 'Generando Factura...',
+            html: 'Por favor espere mientras se procesa la factura electrónica',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        try {
+            const fdata = new FormData();
+            fdata.append('module', MODULE);
+            fdata.append('package', PACKAGE);
+            fdata.append('attr', ATTR);
+            fdata.append('mname', 'generar_factura_sifen');
+            fdata.append('acuse_id', facturaActual.acuse_id);
+            fdata.append('ruc_factura', rucFactura);
+            fdata.append('nombre_factura', nombreFactura);
+            fdata.append('correo_factura', correoFactura);
+            fdata.append('establecimiento', document.getElementById('fl_establecimiento').value);
+            fdata.append('doc_cre_tipo_cod', document.getElementById('fl_doc_cre_tipo_cod').value);
+            fdata.append('doc_vencimiento', document.getElementById('fl_doc_vencimiento').value);
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            Swal.close();
+
+            if (response.data.error) {
+                Swal.fire('Error', response.data.error, 'error');
+                return;
+            }
+
+            // Mostrar resultado
+            // numero_factura: Formato 001-001-0000001 (guardado en MySQL)
+            // cdc: Código de 44 caracteres para consulta SIFEN
+            document.getElementById('fl_resultado_numero').textContent = response.data.numero_factura;
+            document.getElementById('fl_resultado_cdc').textContent = response.data.cdc || 'Pendiente';
+            document.getElementById('fl_resultado_factura').style.display = 'block';
+
+            // Ocultar botones de acción
+            document.getElementById('fl_seccion_botones').style.display = 'none';
+            document.getElementById('fl_seccion_condicion_venta').style.display = 'none';
+            document.getElementById('fl_seccion_factura').style.display = 'none';
+
+            Swal.fire({
+                title: 'Factura Generada',
+                html: `<p>Factura electrónica generada exitosamente</p>
+                       <p><strong>Número:</strong> ${response.data.numero_factura}</p>
+                       <p><strong>CDC:</strong> <small>${response.data.cdc || 'Pendiente'}</small></p>`,
+                icon: 'success'
+            });
+
+            // Descargar PDF si está disponible
+            if (response.data.ek_pdf_file) {
+                let link = document.createElement('a');
+                link.href = response.data.ek_pdf_file;
+                link.target = '_blank';
+                link.click();
+            }
+
+        } catch (error) {
+            Swal.close();
+            console.error('Error generando factura:', error);
+            Swal.fire('Error', 'Error al generar factura electrónica', 'error');
+        }
+    }
+
+    function nuevaFactura() {
+        // Limpiar todo
+        facturaActual = null;
+        pagoConfirmado = false;
+        ultimoRucValidado = '';
+
+        // Limpiar título del cliente
+        document.getElementById('fl_titulo_cliente').style.display = 'none';
+        document.getElementById('fl_titulo_cliente').textContent = '';
+
+        document.getElementById('fl_acuse_id').value = '';
+        document.getElementById('fl_cant_paquetes').value = '';
+        document.getElementById('fl_ruc_factura').value = '';
+        document.getElementById('fl_nombre_factura').value = '';
+        document.getElementById('fl_correo_factura').value = '';
+        document.getElementById('fl_observaciones').value = '';
+
+        // Resetear estado de validación RUC
+        document.getElementById('fl_ruc_check').style.display = 'none';
+        document.getElementById('fl_ruc_error').style.display = 'none';
+        document.getElementById('fl_ruc_loading').style.display = 'none';
+        document.getElementById('fl_ruc_nombre_sifen').style.display = 'none';
+        document.getElementById('fl_nombre_check').style.display = 'none';
+        document.getElementById('fl_correo_check').style.display = 'none';
+        document.getElementById('fl_ruc_factura').classList.remove('is-valid', 'is-invalid');
+        document.getElementById('fl_nombre_factura').classList.remove('is-valid', 'is-invalid');
+
+        document.querySelectorAll('.fl-pago-input').forEach(input => input.value = 0);
+
+        document.getElementById('fl_seccion_cliente').style.display = 'none';
+        document.getElementById('fl_panel_info').style.display = 'none';
+        document.getElementById('fl_seccion_pagos').style.display = 'none';
+        document.getElementById('fl_seccion_botones').style.display = 'none';
+        document.getElementById('fl_seccion_condicion_venta').style.display = 'none';
+        document.getElementById('fl_seccion_factura').style.display = 'none';
+        document.getElementById('fl_resultado_factura').style.display = 'none';
+
+        document.getElementById('fl_btn_confirmar_pago').disabled = false;
+        document.getElementById('fl_btn_confirmar_pago').innerHTML = '<i class="mdi mdi-check-circle me-2"></i>Confirmar Pago/Entrega';
+        document.getElementById('fl_btn_generar_factura').disabled = true;
+
+        // Limpiar y resetear Select2
+        $('#fl_select_acuse').val(null).trigger('change');
+    }
+})();
+</script>

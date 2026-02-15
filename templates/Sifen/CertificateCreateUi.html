@@ -1,0 +1,366 @@
+<div class="ui_certificate">
+    <form id="form_certificate_{{ rr }}" class="form_certificate" enctype="multipart/form-data">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <!-- Info del certificado si existe -->
+        {% if mobj and mobj.estado != 'pendiente' %}
+        <div class="card mb-3 {% if mobj.estado == 'activo' %}border-success{% elif mobj.estado == 'vencido' %}border-danger{% elif mobj.estado == 'error' %}border-warning{% endif %}">
+            <div class="card-header {% if mobj.estado == 'activo' %}bg-success text-white{% elif mobj.estado == 'vencido' %}bg-danger text-white{% elif mobj.estado == 'error' %}bg-warning{% endif %}">
+                <i class="mdi mdi-certificate"></i> Informacion del Certificado
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Titular:</strong> {{ mobj.titular|default:"-" }}</p>
+                        <p class="mb-1"><strong>Emisor:</strong> {{ mobj.emisor|default:"-" }}</p>
+                        <p class="mb-1"><strong>N. Serie:</strong> <code>{{ mobj.numero_serie|default:"-"|truncatechars:30 }}</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Emision:</strong> {{ mobj.fecha_emision|date:"d/m/Y H:i"|default:"-" }}</p>
+                        <p class="mb-1"><strong>Vencimiento:</strong>
+                            <span class="{% if mobj.estado == 'vencido' %}text-danger fw-bold{% endif %}">
+                                {{ mobj.fecha_vencimiento|date:"d/m/Y H:i"|default:"-" }}
+                            </span>
+                        </p>
+                        <p class="mb-1"><strong>Docs. Firmados:</strong> {{ mobj.documentos_firmados }}</p>
+                    </div>
+                </div>
+                {% if mobj.error_mensaje %}
+                <div class="alert alert-danger mt-2 mb-0">
+                    <strong>Error:</strong> {{ mobj.error_mensaje }}
+                </div>
+                {% endif %}
+                {% if mobj.pem_file and mobj.key_file %}
+                <div class="mt-2">
+                    <span class="badge bg-success"><i class="mdi mdi-check"></i> PEM generado</span>
+                    <span class="badge bg-success"><i class="mdi mdi-check"></i> KEY generado</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-8">
+                <label class="required">Nombre del Certificado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="nombre"
+                        class="form-control"
+                        placeholder="Ej: Certificado SIFEN 2024"
+                        required
+                        {% if mobj %} value="{{ mobj.nombre }}" {% endif %}
+                    />
+                </div>
+                <small class="text-muted">Un nombre descriptivo para identificar el certificado</small>
+            </div>
+            <div class="col-md-4">
+                <label>Predeterminado</label>
+                <div class="form-check form-switch mt-2">
+                    <input
+                        type="checkbox"
+                        name="es_predeterminado"
+                        class="form-check-input"
+                        id="chk_predeterminado_{{ rr }}"
+                        {% if mobj and mobj.es_predeterminado %} checked {% endif %}
+                    />
+                    <label class="form-check-label" for="chk_predeterminado_{{ rr }}">
+                        Usar por defecto
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label class="required">Empresa</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select
+                        name="businessobj_id"
+                        class="form-control"
+                        required
+                    >
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {% if not mobj or mobj.estado == 'error' %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label class="required">Archivo de Certificado (.p12 o .pfx)</label>
+                <div class="input-group flex-nowrap">
+                    <input
+                        type="file"
+                        name="pfx_file"
+                        id="input_pfx_file_{{ rr }}"
+                        class="form-control"
+                        accept=".pfx,.p12,.P12,.PFX"
+                        {% if not mobj %} required {% endif %}
+                    />
+                </div>
+                <small class="text-muted">Certificado digital PKCS#12 (extensiones .p12 o .pfx son equivalentes)</small>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label class="required">Contrasena del Certificado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="password"
+                        name="pfx_password"
+                        id="input_pfx_password_{{ rr }}"
+                        class="form-control"
+                        placeholder="Contrasena del archivo PFX"
+                        {% if not mobj %} required {% endif %}
+                    />
+                    <button class="btn btn-outline-secondary" type="button" id="btn_toggle_password_{{ rr }}">
+                        <i class="mdi mdi-eye"></i>
+                    </button>
+                </div>
+                <small class="text-muted">La contrasena sera encriptada antes de almacenarla</small>
+            </div>
+        </div>
+        {% else %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="alert alert-info mb-0">
+                    <i class="mdi mdi-information"></i>
+                    El certificado ya fue procesado. Si necesitas actualizar el archivo PFX o la contrasena,
+                    utiliza el boton "Reprocesar" desde la lista de certificados.
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                    id="btn_save_certificate_{{ rr }}"
+                >
+                    <i class="mdi mdi-content-save"></i>
+                    {% if mobj %}Actualizar{% else %}Cargar y Procesar{% endif %}
+                </button>
+                {% if mobj and mobj.estado == 'activo' %}
+                <button
+                    class="btn btn-success ms-2"
+                    type="button"
+                    id="btn_test_certificate_{{ rr }}"
+                >
+                    <i class="mdi mdi-check-decagram"></i> Verificar Certificado
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Certificado: {{ mobj.nombre }}{% else %}Cargar Nuevo Certificado{% endif %}`;
+
+    // Toggle password visibility
+    {% if not mobj or mobj.estado == 'error' %}
+    qelem('#btn_toggle_password_{{ rr }}').addEventListener('click', function() {
+        const input = qelem('#input_pfx_password_{{ rr }}');
+        const icon = this.querySelector('i');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('mdi-eye');
+            icon.classList.add('mdi-eye-off');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('mdi-eye-off');
+            icon.classList.add('mdi-eye');
+        }
+    });
+    {% endif %}
+
+    // Populate Business select
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_certificate_{{ rr }} select[name=businessobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Business',
+        field_display: ['name', 'ruc'],
+        field_id: ['id'],
+        db_fields: ['id', 'name', 'ruc'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: false,
+        placeholder: 'Seleccione empresa',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        endRow: 1000,
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        sort: [
+            {'dataIndx': 'name', 'dir': 'up'},
+        ],
+        templateResult: function(state) {
+            if (!state.id) return state.text;
+            return $('<span>' + state.text + ' <small class="text-muted">(' + (state.ruc || '') + ')</small></span>');
+        }
+    }).then(() => {
+        {% if mobj and mobj.businessobj %}
+        $('#form_certificate_{{ rr }} select[name=businessobj_id]').val('{{ mobj.businessobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_certificate = (target) => {
+        var fdata = new FormData();
+
+        // Agregar campos para process_record
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Certificate');
+        fdata.append('dbcon', 'default');
+
+        log.info(`#form_certificate_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+
+        // Convertir checkbox a boolean
+        edata['es_predeterminado'] = qelem('#chk_predeterminado_{{ rr }}').checked ? 'true' : 'false';
+
+        // Agregar select value
+        edata['businessobj_id'] = $('#form_certificate_{{ rr }} select[name=businessobj_id]').val();
+
+        // Agregar archivo PFX si existe
+        let pfxFile = qelem('#input_pfx_file_{{ rr }}');
+        if (pfxFile && pfxFile.files && pfxFile.files.length > 0) {
+            fdata.append('pfx_file', pfxFile.files[0]);
+        }
+
+        log.info(`#form_certificate_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'Sifen',
+                'package': 'mng_certificate',
+                'attr': 'MCertificate',
+                'mname': 'save_certificate',
+            },
+        ]));
+        fdata.append('a_vals', jfy([]));
+
+        // Set overlay
+        document.querySelector('#form_certificate_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_certificate_{{ rr }}').classList.add('overlay');
+
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            {
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken'),
+                    'Content-Type': 'multipart/form-data'
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_certificate_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_certificate_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_certificate_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 3000,
+                offcanvasglobal: true
+            })
+            return {msgs: msgs, got_error: got_error};
+        }).then((result)=>{
+            if (result.got_error === false) {
+                log.success(`#form_certificate_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+                // Cerrar offcanvas despues de exito
+                setTimeout(() => {
+                    bootstrap.Offcanvas.getInstance('#offcanvasGlobalUi').hide();
+                }, 1500);
+            }
+        }).catch((err)=>{
+            log.error(`#form_certificate_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError('Error al guardar el certificado: ' + (err.response?.data?.error || err.message || 'Error desconocido'));
+        }).finally(()=>{
+            log.info(`#form_certificate_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_certificate_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_certificate_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_certificate_{{ rr }} Submitting form`);
+
+        {% if not mobj or mobj.estado == 'error' %}
+        // Validar que se haya seleccionado un archivo
+        const fileInput = qelem('#input_pfx_file_{{ rr }}');
+        const passwordInput = qelem('#input_pfx_password_{{ rr }}');
+
+        {% if not mobj %}
+        if (!fileInput.files || fileInput.files.length === 0) {
+            UiB.MsgError('Por favor, selecciona un archivo PFX/P12');
+            return;
+        }
+        if (!passwordInput.value) {
+            UiB.MsgError('Por favor, ingresa la contrasena del certificado');
+            return;
+        }
+        {% endif %}
+        {% endif %}
+
+        save_certificate(event.target);
+    })
+
+    {% if mobj and mobj.estado == 'activo' %}
+    // Verificar certificado
+    qelem('#btn_test_certificate_{{ rr }}').addEventListener('click', function() {
+        let gbe = new FormData();
+        gbe.append('module', 'Sifen');
+        gbe.append('package', 'mng_certificate');
+        gbe.append('attr', 'MCertificate');
+        gbe.append('mname', 'verify_certificate');
+        gbe.append('dbcon', 'default');
+        gbe.append('id', '{{ mobj.pk }}');
+
+        this.disabled = true;
+        this.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Verificando...';
+
+        axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+            let data = rsp.data;
+            UiB.BeMsgHandle({
+                rsps: data,
+                timer: 3000,
+                offcanvasglobal: true
+            })
+        }).catch((err)=>{
+            UiB.MsgError('Error al verificar el certificado');
+        }).finally(() => {
+            this.disabled = false;
+            this.innerHTML = '<i class="mdi mdi-check-decagram"></i> Verificar Certificado';
+        });
+    });
+    {% endif %}
+
+</script>

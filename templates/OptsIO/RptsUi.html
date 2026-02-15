@@ -1,0 +1,22 @@
+<button onclick="test_pdf()" class="btn btn-success">Test barcode</button>
+<script type="text/javascript">
+    test_pdf = () => {
+        OptsIO.getTmpl({
+            url: '{% url "dtmpl" %}',
+            template: 'FL_Paquetes/PaqueteBarCodeUi.html',
+            rpt_view: true,
+            model_app_name: 'FL_Structure',
+                model_name: 'Paquetes',
+                pk: '1187944',
+            dattrs: { 
+                paquete_pk: true,
+            },
+            dbcon: 'fl',
+            surround: 'UIRpt.html'
+        }).then((rsp)=>{
+            let data = rsp.data;
+            console.log(data)
+            //$('#package_form_container').html(data);
+        })
+    }
+</script>

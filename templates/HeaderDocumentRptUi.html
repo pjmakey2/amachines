@@ -1,0 +1,68 @@
+{% load static humanize io_tags %}
+<!-- begin::Header-->
+<div class="am-i-header d-flex justify-content-between align-items-center">
+    <div class="logo">
+        <img style="width: 150px; height: 30px;" src="file://{% business_logo_invoice_path %}" alt="{% business_name %}" class="mx-3"/>
+    </div>
+    <div class="title">
+            <div class="t-title">KuDE de Factura Electronica</div>
+            {% if nombrefactura %}
+                <div class="m-title">{{ nombrefactura|upper }}</div>
+                <div class="m-title">{{ denominacion|upper }}</div>
+            {% else %}
+                <div class="m-title">NOMBRE DE LA EMPRESA</div>
+                <div class="m-title">ACTIVIDAD COMERCIAL</div>
+            {% endif %}
+    </div>
+    <div class="company-details">
+        {% if ruc %}
+            <p>RUC: {{ ruc }}-{{ ruc_dv }}</p>
+        {% else %}
+            <p>RUC: {{ mobj.ek_bs_ruc }}</p>
+        {% endif %}
+        <p>TIMBRADO N° {{ mobj.ek_timbrado }}</p>
+        <p>INICIO DE VIGENCIA: 12/11/2025</p>
+            {% if mobj.doc_tipo == "FE" %}
+                <p><strong>FACTURA ELECTRONICA</strong></p>
+            {% elif mobj.doc_tipo == "NC" %}
+                <p><strong>NOTA DE CREDITO ELECTRONICA</strong></p>
+            {% elif mobj.doc_tipo == "ND" %}
+                <p><strong>NOTA DE DEBITO ELECTRONICA</strong></p>
+            {% elif mobj.doc_tipo == "AF" %}
+                <p><strong>AUTOFACTURA ELECTRONICA</strong></p>
+            {% elif mobj.doc_tipo == "RC" %}
+                <p><strong>RECIBO ELECTRONICO</strong></p>
+            {% endif %}
+        <p>{{ mobj.doc_expedicion|stringformat:"03d" }} - {{ mobj.doc_establecimiento|stringformat:"03d" }} - {{ mobj.doc_numero|stringformat:"07d" }}</p>
+    </div>
+</div>
+<div class="am-contact-info">
+    {% if direccion %}
+        <div>
+            <i style="color: #000000" class="fs-5 mdi mdi-map-marker"></i>
+            {{ direccion }}{% if ciudadobj %} ({{ ciudadobj }} - Paraguay){% endif %}
+        </div>
+        <div>
+            <i style="color: #000000" class="fs-5 mdi mdi-phone"></i>
+            {{ telefono }}
+        </div>
+        <div>
+            <i style="color: #000000" class="fs-5 mdi mdi-web-check"></i>
+            {{ correo }}
+        </div>
+    {% else %}
+        <div>
+            <i style="color: #000000" class="fs-5 mdi mdi-map-marker"></i>
+            Dirección de la empresa
+        </div>
+        <div>
+            <i style="color: #000000" class="fs-5 mdi mdi-phone"></i>
+            Teléfono
+        </div>
+        <div>
+            <i style="color: #000000" class="fs-5 mdi mdi-web-check"></i>
+            correo@empresa.com
+        </div>
+    {% endif %}
+</div>
+<!--end::Header-->

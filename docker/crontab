@@ -1,0 +1,9 @@
+# Crontab for Toca3D
+# Run track_lotes every 5 minutes
+*/5 * * * * /app/Sifen/bin/mng_sifen_track_lotes.sh >> /app/log/track_lotes.log 2>&1
+# Send pending documents to Sifen every 5 minutes
+*/5 * * * * /app/Sifen/bin/mng_sifen_send_pending.sh >> /app/log/send_pending.log 2>&1
+# Send invoice emails to clients every 5 minutes
+*/5 * * * * /app/Sifen/bin/mng_sifen_send_email.sh >> /app/log/send_email.log 2>&1
+# Sync Shopify data every 5 minutes
+*/5 * * * * /app/am_shopify/bin/sync_shopify.sh --all >> /app/log/sync_shopify.log 2>&1

@@ -1,0 +1,288 @@
+<div class="ui_user_profile">
+    <!-- Password Validation Section - Always visible -->
+    <div class="alert alert-info mb-4">
+        <h6 class="mb-2"><i class="mdi mdi-shield-lock-outline"></i> Validación de Seguridad</h6>
+        <p class="mb-3 small">Por seguridad, debe ingresar su contraseña actual para poder editar su perfil.</p>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="mdi mdi-lock"></i></span>
+                    <input autocomplete="new-password" type="password" id="validate_password_{{ rr }}" class="form-control" placeholder="Ingrese su contraseña actual" readonly onfocus="this.removeAttribute('readonly');" />
+                    <button type="button" class="btn btn-primary" id="btn_validate_password_{{ rr }}">
+                        <i class="mdi mdi-check"></i> Validar
+                    </button>
+                </div>
+                <small class="text-muted">Sus datos estarán bloqueados hasta validar su contraseña</small>
+            </div>
+        </div>
+    </div>
+
+    <form id="form_user_profile_{{ rr }}" class="form_user_profile" enctype="multipart/form-data" autocomplete="off">
+        <h5 class="mb-3">Información Personal</h5>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>Nombre</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="first_name" class="form-control" placeholder="Nombre" value="{{ request.user.first_name }}" disabled />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Apellido</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="last_name" class="form-control" placeholder="Apellido" value="{{ request.user.last_name }}" disabled />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Email</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="email" name="email" class="form-control" placeholder="Email" value="{{ request.user.email }}" disabled />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Usuario</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="username" class="form-control" placeholder="Usuario" value="{{ request.user.username }}" readonly disabled />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Foto de Perfil</label>
+                <div class="input-group">
+                    <input type="file" name="photo" class="form-control" accept="image/*" disabled />
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h5 class="mb-3">Cambiar Contraseña</h5>
+
+        <div class="row d-none" id="password_change_section_{{ rr }}">
+            <div class="col-md-12 mb-3">
+                <div class="alert alert-success">
+                    <i class="mdi mdi-check-circle"></i> Contraseña validada. Ahora puede cambiar su contraseña.
+                </div>
+            </div>
+            <div class="col-md-12">
+                <label>Contraseña Actual</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input autocomplete="new-password" type="password" name="current_password" class="form-control" placeholder="Contraseña actual" readonly />
+                    <span class="input-group-text">
+                        <i class="mdi mdi-eye-off toggle-password" data-target="current_password" style="cursor: pointer;"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-6 mt-3">
+                <label>Nueva Contraseña</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input autocomplete="new-password" type="password" name="new_password" class="form-control" placeholder="Nueva contraseña" />
+                    <span class="input-group-text">
+                        <i class="mdi mdi-eye-off toggle-password" data-target="new_password" style="cursor: pointer;"></i>
+                    </span>
+                </div>
+                <small class="text-muted">Mínimo 8 caracteres</small>
+            </div>
+            <div class="col-md-6 mt-3">
+                <label>Confirmar Nueva Contraseña</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input autocomplete="new-password" type="password" name="confirm_password" class="form-control" placeholder="Confirmar contraseña" />
+                    <span class="input-group-text">
+                        <i class="mdi mdi-eye-off toggle-password" data-target="confirm_password" style="cursor: pointer;"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h5 class="mb-3">Preferencias</h5>
+        <div class="row">
+            <div class="col-md-12">
+                <label>Preferencias (JSON) <small class="text-muted">Avanzado</small></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea name="preferences" class="form-control" rows="4" placeholder='{"theme": "light", "language": "es"}' disabled></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit" id="btn_save_profile_{{ rr }}" disabled>Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = 'Mi Perfil';
+
+    qelem('#btn_validate_password_{{ rr }}').addEventListener('click', function() {
+        var validatePassword = qelem('#validate_password_{{ rr }}').value;
+
+        if (!validatePassword) {
+            UiB.MsgError('Debe ingresar su contraseña actual');
+            return;
+        }
+
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'mng_user_profile');
+        fdata.append('attr', 'MUserProfile');
+        fdata.append('mname', 'validate_current_password');
+        fdata.append('dbcon', 'default');
+        fdata.append('current_password', validatePassword);
+
+        qelem('#btn_validate_password_{{ rr }}').disabled = true;
+        qelem('#btn_validate_password_{{ rr }}').innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Validando...';
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            if (rsp.data.success) {
+                UiB.MsgSuccess('Contraseña validada correctamente');
+
+                // Habilitar todos los campos del formulario
+                var formInputs = qelem('#form_user_profile_{{ rr }}').querySelectorAll('input:not([readonly]), textarea, button[type=submit]');
+                formInputs.forEach(function(input) {
+                    input.disabled = false;
+                });
+
+                // Ocultar el alert de validación
+                qelem('.alert-info').style.display = 'none';
+
+                // Mostrar sección de cambio de contraseña
+                qelem('#password_change_section_{{ rr }}').classList.remove('d-none');
+
+                // Llenar el campo de contraseña actual (oculto)
+                qelem('#form_user_profile_{{ rr }} input[name=current_password]').value = validatePassword;
+
+            } else if (rsp.data.error) {
+                UiB.MsgError(rsp.data.error);
+                qelem('#btn_validate_password_{{ rr }}').disabled = false;
+                qelem('#btn_validate_password_{{ rr }}').innerHTML = '<i class="mdi mdi-check"></i> Validar';
+            }
+        }).catch((err) => {
+            log.error('#btn_validate_password_{{ rr }} Error: ' + JSON.stringify(err, null, 2));
+            UiB.MsgError('Error al validar la contraseña');
+            qelem('#btn_validate_password_{{ rr }}').disabled = false;
+            qelem('#btn_validate_password_{{ rr }}').innerHTML = '<i class="mdi mdi-check"></i> Validar';
+        });
+    });
+
+    document.querySelectorAll('.toggle-password').forEach(function(icon) {
+        icon.addEventListener('click', function() {
+            var targetName = this.dataset.target;
+            var input = qelem(`#form_user_profile_{{ rr }} input[name=${targetName}]`);
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                this.classList.remove('mdi-eye-off');
+                this.classList.add('mdi-eye');
+            } else {
+                input.type = 'password';
+                this.classList.remove('mdi-eye');
+                this.classList.add('mdi-eye-off');
+            }
+        });
+    });
+
+    save_user_profile = (target) => {
+        var currentPassword = qelem('#form_user_profile_{{ rr }} input[name=current_password]').value;
+        var newPassword = qelem('#form_user_profile_{{ rr }} input[name=new_password]').value;
+        var confirmPassword = qelem('#form_user_profile_{{ rr }} input[name=confirm_password]').value;
+
+        if (newPassword || confirmPassword) {
+            if (!currentPassword) {
+                UiB.MsgError('Debe ingresar la contraseña actual para cambiar la contraseña');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                UiB.MsgError('Las contraseñas no coinciden');
+                return;
+            }
+            if (newPassword.length < 8) {
+                UiB.MsgError('La contraseña debe tener al menos 8 caracteres');
+                return;
+            }
+        }
+
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'mng_user_profile');
+        fdata.append('attr', 'MUserProfile');
+        fdata.append('mname', 'update_profile');
+        fdata.append('dbcon', 'default');
+
+        log.info('#form_user_profile_{{ rr }} Preparing data to be sent to the backend');
+        var formData = new FormData(target);
+        var edata = form_serials.form_to_json(formData);
+
+        log.info('#form_user_profile_{{ rr }} edata to be sent: ' + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+
+        qelem('#form_user_profile_{{ rr }}').classList.add('overlay-container');
+        qelem('#form_user_profile_{{ rr }}').classList.add('overlay');
+
+        return axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            log.info('#form_user_profile_{{ rr }} Response: ' + JSON.stringify(rsp.data, null, 2));
+
+            if (rsp.data.success) {
+                UiB.MsgSuccess(rsp.data.success);
+                qelem('#form_user_profile_{{ rr }} input[name=current_password]').value = '';
+                qelem('#form_user_profile_{{ rr }} input[name=new_password]').value = '';
+                qelem('#form_user_profile_{{ rr }} input[name=confirm_password]').value = '';
+            } else if (rsp.data.error) {
+                UiB.MsgError(rsp.data.error);
+            }
+        }).catch((err) => {
+            log.error('#form_user_profile_{{ rr }} Error: ' + JSON.stringify(err, null, 2));
+            UiB.MsgError('Error al guardar el perfil');
+        }).finally(() => {
+            var ft = qelem('#form_user_profile_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_user_profile_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        log.info('#form_user_profile_{{ rr }} Submitting form');
+        save_user_profile(event.target);
+    });
+
+</script>
+
+<style>
+.ui_user_profile {
+    padding: 20px;
+}
+
+.ui_user_profile h5 {
+    color: #333;
+    font-weight: 600;
+}
+
+.ui_user_profile .am_focus_highlight input:focus,
+.ui_user_profile .am_focus_highlight textarea:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.toggle-password:hover {
+    color: #0d6efd;
+}
+</style>

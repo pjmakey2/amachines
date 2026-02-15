@@ -1,0 +1,167 @@
+<div class="ui_shopifycustomer">
+    <form id="form_shopifycustomer_{{ rr }}" class="form_shopifycustomer">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>ID Shopify</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="shopify_id"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.shopify_id }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Nombre</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="first_name"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.first_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Apellido</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="last_name"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.last_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Email</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="email"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.email|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Teléfono</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="phone"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.phone|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Estado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="state"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.state }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Tags (RUC)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="tags"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.tags|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Órdenes</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="orders_count"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.orders_count }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Total Gastado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_spent"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_spent }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        {% if mobj.default_address_address1 %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Dirección</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="address"
+                        class="form-control"
+                        readonly
+                        value="{{ mobj.default_address_address1 }}, {{ mobj.default_address_city }}, {{ mobj.default_address_country }}"
+                    />
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Creado en Shopify</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="created_at_shopify"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.created_at_shopify }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Última sincronización</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="synced_at"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.synced_at }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Cliente: {{ mobj.first_name }} {{ mobj.last_name }}{% else %}Cliente{% endif %}`;
+</script>

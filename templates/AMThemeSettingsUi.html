@@ -1,0 +1,124 @@
+{% load static %}
+<!-- Theme Settings -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="theme-settings-offcanvas" aria-labelledby="theme-settings-offcanvas-label">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title" id="theme-settings-offcanvas-label">
+            <i class="bi mdi mdi-cog-outline me-2"></i>
+            Configuración del Tema
+        </h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div data-setting="radio">
+            <h6 class="mt-4 mb-3">Modo de Color</h6>
+            <div class="d-grid gap-3 grid-cols-3 mb-4">
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-primary w-100 active" data-setting="color-mode" data-name="color" data-value="auto">
+                        <i class="bi mdi mdi-theme-light-dark d-block mb-1" style="font-size: 2rem;"></i>
+                        Auto
+                    </button>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-primary w-100" data-setting="color-mode" data-name="color" data-value="light">
+                        <i class="bi mdi mdi-white-balance-sunny d-block mb-1" style="font-size: 2rem;"></i>
+                        Claro
+                    </button>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-primary w-100" data-setting="color-mode" data-name="color" data-value="dark">
+                        <i class="bi mdi mdi-weather-night d-block mb-1" style="font-size: 2rem;"></i>
+                        Oscuro
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <hr class="hr-horizontal">
+
+        <div class="mb-4">
+            <h6 class="mt-4 mb-3">Esquema de Color</h6>
+            <div class="d-flex flex-wrap gap-2">
+                <div data-setting="color-mode1" class="bg-primary rounded color-box" data-value="color-1"></div>
+                <div data-setting="color-mode1" class="bg-success rounded color-box" data-value="color-2"></div>
+                <div data-setting="color-mode1" class="bg-info rounded color-box" data-value="color-3"></div>
+                <div data-setting="color-mode1" class="bg-warning rounded color-box" data-value="color-4"></div>
+                <div data-setting="color-mode1" class="bg-danger rounded color-box" data-value="color-5"></div>
+            </div>
+        </div>
+
+        <hr class="hr-horizontal">
+
+        <div class="mb-4">
+            <h6 class="mt-4 mb-3">Dirección</h6>
+            <div class="d-grid gap-3 grid-cols-2">
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-primary w-100" data-setting="dir" data-name="dir" data-value="ltr">
+                        LTR
+                    </button>
+                </div>
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-primary w-100" data-setting="dir" data-name="dir" data-value="rtl">
+                        RTL
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botón para abrir configuraciones -->
+<div class="btn btn-fixed-end btn-primary btn-icon btn-setting" id="settingbutton">
+    <i class="bi mdi mdi mdi-cog"></i>
+</div>
+
+<style>
+.btn-fixed-end {
+    position: fixed;
+    right: 40px;
+    bottom: 40px;
+    z-index: 999;
+}
+
+.color-box {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.color-box:hover {
+    transform: scale(1.1);
+    border-color: #000;
+}
+
+.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.btn-border {
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-border:hover {
+    border-color: var(--bs-primary);
+}
+
+.btn-border.active {
+    border-color: var(--bs-primary);
+}
+</style>
+
+<script>
+// Abrir configuraciones
+document.getElementById('settingbutton')?.addEventListener('click', function() {
+    const offcanvas = new bootstrap.Offcanvas(document.getElementById('theme-settings-offcanvas'));
+    offcanvas.show();
+});
+</script>

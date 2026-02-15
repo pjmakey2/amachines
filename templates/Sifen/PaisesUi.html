@@ -1,0 +1,275 @@
+<div class="paises_ui_container container-fluid">
+    <div class="paises_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_paises" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_paises" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_paises" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_paises_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    paises_home_be = function (data, settings) {
+        tt = qelem(`#table_paises_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`paises_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_paises = `dtable_${OptsIO.s4generate()}`;
+    dt_paises_pc = Grid.datatables_wrapper({
+          t_guid: t_paises,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Países',
+          tselector: 'table_paises_ui',
+          app_name: 'Sifen',
+          model_name: 'Paises',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          check_gmquery: true,
+          builder_be: paises_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-paises-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'nombre_pais',
+                 tit: 'Nombre País',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'codigo_pais',
+                 tit: 'Código',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'alfa_uno',
+                 tit: 'Alfa 1',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'alfa_dos',
+                 tit: 'Alfa 2',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'areapolitica__area_politica',
+                 tit: 'Área Política',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'adjetivo',
+                 tit: 'Adjetivo',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'nacionalidad',
+                 tit: 'Nacionalidad',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'habitante',
+                 tit: 'Habitante',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'descripcion',
+                 tit: 'Descripción',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'comentarios',
+                 tit: 'Comentarios',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+          ]
+      })
+
+    $(`#${t_paises} tbody`).on('click', '.tr-paises-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_paises}`).DataTable().row( elerow ).data()
+        paises_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_paises').addEventListener('click', function() {
+          paises_form_crud();
+      });
+
+    qelem('#btn_borrar_paises').addEventListener('click', function() {
+        let table = $(`#${t_paises}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_paises');
+            gbe.append('attr', 'MPaises');
+            gbe.append('mname', 'delete_paises');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_paises}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    paises_form_crud = (pk) => {
+        dattrs = {
+            title: 'Crear País',
+            t_guid: t_paises,
+            sui_rr: '{{ rr }}',
+            from_PaisesUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'Paises',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/PaisesCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar País';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_paises').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_paises').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_nombre_pais__icontains', 'value': qelem('input#input_buscar_paises').value
+                })
+                gmquery.push({
+                    'field': 'or_adjetivo__icontains', 'value': qelem('input#input_buscar_paises').value
+                })
+                gmquery.push({
+                    'field': 'or_nacionalidad__icontains', 'value': qelem('input#input_buscar_paises').value
+                })
+            }
+            $(`#${t_paises}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_paises}`).on('draw.dt', function() {
+  tt = qelem(`#table_paises_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

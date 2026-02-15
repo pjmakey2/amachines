@@ -1,0 +1,16 @@
+<div class="am-header-transac">
+    <div class="am-header-transac-left">
+        <p><b>Fecha y hora de emisión:</b> {{ mobj.doc_establecimiento_ciudad }}, {{ mobj.doc_fecha|date:"d" }} DE {{ mobj.doc_fecha|date:"E"|upper }} DE {{ mobj.doc_fecha|date:"Y" }}</p>
+        <p><b>RUC / Documento Identidad:</b> {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv %}-{{ mobj.pdv_ruc_dv }}{% endif %}</p>
+        <p><b>Nombre o Razón Social:</b> {{ mobj.pdv_nombrefactura }}</p>
+        <p><b>Dirección Transacción:</b> {% if mobj.pdv_direccion_entrega and mobj.pdv_direccion_entrega != "ND"  %} {{ mobj.pdv_direccion_entrega }} {% endif %} </p>
+        <p><b>Correo:</b> {{ mobj.pdv_email }}  <b style="padding-left: 50px;">Teléfono:</b> {{ mobj.pdv_celular }}</p>
+    </div>
+    <div class="am-header-transac-right">
+        <p><b>Doc Asociado:</b> {{ mobj.doc_relacion_cdc }} </p>
+        <p><b>Tipo Doc.Asociado:</b> {{ mobj.doc_relacion }} </p>
+        <p><b>Motivo Emisión:</b> {{ mobj.doc_motivo }}</p>
+        <p><b>Moneda:</b> {{ mobj.doc_moneda }} </p>
+        <p><b>Condición de Venta:</b> {% if mobj.doc_cre_tipo == 2 %} Credito {% else %} Contado {% endif %}</p>
+    </div>
+</div>

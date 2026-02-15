@@ -1,0 +1,71 @@
+# Django y dependencias base
+Django>=5.0
+psycopg2-binary>=2.9.9
+python-dotenv>=1.0.0
+python-decouple>=3.8
+
+# Django REST Framework y JWT
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.0
+
+# Django Channels (WebSockets)
+channels>=4.0.0
+channels-redis>=4.1.0
+daphne>=4.0.0
+
+# Celery
+celery>=5.3.0
+redis>=5.0.0
+
+# Sentry
+sentry-sdk>=1.39.0
+
+# Django extensions
+django-extensions>=3.2.0
+
+# Utilities
+boltons>=23.0.0
+asgiref>=3.7.0
+
+# Reports y utilidades
+reportlab>=4.0.0
+Pillow>=10.0.0
+PyPDF2>=3.0.0
+weasyprint>=60.0
+pdfkit>=1.0.0
+minify-html>=0.11.0
+
+# Data processing
+pandas>=2.0.0
+numpy>=1.24.0
+openpyxl>=3.1.0
+arrow>=1.3.0
+tqdm>=4.66.0
+
+# Utilities
+num2words>=0.5.13
+qrcode>=7.4.0
+beautifulsoup4>=4.12.0
+
+# XML y SOAP (SIFEN)
+lxml>=5.0.0
+zeep>=4.2.0
+xmlsec>=1.3.0
+signxml>=3.2.0
+
+# HTTP
+requests>=2.31.0
+requests-pkcs12>=1.24
+
+# MySQL (Frontliner Legacy)
+mysqlclient>=2.2.0
+
+# Cryptography
+cryptography>=41.0.0
+
+# PDF generation
+fpdf2>=2.7.0
+
+# Browser automation (opcional - comentar si no se usa)
+# playwright>=1.40.0
+# webdriver-manager>=4.0.0

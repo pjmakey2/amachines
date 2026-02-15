@@ -1,0 +1,199 @@
+<div class="ui_businessuser">
+    <form id="form_businessuser_{{ rr }}" class="form_businessuser">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <!-- Asignación de Negocio a Usuario -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="mdi mdi-account-network"></i> Asignar Negocio a Usuario
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <label class="required">Usuario</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="userprofileobj_id" class="form-control" required>
+                                <option value="">Seleccionar Usuario</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label class="required">Negocio</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="businessobj_id" class="form-control" required>
+                                <option value="">Seleccionar Negocio</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Estado</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="active" class="form-control">
+                                <option value="true" {% if mobj and mobj.active %}selected{% elif not mobj %}selected{% endif %}>Activo</option>
+                                <option value="false" {% if mobj and not mobj.active %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                        <small class="text-muted">Solo puede haber un negocio activo por usuario</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">
+                <i class="mdi mdi-close"></i> Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="mdi mdi-content-save"></i> Guardar
+            </button>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Asignación de Negocio{% else %}Asignar Negocio a Usuario{% endif %}`;
+
+    // Poblar select de UserProfile
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_businessuser_{{ rr }} select[name=userprofileobj_id]',
+        app_name: 'OptsIO',
+        model_name: 'UserProfile',
+        field_display: ['username'],
+        field_id: ['id'],
+        db_fields: ['id', 'username'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.userprofileobj %}
+            $('#form_businessuser_{{ rr }} select[name=userprofileobj_id]').val('{{ mobj.userprofileobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    // Poblar select de Business
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_businessuser_{{ rr }} select[name=businessobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Business',
+        field_display: ['name', 'ruc'],
+        field_id: ['id'],
+        db_fields: ['id', 'name', 'ruc'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.businessobj %}
+            $('#form_businessuser_{{ rr }} select[name=businessobj_id]').val('{{ mobj.businessobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_businessuser = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'OptsIO');
+        fdata.append('model_name', 'UserBusiness');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_businessuser_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+        seldis = ['active', 'userprofileobj_id', 'businessobj_id']
+        seldis.forEach((idx) => {
+            vv = $(`#form_businessuser_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_businessuser_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_businessuser_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_businessuser_{{ rr }} c_a to be sent: `);
+        fdata.append('c_a', jfy([
+            {
+                'module': 'OptsIO',
+                'package': 'mng_master',
+                'attr': 'MMaster',
+                'mname': 'create_userbusiness',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_businessuser_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_businessuser_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_businessuser_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_businessuser_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_businessuser_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_businessuser_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_businessuser_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return {msgs: msgs, got_error: got_error};
+        }).then((result)=>{
+            if (result.got_error === false) {
+                log.success(`#form_businessuser_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_businessuser_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_businessuser_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_businessuser_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_businessuser_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_businessuser_{{ rr }} Submitting form`);
+        save_businessuser(event.target);
+    })
+
+</script>

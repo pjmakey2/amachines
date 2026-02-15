@@ -1,0 +1,404 @@
+{% load static %}
+
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>Crear Timbrado y Números</h4>
+            <p class="text-muted">Configure el timbrado y los rangos de números para facturación electrónica</p>
+        </div>
+    </div>
+
+    <form id="form_enumber_create">
+        <!-- Timbrado Info Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">Información del Timbrado</h6>
+            </div>
+            <div class="card-body">
+                <!-- Row 1: RUC, DV, Timbrado -->
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>RUC</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="text"
+                                name="ruc"
+                                class="form-control"
+                                placeholder="80163121"
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label>DV</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="number"
+                                name="dv"
+                                class="form-control"
+                                placeholder="1"
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Número Timbrado</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="text"
+                                name="timbrado"
+                                class="form-control"
+                                placeholder="12345678"
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Fecha Inicio</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="date"
+                                name="inicio"
+                                class="form-control"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2: FCSC, SCSC -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>FCSC (32 caracteres)</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="text"
+                                name="fcsc"
+                                class="form-control"
+                                placeholder="ABCD0000000000000000000000000000"
+                                maxlength="32"
+                            />
+                        </div>
+                        <small class="text-muted" id="fcsc_count">0/32</small>
+                    </div>
+                    <div class="col-md-6">
+                        <label>SCSC (32 caracteres)</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="text"
+                                name="scsc"
+                                class="form-control"
+                                placeholder="EFGH0000000000000000000000000000"
+                                maxlength="32"
+                            />
+                        </div>
+                        <small class="text-muted" id="scsc_count">0/32</small>
+                    </div>
+                </div>
+
+                <!-- Row 3: Establecimiento -->
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label>Establecimiento</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                required
+                                type="number"
+                                name="establecimiento"
+                                class="form-control"
+                                placeholder="1"
+                                value="1"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Number Ranges Section -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Rangos de Números</h6>
+                <button type="button" class="btn btn-light btn-sm" id="btn_add_range">
+                    <i class="mdi mdi-plus"></i> Agregar Rango
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Input row for adding ranges -->
+                <div class="row mb-3">
+                    <div class="col-md-2">
+                        <label>Tipo Doc.</label>
+                        <select name="range_tipo" class="form-control">
+                            <option value="FE">FE - Factura</option>
+                            <option value="NC">NC - Nota Crédito</option>
+                            <option value="ND">ND - Nota Débito</option>
+                            <option value="AF">AF - Autofactura</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label>Expedición</label>
+                        <input type="number" name="range_expd" class="form-control" value="1" />
+                    </div>
+                    <div class="col-md-2">
+                        <label>Serie</label>
+                        <input type="text" name="range_serie" class="form-control" value="ZZZ" maxlength="3" />
+                    </div>
+                    <div class="col-md-2">
+                        <label>Número Inicio</label>
+                        <input type="number" name="range_nstart" class="form-control" value="1" />
+                    </div>
+                    <div class="col-md-2">
+                        <label>Número Fin</label>
+                        <input type="number" name="range_nend" class="form-control" value="1000" />
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-success w-100" id="btn_add_range_row">
+                            <i class="mdi mdi-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Table for ranges -->
+                <table class="table table-striped table-bordered" id="table_ranges">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Expedición</th>
+                            <th>Serie</th>
+                            <th>Inicio</th>
+                            <th>Fin</th>
+                            <th>Cantidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody_ranges">
+                        <!-- Ranges will be added here -->
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="5" class="text-end">Total Números:</th>
+                            <th id="total_numbers">0</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Quick Add Buttons -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">Agregar Rápido</h6>
+            </div>
+            <div class="card-body">
+                <button type="button" class="btn btn-outline-primary me-2" id="btn_add_all_types">
+                    <i class="mdi mdi-plus-box-multiple"></i> Agregar FE, NC, ND, AF (1-1000)
+                </button>
+                <button type="button" class="btn btn-outline-secondary" id="btn_clear_ranges">
+                    <i class="mdi mdi-delete-sweep"></i> Limpiar Todo
+                </button>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row">
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary btn-lg" id="btn_create_timbrado">
+                    <i class="mdi mdi-content-save"></i> Crear Timbrado y Números
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript">
+    // Array to store ranges
+    var ranges = [];
+
+    // Character counter for FCSC/SCSC
+    qelem('input[name=fcsc]').addEventListener('input', function() {
+        qelem('#fcsc_count').textContent = `${this.value.length}/32`;
+    });
+
+    qelem('input[name=scsc]').addEventListener('input', function() {
+        qelem('#scsc_count').textContent = `${this.value.length}/32`;
+    });
+
+    // Function to render ranges table
+    function renderRangesTable() {
+        let tbody = qelem('#tbody_ranges');
+        tbody.innerHTML = '';
+        let totalNumbers = 0;
+
+        ranges.forEach((range, index) => {
+            let cantidad = range.nend - range.nstart + 1;
+            totalNumbers += cantidad;
+
+            let row = `
+                <tr>
+                    <td><span class="badge bg-primary">${range.tipo}</span></td>
+                    <td>${range.expd}</td>
+                    <td>${range.serie}</td>
+                    <td>${range.nstart}</td>
+                    <td>${range.nend}</td>
+                    <td class="text-end">${cantidad.toLocaleString()}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteRange(${index})">
+                            <i class="mdi mdi-delete"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        qelem('#total_numbers').textContent = totalNumbers.toLocaleString();
+    }
+
+    // Add range from inputs
+    qelem('#btn_add_range_row').addEventListener('click', function() {
+        let tipo = qelem('select[name=range_tipo]').value;
+        let expd = parseInt(qelem('input[name=range_expd]').value) || 1;
+        let serie = qelem('input[name=range_serie]').value.toUpperCase() || 'ZZZ';
+        let nstart = parseInt(qelem('input[name=range_nstart]').value) || 1;
+        let nend = parseInt(qelem('input[name=range_nend]').value) || 1000;
+
+        if (nend < nstart) {
+            UiB.MsgError('El número final debe ser mayor o igual al inicial');
+            return;
+        }
+
+        // Check if tipo already exists
+        if (ranges.find(r => r.tipo === tipo)) {
+            UiB.MsgError(`Ya existe un rango para ${tipo}`);
+            return;
+        }
+
+        ranges.push({
+            tipo: tipo,
+            expd: expd,
+            serie: serie,
+            nstart: nstart,
+            nend: nend
+        });
+
+        renderRangesTable();
+    });
+
+    // Delete range
+    window.deleteRange = function(index) {
+        ranges.splice(index, 1);
+        renderRangesTable();
+    };
+
+    // Add all types
+    qelem('#btn_add_all_types').addEventListener('click', function() {
+        let expd = parseInt(qelem('input[name=range_expd]').value) || 1;
+        let serie = qelem('input[name=range_serie]').value.toUpperCase() || 'ZZZ';
+        let nstart = parseInt(qelem('input[name=range_nstart]').value) || 1;
+        let nend = parseInt(qelem('input[name=range_nend]').value) || 1000;
+
+        ['FE', 'NC', 'ND', 'AF'].forEach(tipo => {
+            if (!ranges.find(r => r.tipo === tipo)) {
+                ranges.push({
+                    tipo: tipo,
+                    expd: expd,
+                    serie: serie,
+                    nstart: nstart,
+                    nend: nend
+                });
+            }
+        });
+
+        renderRangesTable();
+    });
+
+    // Clear all ranges
+    qelem('#btn_clear_ranges').addEventListener('click', function() {
+        ranges = [];
+        renderRangesTable();
+    });
+
+    // Form submit
+    qelem('#form_enumber_create').addEventListener('submit', function(evt) {
+        evt.preventDefault();
+
+        if (ranges.length === 0) {
+            UiB.MsgError('Debe agregar al menos un rango de números');
+            return;
+        }
+
+        // Validate FCSC/SCSC length
+        let fcsc = qelem('input[name=fcsc]').value;
+        let scsc = qelem('input[name=scsc]').value;
+
+        if (fcsc.length !== 32) {
+            UiB.MsgError('FCSC debe tener exactamente 32 caracteres');
+            return;
+        }
+
+        if (scsc.length !== 32) {
+            UiB.MsgError('SCSC debe tener exactamente 32 caracteres');
+            return;
+        }
+
+        // Build data
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen_serials');
+        fdata.append('attr', 'SEserial');
+        fdata.append('mname', 'create_timbrado_ui');
+
+        // Send parameters directly
+        fdata.append('ruc', qelem('input[name=ruc]').value);
+        fdata.append('dv', qelem('input[name=dv]').value);
+        fdata.append('timbrado', qelem('input[name=timbrado]').value);
+        fdata.append('inicio', qelem('input[name=inicio]').value);
+        fdata.append('fcsc', fcsc);
+        fdata.append('scsc', scsc);
+        fdata.append('establecimiento', jfy([qelem('input[name=establecimiento]').value]));
+        fdata.append('tipo', jfy(ranges.map(r => r.tipo)));
+        fdata.append('expd', jfy(ranges.map(r => r.expd)));
+        fdata.append('serie', jfy(ranges.map(r => r.serie)));
+        fdata.append('nstart', jfy(ranges.map(r => r.nstart)));
+        fdata.append('nend', jfy(ranges.map(r => r.nend)));
+
+        // Show loading
+        qelem('#btn_create_timbrado').disabled = true;
+        qelem('#btn_create_timbrado').innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Procesando...';
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                UiB.MsgSuccess(data.success);
+                if (data.info) {
+                    UiB.MsgInfo(data.info);
+                }
+                // Reset form to initial state
+                qelem('#form_enumber_create').reset();
+                ranges = [];
+                renderRangesTable();
+                qelem('input[name=inicio]').valueAsDate = new Date();
+                qelem('#fcsc_count').textContent = '0/32';
+                qelem('#scsc_count').textContent = '0/32';
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            log.error('Error creating timbrado: ' + JSON.stringify(err, null, 2));
+            UiB.MsgError('Error al crear el timbrado');
+        }).finally(() => {
+            qelem('#btn_create_timbrado').disabled = false;
+            qelem('#btn_create_timbrado').innerHTML = '<i class="mdi mdi-content-save"></i> Crear Timbrado y Números';
+        });
+    });
+
+    // Set default date to today
+    qelem('input[name=inicio]').valueAsDate = new Date();
+</script>

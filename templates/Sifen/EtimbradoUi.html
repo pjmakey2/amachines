@@ -1,0 +1,285 @@
+<div class="etimbrado_ui_container container-fluid">
+    <div class="etimbrado_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_etimbrado" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Nuevo Timbrado
+            </button>
+            <button id="btn_borrar_etimbrado" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Eliminar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_etimbrado" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_etimbrado_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    etimbrado_home_be = function (data, settings) {
+        tt = qelem(`#table_etimbrado_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`etimbrado_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+
+    // Helper para formatear vencimiento con alerta
+    etimbrado_vencimiento_format = (fecha) => {
+        if (!fecha) return '-';
+        const fechaObj = new Date(fecha);
+        const hoy = new Date();
+        const diasRestantes = Math.floor((fechaObj - hoy) / (1000 * 60 * 60 * 24));
+
+        let formatted = fechaObj.toLocaleDateString('es-PY');
+
+        if (diasRestantes < 0) {
+            return `<span class="text-danger fw-bold">${formatted} <small>(Vencido)</small></span>`;
+        } else if (diasRestantes <= 30) {
+            return `<span class="text-warning fw-bold">${formatted} <small>(${diasRestantes} dias)</small></span>`;
+        } else if (diasRestantes <= 90) {
+            return `<span class="text-info">${formatted}</span>`;
+        }
+        return formatted;
+    }
+
+    t_etimbrado = `dtable_${OptsIO.s4generate()}`;
+    dt_etimbrado_pc = Grid.datatables_wrapper({
+          t_guid: t_etimbrado,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Timbrados',
+          tselector: 'table_etimbrado_ui',
+          app_name: 'Sifen',
+          model_name: 'Etimbrado',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          check_gmquery: true,
+          builder_be: etimbrado_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-etimbrado-query text fs-5 mdi mdi-eye"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'ruc',
+                 tit: 'RUC',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'dv',
+                 tit: 'DV',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'timbrado',
+                 tit: 'Timbrado',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'serie',
+                 tit: 'Serie',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'inicio',
+                 tit: 'Inicio',
+                 cls: 'align-left',
+                 dtyp: 'date',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'loc',
+                 idx: 'vencimiento',
+                 tit: 'Vencimiento',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: function(data, type, row) {
+                    return etimbrado_vencimiento_format(data);
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'fcsc',
+                 tit: 'FCSC',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'scsc',
+                 tit: 'SCSC',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+          ]
+      })
+
+    // Click en icono de editar
+    $(`#${t_etimbrado} tbody`).on('click', '.tr-etimbrado-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_etimbrado}`).DataTable().row( elerow ).data()
+        etimbrado_form_crud(rowobj.id);
+    })
+
+    // Boton crear nuevo
+    qelem('#btn_crear_etimbrado').addEventListener('click', function() {
+          etimbrado_form_crud();
+      });
+
+    // Boton borrar
+    qelem('#btn_borrar_etimbrado').addEventListener('click', function() {
+        let table = $(`#${t_etimbrado}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para eliminar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `Estas seguro de que deseas eliminar ${idsToDelete.length} timbrado(s)? Esta accion no se puede deshacer.`,
+            ttype: 'warning'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_etimbrado');
+            gbe.append('attr', 'MEtimbrado');
+            gbe.append('mname', 'delete_etimbrado');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_etimbrado}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al eliminar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrio un error al eliminar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    // Funcion CRUD offcanvas
+    etimbrado_form_crud = (pk) => {
+        dattrs = {
+            title: 'Nuevo Timbrado',
+            t_guid: t_etimbrado,
+            sui_rr: '{{ rr }}',
+            from_EtimbradoUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'Etimbrado',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/EtimbradoCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Timbrado';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    // Busqueda
+    qelem('#input_buscar_etimbrado').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_etimbrado').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_ruc__icontains', 'value': qelem('input#input_buscar_etimbrado').value
+                })
+                gmquery.push({
+                    'field': 'or_timbrado__icontains', 'value': qelem('input#input_buscar_etimbrado').value
+                })
+                gmquery.push({
+                    'field': 'or_serie__icontains', 'value': qelem('input#input_buscar_etimbrado').value
+                })
+            }
+            $(`#${t_etimbrado}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_etimbrado}`).on('draw.dt', function() {
+  tt = qelem(`#table_etimbrado_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

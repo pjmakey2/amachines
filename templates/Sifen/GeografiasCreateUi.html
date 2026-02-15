@@ -1,0 +1,137 @@
+<div class="ui_geografias">
+    <form id="form_geografias_{{ rr }}" class="form_geografias">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-12">
+                <label>Continente</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="continente"
+                        class="form-control"
+                        placeholder="Continente"
+                        {% if mobj %} value="{{ mobj.continente }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Descripción</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="descripcion"
+                        class="form-control"
+                        placeholder="Descripción"
+                        {% if mobj %} value="{{ mobj.descripcion }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Comentarios</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea
+                        name="comentarios"
+                        class="form-control"
+                        placeholder="Comentarios"
+                        rows="3"
+                    >{% if mobj %}{{ mobj.comentarios }}{% endif %}</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Geografía {{ mobj.pk }}{% else %}Crear Geografía{% endif %}`;
+
+    save_geografias = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Geografias');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_geografias_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        log.info(`#form_geografias_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_geografias_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_geografias_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([]))
+        log.info(`#form_geografias_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_geografias_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_geografias_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_geografias_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_geografias_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_geografias_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_geografias_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_geografias_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_geografias_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_geografias_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_geografias_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_geografias_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_geografias_{{ rr }} Submitting form`);
+        save_geografias(event.target);
+    })
+
+</script>

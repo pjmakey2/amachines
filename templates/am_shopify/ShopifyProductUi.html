@@ -1,0 +1,300 @@
+<div class="shopifyproduct_ui_container container-fluid">
+    <div class="shopifyproduct_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_sync_productos" class="btn btn-primary me-2">
+                <i class="mdi mdi-sync"></i> Sincronizar
+            </button>
+            <button id="btn_migrar_productos" class="btn btn-success me-2">
+                <i class="mdi mdi-database-export"></i> Migrar a SIFEN
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_productos" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_shopifyproduct_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    shopifyproduct_home_be = function (data, settings) {
+        tt = qelem(`#table_shopifyproduct_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`shopifyproduct_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_shopifyproduct = `dtable_${OptsIO.s4generate()}`;
+    dt_shopifyproduct_pc = Grid.datatables_wrapper({
+          t_guid: t_shopifyproduct,
+          url_exec: '{% url "iom" %}',
+          title: 'Productos de Shopify',
+          tselector: 'table_shopifyproduct_ui',
+          app_name: 'am_shopify',
+          model_name: 'ShopifyProduct',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: shopifyproduct_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_shopifyproduct_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-shopifyproduct-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'shopify_id',
+                 tit: 'Shopify ID',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'title',
+                 tit: 'Título',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'sku',
+                 tit: 'SKU',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'barcode',
+                 tit: 'Código de Barras',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'price',
+                 tit: 'Precio',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `PYG ${UiN.formatNumberU(parseFloat(data || 0).toFixed(0))}`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'inventory_quantity',
+                 tit: 'Inventario',
+                 cls: 'align-right',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'status',
+                 tit: 'Estado',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     let badgeClass = data === 'active' ? 'bg-success' : 'bg-secondary';
+                     return `<span class="badge ${badgeClass}">${data}</span>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'vendor',
+                 tit: 'Proveedor',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'product_type',
+                 tit: 'Tipo',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+          ]
+      })
+
+    $(`#${t_shopifyproduct} tbody`).on('click', '.tr-shopifyproduct-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_shopifyproduct}`).DataTable().row( elerow ).data()
+        shopifyproduct_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_sync_productos').addEventListener('click', function() {
+        UiB.MsgSwall({
+            msg: '¿Desea sincronizar los productos desde Shopify?',
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'sync_products_from_ui');
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs || [rsp.data],
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifyproduct}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al sincronizar: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al sincronizar. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    qelem('#btn_migrar_productos').addEventListener('click', function() {
+        let table = $(`#${t_shopifyproduct}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un producto para migrar.');
+            return;
+        }
+        let idsToMigrate = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Desea migrar ${idsToMigrate.length} producto(s) a SIFEN?`,
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'migrate_products_to_sifen');
+                fdata.append('ids', jfy(idsToMigrate));
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs,
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifyproduct}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al migrar: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al migrar. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    shopifyproduct_form_crud = (pk) => {
+        dattrs = {
+            title: 'Ver Producto',
+            t_guid: t_shopifyproduct,
+            sui_rr: '{{ rr }}',
+            from_ShopifyProductUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'am_shopify',
+            model_name: 'ShopifyProduct',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'am_shopify/ShopifyProductCreateUi.html',
+            raw: true,
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Detalle del Producto';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_productos').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_productos').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_title__icontains', 'value': qelem('input#input_buscar_productos').value
+                })
+                gmquery.push({
+                    'field': 'or_sku__icontains', 'value': qelem('input#input_buscar_productos').value
+                })
+                gmquery.push({
+                    'field': 'or_barcode__icontains', 'value': qelem('input#input_buscar_productos').value
+                })
+                gmquery.push({
+                    'field': 'or_vendor__icontains', 'value': qelem('input#input_buscar_productos').value
+                })
+            }
+            $(`#${t_shopifyproduct}`).DataTable().ajax.reload();
+        }
+    }
+
+$(`#${t_shopifyproduct}`).on('draw.dt', function() {
+  tt = qelem(`#table_shopifyproduct_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

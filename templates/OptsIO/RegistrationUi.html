@@ -1,0 +1,420 @@
+{% load static %}
+<!doctype html>
+<html lang="es" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Alta Machines - Registro</title>
+
+    {% include "AMCSS.html" %}
+
+    <style>
+        .login-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .form-side {
+            background: #ffffff;
+            padding: 40px;
+        }
+
+        .form-side h2 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .form-side .subtitle {
+            color: #718096;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-register:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+
+        .strength-weak { background: #f56565; width: 33%; }
+        .strength-medium { background: #ed8936; width: 66%; }
+        .strength-strong { background: #48bb78; width: 100%; }
+
+        .password-requirements {
+            font-size: 0.8rem;
+            color: #718096;
+            margin-top: 8px;
+        }
+
+        .password-requirements li {
+            list-style: none;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .password-requirements li:before {
+            content: "✗";
+            position: absolute;
+            left: 0;
+            color: #f56565;
+        }
+
+        .password-requirements li.valid:before {
+            content: "✓";
+            color: #48bb78;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-3 {
+            margin-top: 1rem;
+        }
+
+        .text-muted {
+            color: #718096;
+        }
+
+        .link-primary {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .link-primary:hover {
+            text-decoration: underline;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-validation {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+        }
+
+        .validation-loading { color: #a0aec0; }
+        .validation-success { color: #48bb78; }
+        .validation-error { color: #f56565; }
+
+        .input-password {
+            -webkit-text-security: disc;
+            text-security: disc;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-content">
+        <div class="login-card">
+            <div class="card">
+                <div class="card-body form-side">
+                    <div class="text-center mb-4">
+                        <img src="{% static 'images/amachine_logo.png' %}" alt="Alta Machines" style="height: 60px; margin-bottom: 20px;">
+                        <h2>Crear Cuenta</h2>
+                        <p class="subtitle">Complete el formulario para registrarse en Alta Machines</p>
+                    </div>
+
+                    <form id="form_register">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Nombre</label>
+                                    <input type="text" name="first_name" class="form-control" placeholder="Ingrese su nombre" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label>Apellido</label>
+                                    <input type="text" name="last_name" class="form-control" placeholder="Ingrese su apellido" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Usuario</label>
+                            <div class="input-group">
+                                <input type="text" name="n_user" class="form-control" placeholder="Nombre de usuario" required>
+                                <span class="input-validation" id="username_validation"></span>
+                            </div>
+                            <small class="text-muted">Mínimo 4 caracteres</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email Corporativo</label>
+                            <div class="input-group">
+                                <input type="email" name="n_email" class="form-control" placeholder="correo@empresa.com" required>
+                                <span class="input-validation" id="email_validation"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Contraseña</label>
+                            <input type="text" name="n_pass" class="form-control input-password" placeholder="Cree una contraseña segura" required>
+                            <div class="password-strength">
+                                <div class="password-strength-bar" id="password_strength_bar"></div>
+                            </div>
+                            <ul class="password-requirements" id="password_requirements">
+                                <li id="req_length">Mínimo 8 caracteres</li>
+                                <li id="req_uppercase">Al menos una mayúscula</li>
+                                <li id="req_lowercase">Al menos una minúscula</li>
+                                <li id="req_number">Al menos un número</li>
+                                <li id="req_special">Al menos un carácter especial</li>
+                            </ul>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirmar Contraseña</label>
+                            <input type="text" name="confirm_n_pass" class="form-control input-password" placeholder="Confirme su contraseña" required>
+                        </div>
+
+                        <button type="submit" class="btn-register" id="btn_register">
+                            Registrarse
+                        </button>
+
+                        <div class="text-center mt-3">
+                            <span class="text-muted">¿Ya tiene una cuenta?</span>
+                            <a href="/io/glogin/" class="link-primary">Iniciar Sesión</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include "AMJS.html" %}
+
+    <script>
+        var usernameValid = false;
+        var emailValid = false;
+        var passwordValid = false;
+
+        qelem('#form_register input[name=n_user]').addEventListener('blur', function() {
+            var username = this.value.trim();
+            if (username.length < 4) {
+                qelem('#username_validation').innerHTML = '<i class="mdi mdi-close-circle validation-error"></i>';
+                usernameValid = false;
+                return;
+            }
+
+            qelem('#username_validation').innerHTML = '<i class="mdi mdi-loading mdi-spin validation-loading"></i>';
+
+            var fdata = new FormData();
+            fdata.append('action', 'check_username');
+            fdata.append('username', username);
+
+            axios.post('{% url "gregister" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    qelem('#username_validation').innerHTML = '<i class="mdi mdi-check-circle validation-success"></i>';
+                    usernameValid = true;
+                } else {
+                    qelem('#username_validation').innerHTML = '<i class="mdi mdi-close-circle validation-error"></i>';
+                    usernameValid = false;
+                    UiB.MsgError(rsp.data.error);
+                }
+            }).catch(() => {
+                qelem('#username_validation').innerHTML = '<i class="mdi mdi-close-circle validation-error"></i>';
+                usernameValid = false;
+            });
+        });
+
+        qelem('#form_register input[name=n_email]').addEventListener('blur', function() {
+            var email = this.value.trim();
+            if (!email) return;
+
+            qelem('#email_validation').innerHTML = '<i class="mdi mdi-loading mdi-spin validation-loading"></i>';
+
+            var fdata = new FormData();
+            fdata.append('action', 'check_email');
+            fdata.append('email', email);
+
+            axios.post('{% url "gregister" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    qelem('#email_validation').innerHTML = '<i class="mdi mdi-check-circle validation-success"></i>';
+                    emailValid = true;
+                } else {
+                    qelem('#email_validation').innerHTML = '<i class="mdi mdi-close-circle validation-error"></i>';
+                    emailValid = false;
+                    UiB.MsgError(rsp.data.error);
+                }
+            }).catch(() => {
+                qelem('#email_validation').innerHTML = '<i class="mdi mdi-close-circle validation-error"></i>';
+                emailValid = false;
+            });
+        });
+
+        qelem('#form_register input[name=n_pass]').addEventListener('input', function() {
+            var password = this.value;
+            var strength = 0;
+
+            var hasLength = password.length >= 8;
+            var hasUpper = /[A-Z]/.test(password);
+            var hasLower = /[a-z]/.test(password);
+            var hasNumber = /[0-9]/.test(password);
+            var hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+
+            qelem('#req_length').classList.toggle('valid', hasLength);
+            qelem('#req_uppercase').classList.toggle('valid', hasUpper);
+            qelem('#req_lowercase').classList.toggle('valid', hasLower);
+            qelem('#req_number').classList.toggle('valid', hasNumber);
+            qelem('#req_special').classList.toggle('valid', hasSpecial);
+
+            if (hasLength) strength++;
+            if (hasUpper) strength++;
+            if (hasLower) strength++;
+            if (hasNumber) strength++;
+            if (hasSpecial) strength++;
+
+            var strengthBar = qelem('#password_strength_bar');
+            strengthBar.className = 'password-strength-bar';
+
+            if (strength <= 2) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 4) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+
+            passwordValid = strength === 5;
+        });
+
+        qelem('#form_register').addEventListener('submit', function(evt) {
+            evt.preventDefault();
+
+            if (!usernameValid) {
+                UiB.MsgError('Usuario no válido o no disponible');
+                return;
+            }
+
+            if (!emailValid) {
+                UiB.MsgError('Email no válido o no disponible');
+                return;
+            }
+
+            if (!passwordValid) {
+                UiB.MsgError('La contraseña no cumple con los requisitos de seguridad');
+                return;
+            }
+
+            var password = qelem('#form_register input[name=n_pass]').value;
+            var confirmPassword = qelem('#form_register input[name=confirm_n_pass]').value;
+
+            if (password !== confirmPassword) {
+                UiB.MsgError('Las contraseñas no coinciden');
+                return;
+            }
+
+            var formData = new FormData(evt.target);
+            var formFields = form_serials.form_to_json(formData);
+
+            var fdata = new FormData();
+            fdata.append('action', 'register');
+            fdata.append('uc_fields', jfy(formFields));
+
+            qelem('#btn_register').disabled = true;
+            qelem('#btn_register').innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Registrando...';
+
+            axios.post('{% url "gregister" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    UiB.MsgSuccess(rsp.data.success);
+                    setTimeout(() => {
+                        window.location.href = '/io/glogin/';
+                    }, 2000);
+                } else if (rsp.data.error) {
+                    UiB.MsgError(rsp.data.error);
+                    qelem('#btn_register').disabled = false;
+                    qelem('#btn_register').innerHTML = 'Registrarse';
+                }
+            }).catch((err) => {
+                log.error('Error en registro: ' + jfy(err));
+                UiB.MsgError('Error al registrar usuario');
+                qelem('#btn_register').disabled = false;
+                qelem('#btn_register').innerHTML = 'Registrarse';
+            });
+        });
+    </script>
+</body>
+</html>

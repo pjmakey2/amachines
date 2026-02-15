@@ -1,0 +1,3075 @@
+{
+    "FORMULARIO_RECLAMOTRAZABILIDAD": [
+        {
+            "perm": "form_reclamotrazabilidad_accion_id_ver",
+            "pname": "VER ACCION_ID",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotrazabilidad_accion_id_edita",
+            "pname": "EDITA ACCION_ID",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotrazabilidad_comentario_ver",
+            "pname": "VER COMENTARIO",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotrazabilidad_comentario_edita",
+            "pname": "EDITA COMENTARIO",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotrazabilidad_documento_ver",
+            "pname": "VER DOCUMENTO",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotrazabilidad_documento_edita",
+            "pname": "EDITA DOCUMENTO",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotrazabilidad_btn_crear_reclamotrazabilidad",
+            "pname": "BTN_CREAR_RECLAMOTRAZABILIDAD",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        },
+        { 
+            "perm": "form_reclamo_btn_anular_reclamo",
+            "pname": "BTN_ANULAR_RECLAMO",
+            "gname": "FORMULARIO RECLAMOTRAZABILIDAD",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_RECLAMOACCION": [
+        {
+            "perm": "form_reclamoaccion_orden_ver",
+            "pname": "VER ORDEN",
+            "gname": "FORMULARIO RECLAMOACCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamoaccion_orden_edita",
+            "pname": "EDITA ORDEN",
+            "gname": "FORMULARIO RECLAMOACCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamoaccion_accion_ver",
+            "pname": "VER ACCION",
+            "gname": "FORMULARIO RECLAMOACCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamoaccion_accion_edita",
+            "pname": "EDITA ACCION",
+            "gname": "FORMULARIO RECLAMOACCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamoaccion_btn_crear_reclamoaccion",
+            "pname": "BTN_CREAR_RECLAMOACCION",
+            "gname": "FORMULARIO RECLAMOACCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamoaccion_btn_actualizar_reclamoaccion",
+            "pname": "BTN_ACTUALIZAR_RECLAMOACCION",
+            "gname": "FORMULARIO RECLAMOACCION",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_RECLAMO": [
+        {
+            "perm": "form_reclamo_ver",
+            "pname": "VER FORMULARIO RECLAMO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_topico_id_ver",
+            "pname": "VER TOPICO_ID",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_topico_id_edita",
+            "pname": "EDITA TOPICO_ID",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_asignado_ver",
+            "pname": "VER ASIGNADO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_asignado_edita",
+            "pname": "EDITA ASIGNADO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_identificador_ver",
+            "pname": "VER IDENTIFICADOR",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_identificador_edita",
+            "pname": "EDITA IDENTIFICADOR",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_valor_ver",
+            "pname": "VER VALOR",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_valor_edita",
+            "pname": "EDITA VALOR",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_estado_ver",
+            "pname": "VER ESTADO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_estado_edita",
+            "pname": "EDITA ESTADO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_descripcion_ver",
+            "pname": "VER DESCRIPCION",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_descripcion_edita",
+            "pname": "EDITA DESCRIPCION",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_btn_crear_reclamo",
+            "pname": "BTN_CREAR_RECLAMO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_btn_actualizar_reclamo",
+            "pname": "BTN_ACTUALIZAR_RECLAMO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamo_btn_anular_reclamo",
+            "pname": "BTN_ANULAR_RECLAMO",
+            "gname": "FORMULARIO RECLAMO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_RECLAMOSOLUCION": [
+        {
+            "perm": "form_reclamosolucion_orden_ver",
+            "pname": "VER ORDEN",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_orden_edita",
+            "pname": "EDITA ORDEN",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_solucion_ver",
+            "pname": "VER SOLUCION",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_solucion_edita",
+            "pname": "EDITA SOLUCION",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_requiere_intervencion_ver",
+            "pname": "VER REQUIERE_INTERVENCION",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_requiere_intervencion_edita",
+            "pname": "EDITA REQUIERE_INTERVENCION",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_btn_actualizar_reclamosolucion",
+            "pname": "BTN_ACTUALIZAR_RECLAMOSOLUCION",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamosolucion_btn_crear_reclamosolucion",
+            "pname": "BTN_CREAR_RECLAMOSOLUCION",
+            "gname": "FORMULARIO RECLAMOSOLUCION",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_RECLAMOTOPICO": [
+        {
+            "perm": "form_reclamotopico_topico_ver",
+            "pname": "VER TOPICO",
+            "gname": "FORMULARIO RECLAMOTOPICO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotopico_topico_edita",
+            "pname": "EDITA TOPICO",
+            "gname": "FORMULARIO RECLAMOTOPICO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotopico_btn_actualizar_reclamotopico",
+            "pname": "BTN_ACTUALIZAR_RECLAMOTOPICO",
+            "gname": "FORMULARIO RECLAMOTOPICO",
+            "groups": []
+        },
+        {
+            "perm": "form_reclamotopico_btn_crear_reclamotopico",
+            "pname": "BTN_CREAR_RECLAMOTOPICO",
+            "gname": "FORMULARIO RECLAMOTOPICO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_USERPROFILE": [
+        {
+            "perm": "perms.OptsIO.form_userprofile_ver",
+            "pname": "VER FORMULARIO USERPROFILE",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_foto_ver",
+            "pname": "VER FOTO",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_foto_edita",
+            "pname": "EDITA FOTO",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariocorreo_ver",
+            "pname": "VER FUNCIONARIOCORREO",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariocorreo_edita",
+            "pname": "EDITA FUNCIONARIOCORREO",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariocelular_ver",
+            "pname": "VER FUNCIONARIOCELULAR",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariocelular_edita",
+            "pname": "EDITA FUNCIONARIOCELULAR",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariotel_ver",
+            "pname": "VER FUNCIONARIOTEL",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariotel_edita",
+            "pname": "EDITA FUNCIONARIOTEL",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariodireccion_ver",
+            "pname": "VER FUNCIONARIODIRECCION",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariodireccion_edita",
+            "pname": "EDITA FUNCIONARIODIRECCION",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariopassword_ver",
+            "pname": "VER FUNCIONARIOPASSWORD",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_funcionariopassword_edita",
+            "pname": "EDITA FUNCIONARIOPASSWORD",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        },
+        {
+            "perm": "form_userprofile_btn_actualizar_userprofile",
+            "pname": "BTN_ACTUALIZAR_USERPROFILE",
+            "gname": "FORMULARIO USERPROFILE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_USERCREATE": [
+        {
+            "perm": "form_usercreate_ver",
+            "pname": "VER FORMULARIO USERCREATE",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarioci_ver",
+            "pname": "VER FUNCIONARIOCI",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarioci_edita",
+            "pname": "EDITA FUNCIONARIOCI",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarionombre_ver",
+            "pname": "VER FUNCIONARIONOMBRE",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarionombre_edita",
+            "pname": "EDITA FUNCIONARIONOMBRE",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarioapellido_ver",
+            "pname": "VER FUNCIONARIOAPELLIDO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarioapellido_edita",
+            "pname": "EDITA FUNCIONARIOAPELLIDO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariocorreo_ver",
+            "pname": "VER FUNCIONARIOCORREO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariocorreo_edita",
+            "pname": "EDITA FUNCIONARIOCORREO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariotel_ver",
+            "pname": "VER FUNCIONARIOTEL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariotel_edita",
+            "pname": "EDITA FUNCIONARIOTEL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariocelular_ver",
+            "pname": "VER FUNCIONARIOCELULAR",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariocelular_edita",
+            "pname": "EDITA FUNCIONARIOCELULAR",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariodireccion_ver",
+            "pname": "VER FUNCIONARIODIRECCION",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariodireccion_edita",
+            "pname": "EDITA FUNCIONARIODIRECCION",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_ciudad_ver",
+            "pname": "VER CIUDAD",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_ciudad_edita",
+            "pname": "EDITA CIUDAD",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_sucursal_ver",
+            "pname": "VER SUCURSAL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_sucursal_edita",
+            "pname": "EDITA SUCURSAL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_codoficina_ver",
+            "pname": "VER CODOFICINA",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_codoficina_edita",
+            "pname": "EDITA CODOFICINA",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_codigorol_ver",
+            "pname": "VER CODIGOROL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_codigorol_edita",
+            "pname": "EDITA CODIGOROL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_cargocodigo_ver",
+            "pname": "VER CARGOCODIGO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_cargocodigo_edita",
+            "pname": "EDITA CARGOCODIGO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_tipopanel_ver",
+            "pname": "VER TIPOPANEL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_tipopanel_edita",
+            "pname": "EDITA TIPOPANEL",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariopassword_ver",
+            "pname": "VER FUNCIONARIOPASSWORD",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionariopassword_edita",
+            "pname": "EDITA FUNCIONARIOPASSWORD",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarioestado_ver",
+            "pname": "VER FUNCIONARIOESTADO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_funcionarioestado_edita",
+            "pname": "EDITA FUNCIONARIOESTADO",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_inactive_screen_ver",
+            "pname": "VER INACTIVE_SCREEN",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_inactive_screen_edita",
+            "pname": "EDITA INACTIVE_SCREEN",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_password_timechange_ver",
+            "pname": "VER PASSWORD_TIMECHANGE",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_password_timechange_edita",
+            "pname": "EDITA PASSWORD_TIMECHANGE",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_first_login_ver",
+            "pname": "VER FIRST_LOGIN",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_usercreate_first_login_edita",
+            "pname": "EDITA FIRST_LOGIN",
+            "gname": "FORMULARIO USERCREATE",
+            "groups": []
+        },
+        {
+            "perm":"form_usercreate_btn_actualizar_usuario",
+            "pname":"BTN_ACTUALIZAR_USUARIO",
+            "gname":"FORMULARIO USERCREATE",
+            "groups":[]
+        },
+        {
+            "perm":"form_usercreate_btn_crear_usuario",
+            "pname":"BTN_CREAR_USUARIO",
+            "gname":"FORMULARIO USERCREATE",
+            "groups":[]
+
+        }
+    ],
+    "FORMULARIO_SEGMENTO": [
+        {
+            "perm": "form_segmento_segmento_ver",
+            "pname": "VER SEGMENTO",
+            "gname": "FORMULARIO SEGMENTO",
+            "groups": []
+        },
+        {
+            "perm": "form_segmento_segmento_edita",
+            "pname": "EDITA SEGMENTO",
+            "gname": "FORMULARIO SEGMENTO",
+            "groups": []
+        },
+        {
+            "perm": "form_segmento_btn_actualizar_segmento",
+            "pname": "BTN_ACTUALIZAR_SEGMENTO",
+            "gname": "FORMULARIO SEGMENTO",
+            "groups": []
+        },
+        {
+            "perm": "form_segmento_btn_crear_segmento",
+            "pname": "BTN_CREAR_SEGMENTO",
+            "gname": "FORMULARIO SEGMENTO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PORCENTAJEIVA": [
+        {
+            "perm": "form_porcentajeiva_descripcion_ver",
+            "pname": "VER DESCRIPCION",
+            "gname": "FORMULARIO PORCENTAJEIVA",
+            "groups": []
+        },
+        {
+            "perm": "form_porcentajeiva_descripcion_edita",
+            "pname": "EDITA DESCRIPCION",
+            "gname": "FORMULARIO PORCENTAJEIVA",
+            "groups": []
+        },
+        {
+            "perm": "form_porcentajeiva_porcentaje_ver",
+            "pname": "VER PORCENTAJE",
+            "gname": "FORMULARIO PORCENTAJEIVA",
+            "groups": []
+        },
+        {
+            "perm": "form_porcentajeiva_porcentaje_edita",
+            "pname": "EDITA PORCENTAJE",
+            "gname": "FORMULARIO PORCENTAJEIVA",
+            "groups": []
+        }
+    ],
+"FORMULARIO_OFICINAREMOTA": [
+        {
+            "perm": "form_oficinaremota_nomoficina_ver",
+            "pname": "VER NOMOFICINA",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_nomoficina_edita",
+            "pname": "EDITA NOMOFICINA",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_razon_social_ver",
+            "pname": "VER RAZON_SOCIAL",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_razon_social_edita",
+            "pname": "EDITA RAZON_SOCIAL",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_pais_ver",
+            "pname": "VER PAIS",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_pais_edita",
+            "pname": "EDITA PAIS",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_pais_icono_ver",
+            "pname": "VER PAIS_ICONO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_pais_icono_edita",
+            "pname": "EDITA PAIS_ICONO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_ciudad_ver",
+            "pname": "VER CIUDAD",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_ciudad_edita",
+            "pname": "EDITA CIUDAD",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_encargado_ver",
+            "pname": "VER ENCARGADO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_encargado_edita",
+            "pname": "EDITA ENCARGADO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_modalidad_ver",
+            "pname": "VER MODALIDAD",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_modalidad_edita",
+            "pname": "EDITA MODALIDAD",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_modalidad_icono_ver",
+            "pname": "VER MODALIDAD_ICONO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_modalidad_icono_edita",
+            "pname": "EDITA MODALIDAD_ICONO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_modalidad_imagen_ver",
+            "pname": "VER MODALIDAD_IMAGEN",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_modalidad_imagen_edita",
+            "pname": "EDITA MODALIDAD_IMAGEN",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_telefono_ver",
+            "pname": "VER TELEFONO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_telefono_edita",
+            "pname": "EDITA TELEFONO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_peso_minimo_ver",
+            "pname": "VER PESO_MINIMO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_peso_minimo_edita",
+            "pname": "EDITA PESO_MINIMO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_direccion_ver",
+            "pname": "VER DIRECCION",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_direccion_edita",
+            "pname": "EDITA DIRECCION",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_tere_paistrans_ver",
+            "pname": "VER TERE_PAISTRANS",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_tere_paistrans_edita",
+            "pname": "EDITA TERE_PAISTRANS",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_tere_paismedtrans_ver",
+            "pname": "VER TERE_PAISMEDTRANS",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_tere_paismedtrans_edita",
+            "pname": "EDITA TERE_PAISMEDTRANS",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_estado_ver",
+            "pname": "VER ESTADO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_estado_edita",
+            "pname": "EDITA ESTADO",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_colortxt_ver",
+            "pname": "VER COLORTXT",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_colortxt_edita",
+            "pname": "EDITA COLORTXT",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_colorbgnd_ver",
+            "pname": "VER COLORBGND",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        },
+        {
+            "perm": "form_oficinaremota_colorbgnd_edita",
+            "pname": "EDITA COLORBGND",
+            "gname": "FORMULARIO OFICINAREMOTA",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PRODUCTO": [
+        {
+            "perm": "form_producto_descripcion_ver",
+            "pname": "VER DESCRIPCION",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_descripcion_edita",
+            "pname": "EDITA DESCRIPCION",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_categoriaobj_id_ver",
+            "pname": "VER CATEGORIAOBJ_ID",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_categoriaobj_id_edita",
+            "pname": "EDITA CATEGORIAOBJ_ID",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_porcentaje_iva_id_ver",
+            "pname": "VER PORCENTAJE_IVA_ID",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_porcentaje_iva_id_edita",
+            "pname": "EDITA PORCENTAJE_IVA_ID",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_medidaobj_id_ver",
+            "pname": "VER MEDIDAOBJ_ID",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_medidaobj_id_edita",
+            "pname": "EDITA MEDIDAOBJ_ID",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_moneda_ver",
+            "pname": "VER MONEDA",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_moneda_edita",
+            "pname": "EDITA MONEDA",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_exenta_ver",
+            "pname": "VER EXENTA",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_exenta_edita",
+            "pname": "EDITA EXENTA",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_g5_ver",
+            "pname": "VER G5",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_g5_edita",
+            "pname": "EDITA G5",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_g10_ver",
+            "pname": "VER G10",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_g10_edita",
+            "pname": "EDITA G10",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_precio_ver",
+            "pname": "VER PRECIO",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        },
+        {
+            "perm": "form_producto_precio_edita",
+            "pname": "EDITA PRECIO",
+            "gname": "FORMULARIO PRODUCTO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_CATEGORIA": [
+        {
+            "perm": "form_categoria_categoria_ver",
+            "pname": "VER CATEGORIA",
+            "gname": "FORMULARIO CATEGORIA",
+            "groups": []
+        },
+        {
+            "perm": "form_categoria_categoria_edita",
+            "pname": "EDITA CATEGORIA",
+            "gname": "FORMULARIO CATEGORIA",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_MARCA": [
+        {
+            "perm": "form_marca_marca_ver",
+            "pname": "VER MARCA",
+            "gname": "FORMULARIO MARCA",
+            "groups": []
+        },
+        {
+            "perm": "form_marca_marca_edita",
+            "pname": "EDITA MARCA",
+            "gname": "FORMULARIO MARCA",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_MEDIDA": [
+        {
+            "perm": "form_medida_medida_cod_ver",
+            "pname": "VER MEDIDA_COD",
+            "gname": "FORMULARIO MEDIDA",
+            "groups": []
+        },
+        {
+            "perm": "form_medida_medida_cod_edita",
+            "pname": "EDITA MEDIDA_COD",
+            "gname": "FORMULARIO MEDIDA",
+            "groups": []
+        },
+        {
+            "perm": "form_medida_medida_ver",
+            "pname": "VER MEDIDA",
+            "gname": "FORMULARIO MEDIDA",
+            "groups": []
+        },
+        {
+            "perm": "form_medida_medida_edita",
+            "pname": "EDITA MEDIDA",
+            "gname": "FORMULARIO MEDIDA",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_SUCURSAL": [
+        {
+            "perm": "form_sucursal_nombre_ver",
+            "pname": "VER NOMBRE",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_nombre_edita",
+            "pname": "EDITA NOMBRE",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_codigoalfanumerico_ver",
+            "pname": "VER CODIGOALFANUMERICO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_codigoalfanumerico_edita",
+            "pname": "EDITA CODIGOALFANUMERICO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_nempresa_ver",
+            "pname": "VER NEMPRESA",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_nempresa_edita",
+            "pname": "EDITA NEMPRESA",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_ruc_ver",
+            "pname": "VER RUC",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_ruc_edita",
+            "pname": "EDITA RUC",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_abv_ver",
+            "pname": "VER ABV",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_abv_edita",
+            "pname": "EDITA ABV",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_website_ver",
+            "pname": "VER WEBSITE",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_website_edita",
+            "pname": "EDITA WEBSITE",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_pais_ver",
+            "pname": "VER PAIS",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_pais_edita",
+            "pname": "EDITA PAIS",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_ciudad_ver",
+            "pname": "VER CIUDAD",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_ciudad_edita",
+            "pname": "EDITA CIUDAD",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_encargado_ver",
+            "pname": "VER ENCARGADO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_encargado_edita",
+            "pname": "EDITA ENCARGADO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_nomencargado_ver",
+            "pname": "VER NOMENCARGADO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_nomencargado_edita",
+            "pname": "EDITA NOMENCARGADO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_telefono_ver",
+            "pname": "VER TELEFONO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_telefono_edita",
+            "pname": "EDITA TELEFONO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_email_ver",
+            "pname": "VER EMAIL",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_email_edita",
+            "pname": "EDITA EMAIL",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_direccion_ver",
+            "pname": "VER DIRECCION",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_direccion_edita",
+            "pname": "EDITA DIRECCION",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_colortxt_ver",
+            "pname": "VER COLORTXT",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_colortxt_edita",
+            "pname": "EDITA COLORTXT",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_colorbgnd_ver",
+            "pname": "VER COLORBGND",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_colorbgnd_edita",
+            "pname": "EDITA COLORBGND",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_foto_ver",
+            "pname": "VER FOTO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_foto_edita",
+            "pname": "EDITA FOTO",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_latitud_ver",
+            "pname": "VER LATITUD",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_latitud_edita",
+            "pname": "EDITA LATITUD",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_longitud_ver",
+            "pname": "VER LONGITUD",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        },
+        {
+            "perm": "form_sucursal_longitud_edita",
+            "pname": "EDITA LONGITUD",
+            "gname": "FORMULARIO SUCURSAL",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_WSTERECIAAEREA": [
+        {
+            "perm": "form_wstereciaaerea_code_ver",
+            "pname": "VER CODE",
+            "gname": "FORMULARIO WSTERECIAAEREA",
+            "groups": []
+        },
+        {
+            "perm": "form_wstereciaaerea_code_edita",
+            "pname": "EDITA CODE",
+            "gname": "FORMULARIO WSTERECIAAEREA",
+            "groups": []
+        },
+        {
+            "perm": "form_wstereciaaerea_description_ver",
+            "pname": "VER DESCRIPTION",
+            "gname": "FORMULARIO WSTERECIAAEREA",
+            "groups": []
+        },
+        {
+            "perm": "form_wstereciaaerea_description_edita",
+            "pname": "EDITA DESCRIPTION",
+            "gname": "FORMULARIO WSTERECIAAEREA",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_DELIVERYZONE": [
+        {
+            "perm": "form_deliveryzone_nombre_ver",
+            "pname": "VER NOMBRE",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_nombre_edita",
+            "pname": "EDITA NOMBRE",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_costo_ver",
+            "pname": "VER COSTO",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_costo_edita",
+            "pname": "EDITA COSTO",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_deliveryzonedetail_id_ver",
+            "pname": "VER DELIVERYZONEDETAIL_ID",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_deliveryzonedetail_id_edita",
+            "pname": "EDITA DELIVERYZONEDETAIL_ID",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_ciudad_ver",
+            "pname": "VER CIUDAD",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        },
+        {
+            "perm": "form_deliveryzone_ciudad_edita",
+            "pname": "EDITA CIUDAD",
+            "gname": "FORMULARIO DELIVERYZONE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PARTIDASARANCELARIAS": [
+        {
+            "perm": "form_partidasarancelarias_codigo_ver",
+            "pname": "VER CODIGO",
+            "gname": "FORMULARIO PARTIDASARANCELARIAS",
+            "groups": []
+        },
+        {
+            "perm": "form_partidasarancelarias_codigo_edita",
+            "pname": "EDITA CODIGO",
+            "gname": "FORMULARIO PARTIDASARANCELARIAS",
+            "groups": []
+        },
+        {
+            "perm": "form_partidasarancelarias_descripcion_ver",
+            "pname": "VER DESCRIPCION",
+            "gname": "FORMULARIO PARTIDASARANCELARIAS",
+            "groups": []
+        },
+        {
+            "perm": "form_partidasarancelarias_descripcion_edita",
+            "pname": "EDITA DESCRIPCION",
+            "gname": "FORMULARIO PARTIDASARANCELARIAS",
+            "groups": []
+        },
+        {
+            "perm": "form_partidasarancelarias_partida_ver",
+            "pname": "VER PARTIDA",
+            "gname": "FORMULARIO PARTIDASARANCELARIAS",
+            "groups": []
+        },
+        {
+            "perm": "form_partidasarancelarias_partida_edita",
+            "pname": "EDITA PARTIDA",
+            "gname": "FORMULARIO PARTIDASARANCELARIAS",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_ORDER": [
+        {
+            "perm": "form_order_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_forma_pago_ver",
+            "pname": "VER FORMA_PAGO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_forma_pago_edita",
+            "pname": "EDITA FORMA_PAGO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_modalidad_ver",
+            "pname": "VER MODALIDAD",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_modalidad_edita",
+            "pname": "EDITA MODALIDAD",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_tasa_cambio_ver",
+            "pname": "VER TASA_CAMBIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_tasa_cambio_edita",
+            "pname": "EDITA TASA_CAMBIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_feed_percentage_ver",
+            "pname": "VER FEED_PERCENTAGE",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_feed_percentage_edita",
+            "pname": "EDITA FEED_PERCENTAGE",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_moneda_ver",
+            "pname": "VER MONEDA",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_moneda_edita",
+            "pname": "EDITA MONEDA",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_orderdetail_id_ver",
+            "pname": "VER ORDERDETAIL_ID",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_orderdetail_id_edita",
+            "pname": "EDITA ORDERDETAIL_ID",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_paquetedescripcion_ver",
+            "pname": "VER PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_paquetedescripcion_edita",
+            "pname": "EDITA PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_paqueteremitente_ver",
+            "pname": "VER PAQUETEREMITENTE",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_paqueteremitente_edita",
+            "pname": "EDITA PAQUETEREMITENTE",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_link_producto_ver",
+            "pname": "VER LINK_PRODUCTO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_link_producto_edita",
+            "pname": "EDITA LINK_PRODUCTO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_paqueteprecio_ver",
+            "pname": "VER PAQUETEPRECIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_paqueteprecio_edita",
+            "pname": "EDITA PAQUETEPRECIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_observacion_ver",
+            "pname": "VER OBSERVACION",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_observacion_edita",
+            "pname": "EDITA OBSERVACION",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_procesado_usuario_ver",
+            "pname": "VER PROCESADO_USUARIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_procesado_usuario_edita",
+            "pname": "EDITA PROCESADO_USUARIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_cobrado_usuario_ver",
+            "pname": "VER COBRADO_USUARIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        },
+        {
+            "perm": "form_order_cobrado_usuario_edita",
+            "pname": "EDITA COBRADO_USUARIO",
+            "gname": "FORMULARIO ORDER",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_RECEPTIONFORM": [
+        {
+            "perm": "form_receptionform_paquetecodigo_ver",
+            "pname": "VER PAQUETECODIGO",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_paquetecodigo_edita",
+            "pname": "EDITA PAQUETECODIGO",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_embarquecodigo_ver",
+            "pname": "VER EMBARQUECODIGO",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_embarquecodigo_edita",
+            "pname": "EDITA EMBARQUECODIGO",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_paquetetracking_ver",
+            "pname": "VER PAQUETETRACKING",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_paquetetracking_edita",
+            "pname": "EDITA PAQUETETRACKING",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_estante_ver",
+            "pname": "VER ESTANTE",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_estante_edita",
+            "pname": "EDITA ESTANTE",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_fechallegada_ver",
+            "pname": "VER FECHALLEGADA",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_fechallegada_edita",
+            "pname": "EDITA FECHALLEGADA",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_client_suite_ver",
+            "pname": "VER CLIENT_SUITE",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_client_suite_edita",
+            "pname": "EDITA CLIENT_SUITE",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_sucursal_ver",
+            "pname": "VER SUCURSAL",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_sucursal_edita",
+            "pname": "EDITA SUCURSAL",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_cliente_ver",
+            "pname": "VER CLIENTE",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_cliente_edita",
+            "pname": "EDITA CLIENTE",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_paqueteobservacion_ver",
+            "pname": "VER PAQUETEOBSERVACION",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        },
+        {
+            "perm": "form_receptionform_paqueteobservacion_edita",
+            "pname": "EDITA PAQUETEOBSERVACION",
+            "gname": "FORMULARIO RECEPTIONFORM",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_EPRECIO": [
+        {
+            "perm": "form_eprecio_zona_ver",
+            "pname": "VER ZONA",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_zona_edita",
+            "pname": "EDITA ZONA",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_peso_a_ver",
+            "pname": "VER PESO_A",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_peso_a_edita",
+            "pname": "EDITA PESO_A",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_peso_b_ver",
+            "pname": "VER PESO_B",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_peso_b_edita",
+            "pname": "EDITA PESO_B",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_precio_ver",
+            "pname": "VER PRECIO",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_precio_edita",
+            "pname": "EDITA PRECIO",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_exenta_ver",
+            "pname": "VER EXENTA",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_exenta_edita",
+            "pname": "EDITA EXENTA",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_g5_ver",
+            "pname": "VER G5",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_g5_edita",
+            "pname": "EDITA G5",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_g10_ver",
+            "pname": "VER G10",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        },
+        {
+            "perm": "form_eprecio_g10_edita",
+            "pname": "EDITA G10",
+            "gname": "FORMULARIO EPRECIO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_ENVIO": [
+        {
+            "perm": "form_envio_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_peso_ver",
+            "pname": "VER PESO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_peso_edita",
+            "pname": "EDITA PESO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_zona_ver",
+            "pname": "VER ZONA",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_zona_edita",
+            "pname": "EDITA ZONA",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_largo_ver",
+            "pname": "VER LARGO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_largo_edita",
+            "pname": "EDITA LARGO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_alto_ver",
+            "pname": "VER ALTO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_alto_edita",
+            "pname": "EDITA ALTO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_ancho_ver",
+            "pname": "VER ANCHO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_ancho_edita",
+            "pname": "EDITA ANCHO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_peso_calculado_ver",
+            "pname": "VER PESO_CALCULADO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_peso_calculado_edita",
+            "pname": "EDITA PESO_CALCULADO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_ver",
+            "pname": "VER PRECIO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_edita",
+            "pname": "EDITA PRECIO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_peso_elegido_ver",
+            "pname": "VER PESO_ELEGIDO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_peso_elegido_edita",
+            "pname": "EDITA PESO_ELEGIDO",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_civa_ver",
+            "pname": "VER PRECIO_CIVA",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_civa_edita",
+            "pname": "EDITA PRECIO_CIVA",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_gs_ver",
+            "pname": "VER PRECIO_GS",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_gs_edita",
+            "pname": "EDITA PRECIO_GS",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_gs_civa_ver",
+            "pname": "VER PRECIO_GS_CIVA",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_precio_gs_civa_edita",
+            "pname": "EDITA PRECIO_GS_CIVA",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_paquetetracking_ver",
+            "pname": "VER PAQUETETRACKING",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_paquetetracking_edita",
+            "pname": "EDITA PAQUETETRACKING",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_paquetedescripcion_ver",
+            "pname": "VER PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_paquetedescripcion_edita",
+            "pname": "EDITA PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_archcomercial_full_ver",
+            "pname": "VER ARCHCOMERCIAL_FULL",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_archcomercial_full_edita",
+            "pname": "EDITA ARCHCOMERCIAL_FULL",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_deslinde_full_ver",
+            "pname": "VER DESLINDE_FULL",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        },
+        {
+            "perm": "form_envio_deslinde_full_edita",
+            "pname": "EDITA DESLINDE_FULL",
+            "gname": "FORMULARIO ENVIO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_RETENCIONCREATE": [
+        {
+            "perm": "form_retencioncreate_pdv_codigo_ver",
+            "pname": "VER PDV_CODIGO",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_codigo_edita",
+            "pname": "EDITA PDV_CODIGO",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_ruc_ver",
+            "pname": "VER PDV_RUC",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_ruc_edita",
+            "pname": "EDITA PDV_RUC",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_ruc_dv_ver",
+            "pname": "VER PDV_RUC_DV",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_ruc_dv_edita",
+            "pname": "EDITA PDV_RUC_DV",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_nombrefactura_ver",
+            "pname": "VER PDV_NOMBREFACTURA",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_pdv_nombrefactura_edita",
+            "pname": "EDITA PDV_NOMBREFACTURA",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_retencion_fecha_ver",
+            "pname": "VER RETENCION_FECHA",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_retencion_fecha_edita",
+            "pname": "EDITA RETENCION_FECHA",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_retencion_numero_ver",
+            "pname": "VER RETENCION_NUMERO",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_retencion_numero_edita",
+            "pname": "EDITA RETENCION_NUMERO",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_doc_loop_link_ver",
+            "pname": "VER DOC_LOOP_LINK",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_doc_loop_link_edita",
+            "pname": "EDITA DOC_LOOP_LINK",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_retencion_ver",
+            "pname": "VER RETENCION",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_retencioncreate_retencion_edita",
+            "pname": "EDITA RETENCION",
+            "gname": "FORMULARIO RETENCIONCREATE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_DOCUMENTHEADERCREATE": [
+        {
+            "perm": "form_documentheadercreate_pdv_codigo_ver",
+            "pname": "VER PDV_CODIGO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_codigo_edita",
+            "pname": "EDITA PDV_CODIGO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_ruc_ver",
+            "pname": "VER PDV_RUC",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_ruc_edita",
+            "pname": "EDITA PDV_RUC",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_ruc_dv_ver",
+            "pname": "VER PDV_RUC_DV",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_ruc_dv_edita",
+            "pname": "EDITA PDV_RUC_DV",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_email_ver",
+            "pname": "VER PDV_EMAIL",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_email_edita",
+            "pname": "EDITA PDV_EMAIL",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_direccion_entrega_ver",
+            "pname": "VER PDV_DIRECCION_ENTREGA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_direccion_entrega_edita",
+            "pname": "EDITA PDV_DIRECCION_ENTREGA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_nombrefactura_ver",
+            "pname": "VER PDV_NOMBREFACTURA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_pdv_nombrefactura_edita",
+            "pname": "EDITA PDV_NOMBREFACTURA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_cre_tipo_cod_ver",
+            "pname": "VER DOC_CRE_TIPO_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_cre_tipo_cod_edita",
+            "pname": "EDITA DOC_CRE_TIPO_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_moneda_ver",
+            "pname": "VER DOC_MONEDA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_moneda_edita",
+            "pname": "EDITA DOC_MONEDA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_fecha_ver",
+            "pname": "VER DOC_FECHA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_fecha_edita",
+            "pname": "EDITA DOC_FECHA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_tipo_ver",
+            "pname": "VER DOC_TIPO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_tipo_edita",
+            "pname": "EDITA DOC_TIPO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_numero_ver",
+            "pname": "VER DOC_NUMERO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_numero_edita",
+            "pname": "EDITA DOC_NUMERO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_vencimiento_ver",
+            "pname": "VER DOC_VENCIMIENTO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_vencimiento_edita",
+            "pname": "EDITA DOC_VENCIMIENTO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_tasa_cambio_ver",
+            "pname": "VER TASA_CAMBIO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_tasa_cambio_edita",
+            "pname": "EDITA TASA_CAMBIO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_relacion_cdc_ver",
+            "pname": "VER DOC_RELACION_CDC",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_relacion_cdc_edita",
+            "pname": "EDITA DOC_RELACION_CDC",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_motivo_ver",
+            "pname": "VER DOC_MOTIVO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_doc_motivo_edita",
+            "pname": "EDITA DOC_MOTIVO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_vendedor_cod_ver",
+            "pname": "VER AF_VENDEDOR_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_vendedor_cod_edita",
+            "pname": "EDITA AF_VENDEDOR_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_tdoc_cod_ver",
+            "pname": "VER AF_TDOC_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_tdoc_cod_edita",
+            "pname": "EDITA AF_TDOC_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_doc_id_ver",
+            "pname": "VER AF_DOC_ID",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_doc_id_edita",
+            "pname": "EDITA AF_DOC_ID",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_nombrefantasia_ver",
+            "pname": "VER AF_NOMBREFANTASIA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_nombrefantasia_edita",
+            "pname": "EDITA AF_NOMBREFANTASIA",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_direccion_ver",
+            "pname": "VER AF_DIRECCION",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_direccion_edita",
+            "pname": "EDITA AF_DIRECCION",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_dpto_cod_ver",
+            "pname": "VER AF_DPTO_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_dpto_cod_edita",
+            "pname": "EDITA AF_DPTO_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_distrito_cod_ver",
+            "pname": "VER AF_DISTRITO_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_distrito_cod_edita",
+            "pname": "EDITA AF_DISTRITO_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_ciudad_cod_ver",
+            "pname": "VER AF_CIUDAD_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_af_ciudad_cod_edita",
+            "pname": "EDITA AF_CIUDAD_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_documentdetail_id_ver",
+            "pname": "VER DOCUMENTDETAIL_ID",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_documentdetail_id_edita",
+            "pname": "EDITA DOCUMENTDETAIL_ID",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_prod_cod_ver",
+            "pname": "VER PROD_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_prod_cod_edita",
+            "pname": "EDITA PROD_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_prod_cod_ver",
+            "pname": "VER PROD_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_prod_cod_edita",
+            "pname": "EDITA PROD_COD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_precio_unitario_ver",
+            "pname": "VER PRECIO_UNITARIO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_precio_unitario_edita",
+            "pname": "EDITA PRECIO_UNITARIO",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_cantidad_ver",
+            "pname": "VER CANTIDAD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_cantidad_edita",
+            "pname": "EDITA CANTIDAD",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_d_total_ver",
+            "pname": "VER D_TOTAL",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_d_total_edita",
+            "pname": "EDITA D_TOTAL",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_observacion_ver",
+            "pname": "VER OBSERVACION",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_documentheadercreate_observacion_edita",
+            "pname": "EDITA OBSERVACION",
+            "gname": "FORMULARIO DOCUMENTHEADERCREATE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_POS": [
+        {
+            "perm": "form_pos_nombre_ver",
+            "pname": "VER NOMBRE",
+            "gname": "FORMULARIO POS",
+            "groups": []
+        },
+        {
+            "perm": "form_pos_nombre_edita",
+            "pname": "EDITA NOMBRE",
+            "gname": "FORMULARIO POS",
+            "groups": []
+        },
+        {
+            "perm": "form_pos_ip_address_ver",
+            "pname": "VER IP_ADDRESS",
+            "gname": "FORMULARIO POS",
+            "groups": []
+        },
+        {
+            "perm": "form_pos_ip_address_edita",
+            "pname": "EDITA IP_ADDRESS",
+            "gname": "FORMULARIO POS",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_CLIENTECATEGORIAUPDATE": [
+        {
+            "perm": "form_clientecategoriaupdate_categoriaobj_id_ver",
+            "pname": "VER CATEGORIAOBJ_ID",
+            "gname": "FORMULARIO CLIENTECATEGORIAUPDATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriaupdate_categoriaobj_id_edita",
+            "pname": "EDITA CATEGORIAOBJ_ID",
+            "gname": "FORMULARIO CLIENTECATEGORIAUPDATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriaupdate_tarifa_ver",
+            "pname": "VER TARIFA",
+            "gname": "FORMULARIO CLIENTECATEGORIAUPDATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriaupdate_tarifa_edita",
+            "pname": "EDITA TARIFA",
+            "gname": "FORMULARIO CLIENTECATEGORIAUPDATE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_CLIENTECATEGORIACREATE": [
+        {
+            "perm": "form_clientecategoriacreate_categoriaobj_id_ver",
+            "pname": "VER CATEGORIAOBJ_ID",
+            "gname": "FORMULARIO CLIENTECATEGORIACREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriacreate_categoriaobj_id_edita",
+            "pname": "EDITA CATEGORIAOBJ_ID",
+            "gname": "FORMULARIO CLIENTECATEGORIACREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriacreate_ofremotaobj_id_ver",
+            "pname": "VER OFREMOTAOBJ_ID",
+            "gname": "FORMULARIO CLIENTECATEGORIACREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriacreate_ofremotaobj_id_edita",
+            "pname": "EDITA OFREMOTAOBJ_ID",
+            "gname": "FORMULARIO CLIENTECATEGORIACREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriacreate_tarifa_ver",
+            "pname": "VER TARIFA",
+            "gname": "FORMULARIO CLIENTECATEGORIACREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_clientecategoriacreate_tarifa_edita",
+            "pname": "EDITA TARIFA",
+            "gname": "FORMULARIO CLIENTECATEGORIACREATE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_VALIDARCLIENTE": [
+        {
+            "perm": "form_validarcliente_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_ruc_ver",
+            "pname": "VER RUC",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_ruc_edita",
+            "pname": "EDITA RUC",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_dv_ver",
+            "pname": "VER DV",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_dv_edita",
+            "pname": "EDITA DV",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_nombrefactura_ver",
+            "pname": "VER NOMBREFACTURA",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_nombrefactura_edita",
+            "pname": "EDITA NOMBREFACTURA",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_forma_pago_ver",
+            "pname": "VER FORMA_PAGO",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_forma_pago_edita",
+            "pname": "EDITA FORMA_PAGO",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_telefono_ver",
+            "pname": "VER TELEFONO",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_telefono_edita",
+            "pname": "EDITA TELEFONO",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_email_ver",
+            "pname": "VER EMAIL",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_email_edita",
+            "pname": "EDITA EMAIL",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_ciudad_cod_ver",
+            "pname": "VER CIUDAD_COD",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_ciudad_cod_edita",
+            "pname": "EDITA CIUDAD_COD",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_direccion_ver",
+            "pname": "VER DIRECCION",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_direccion_edita",
+            "pname": "EDITA DIRECCION",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_numero_casa_ver",
+            "pname": "VER NUMERO_CASA",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        },
+        {
+            "perm": "form_validarcliente_numero_casa_edita",
+            "pname": "EDITA NUMERO_CASA",
+            "gname": "FORMULARIO VALIDARCLIENTE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PAQUETERETENIDOCREATE": [
+        {
+            "perm": "form_paqueteretenidocreate_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_motivo_ver",
+            "pname": "VER MOTIVO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_motivo_edita",
+            "pname": "EDITA MOTIVO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_estante_ver",
+            "pname": "VER ESTANTE",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_estante_edita",
+            "pname": "EDITA ESTANTE",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetetracking_ver",
+            "pname": "VER PAQUETETRACKING",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetetracking_edita",
+            "pname": "EDITA PAQUETETRACKING",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetedescripcion_ver",
+            "pname": "VER PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetedescripcion_edita",
+            "pname": "EDITA PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetefoto_ver",
+            "pname": "VER PAQUETEFOTO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetefoto_edita",
+            "pname": "EDITA PAQUETEFOTO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetepeso_ver",
+            "pname": "VER PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetepeso_edita",
+            "pname": "EDITA PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetelargo_ver",
+            "pname": "VER PAQUETELARGO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetelargo_edita",
+            "pname": "EDITA PAQUETELARGO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetealto_ver",
+            "pname": "VER PAQUETEALTO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetealto_edita",
+            "pname": "EDITA PAQUETEALTO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paqueteancho_ver",
+            "pname": "VER PAQUETEANCHO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paqueteancho_edita",
+            "pname": "EDITA PAQUETEANCHO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetevolumen_ver",
+            "pname": "VER PAQUETEVOLUMEN",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paquetevolumen_edita",
+            "pname": "EDITA PAQUETEVOLUMEN",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paqueteremitente_ver",
+            "pname": "VER PAQUETEREMITENTE",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paqueteremitente_edita",
+            "pname": "EDITA PAQUETEREMITENTE",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paqueteobservacion_ver",
+            "pname": "VER PAQUETEOBSERVACION",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_paqueteobservacion_edita",
+            "pname": "EDITA PAQUETEOBSERVACION",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_resuelto_ver",
+            "pname": "VER RESUELTO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paqueteretenidocreate_resuelto_edita",
+            "pname": "EDITA RESUELTO",
+            "gname": "FORMULARIO PAQUETERETENIDOCREATE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PAQUETEDESCONOCIDOCREATE": [
+        {
+            "perm": "form_paquetedesconocidocreate_codoficina_ver",
+            "pname": "VER CODOFICINA",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_codoficina_edita",
+            "pname": "EDITA CODOFICINA",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_embarque_ver",
+            "pname": "VER EMBARQUE",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_embarque_edita",
+            "pname": "EDITA EMBARQUE",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_estante_ver",
+            "pname": "VER ESTANTE",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_estante_edita",
+            "pname": "EDITA ESTANTE",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetetracking_ver",
+            "pname": "VER PAQUETETRACKING",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetetracking_edita",
+            "pname": "EDITA PAQUETETRACKING",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetedescripcion_ver",
+            "pname": "VER PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetedescripcion_edita",
+            "pname": "EDITA PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetefoto_ver",
+            "pname": "VER PAQUETEFOTO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetefoto_edita",
+            "pname": "EDITA PAQUETEFOTO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paqueteremitente_ver",
+            "pname": "VER PAQUETEREMITENTE",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paqueteremitente_edita",
+            "pname": "EDITA PAQUETEREMITENTE",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetepeso_ver",
+            "pname": "VER PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetepeso_edita",
+            "pname": "EDITA PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetelargo_ver",
+            "pname": "VER PAQUETELARGO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetelargo_edita",
+            "pname": "EDITA PAQUETELARGO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetealto_ver",
+            "pname": "VER PAQUETEALTO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetealto_edita",
+            "pname": "EDITA PAQUETEALTO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paqueteancho_ver",
+            "pname": "VER PAQUETEANCHO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paqueteancho_edita",
+            "pname": "EDITA PAQUETEANCHO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetevolumen_ver",
+            "pname": "VER PAQUETEVOLUMEN",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paquetevolumen_edita",
+            "pname": "EDITA PAQUETEVOLUMEN",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paqueteobservacion_ver",
+            "pname": "VER PAQUETEOBSERVACION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_paqueteobservacion_edita",
+            "pname": "EDITA PAQUETEOBSERVACION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_resuelto_ver",
+            "pname": "VER RESUELTO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidocreate_resuelto_edita",
+            "pname": "EDITA RESUELTO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOCREATE",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PAQUETEDESCONOCIDOSEARCH": [
+        {
+            "perm": "form_paquetedesconocidosearch_cargado_fecha_ver",
+            "pname": "VER CARGADO_FECHA",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_cargado_fecha_edita",
+            "pname": "EDITA CARGADO_FECHA",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_cargado_fecha_ver",
+            "pname": "VER CARGADO_FECHA",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_cargado_fecha_edita",
+            "pname": "EDITA CARGADO_FECHA",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paquetedescripcion_ver",
+            "pname": "VER PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paquetedescripcion_edita",
+            "pname": "EDITA PAQUETEDESCRIPCION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paquetepeso_ver",
+            "pname": "VER PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paquetepeso_edita",
+            "pname": "EDITA PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paquetepeso_ver",
+            "pname": "VER PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paquetepeso_edita",
+            "pname": "EDITA PAQUETEPESO",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paqueteobservacion_ver",
+            "pname": "VER PAQUETEOBSERVACION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedesconocidosearch_paqueteobservacion_edita",
+            "pname": "EDITA PAQUETEOBSERVACION",
+            "gname": "FORMULARIO PAQUETEDESCONOCIDOSEARCH",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_MOTIVOPAQUETERETENIDO": [
+        {
+            "perm": "form_motivopaqueteretenido_motivo_ver",
+            "pname": "VER MOTIVO",
+            "gname": "FORMULARIO MOTIVOPAQUETERETENIDO",
+            "groups": []
+        },
+        {
+            "perm": "form_motivopaqueteretenido_motivo_edita",
+            "pname": "EDITA MOTIVO",
+            "gname": "FORMULARIO MOTIVOPAQUETERETENIDO",
+            "groups": []
+        },
+        {
+            "perm": "form_motivopaqueteretenido_tipo_retencion_ver",
+            "pname": "VER TIPO_RETENCION",
+            "gname": "FORMULARIO MOTIVOPAQUETERETENIDO",
+            "groups": []
+        },
+        {
+            "perm": "form_motivopaqueteretenido_tipo_retencion_edita",
+            "pname": "EDITA TIPO_RETENCION",
+            "gname": "FORMULARIO MOTIVOPAQUETERETENIDO",
+            "groups": []
+        }
+    ],
+    "FORMULARIO_PAQUETEDEPOSITODETAIL": [
+        {
+            "perm": "form_paquetedepositodetail_clientecodigo_ver",
+            "pname": "VER CLIENTECODIGO",
+            "gname": "FORMULARIO PAQUETEDEPOSITODETAIL",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedepositodetail_clientecodigo_edita",
+            "pname": "EDITA CLIENTECODIGO",
+            "gname": "FORMULARIO PAQUETEDEPOSITODETAIL",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedepositodetail_estante_actual_ver",
+            "pname": "VER ESTANTE_ACTUAL",
+            "gname": "FORMULARIO PAQUETEDEPOSITODETAIL",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedepositodetail_estante_actual_edita",
+            "pname": "EDITA ESTANTE_ACTUAL",
+            "gname": "FORMULARIO PAQUETEDEPOSITODETAIL",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedepositodetail_estante_ver",
+            "pname": "VER ESTANTE",
+            "gname": "FORMULARIO PAQUETEDEPOSITODETAIL",
+            "groups": []
+        },
+        {
+            "perm": "form_paquetedepositodetail_estante_edita",
+            "pname": "EDITA ESTANTE",
+            "gname": "FORMULARIO PAQUETEDEPOSITODETAIL",
+            "groups": []
+        }
+    ]
+}

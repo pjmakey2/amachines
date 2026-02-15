@@ -1,0 +1,42 @@
+<h2 class="text text-left">Permisos del sistema</h2>
+<div id="permission_table_container"></div>
+<script type="text/javascript">
+    Grid.datatables_wrapper({
+        url_exec: '{% url "iom" %}',
+        url_tmpl: '{% url "dtmpl" %}',
+        crud_tmpl: 'OptsIO/PermissionCreateUi.html',
+        title: 'Crear permisos',
+        tselector: 'permission_table_container',
+        app_name: 'auth',
+        model_name: 'Permission',
+        model_pk: 'id',
+        record_delete: true,
+        state_field: {},
+        dbcon: 'default',
+        cls_table: 'table table-sm gs-2',
+        t_fsize: '14px',
+        always_initquery: false,
+        mquery: [
+            {'field': 'content_type__model', value: 'sysparams'},
+            {'field': 'nor_codename', value: 'add_sysparams'},
+            {'field': 'nor_codename', value: 'change_sysparams'},
+            {'field': 'nor_codename', value: 'delete_sysparams'},
+            {'field': 'nor_codename', value: 'view_sysparams'},
+        ],
+        t_opts: {
+            select: { style: 'single' }
+        },
+        crud_btns: {
+            create: {btn: true, event: true, label: 'Crear'},
+            update: {btn: false, event: false, label: 'Modificar'},
+            delete: {btn: true, event: true, label: 'Borrar'},
+        },
+        order: [[0, 'asc']],
+        columns: [
+            { fdis: true, gre: true, btyp:'fdb', idx: 'codename', tit: 'Permiso', dtyp: 'str'},
+            { fdis: true, gre: true, btyp:'fdb', idx: 'name', tit: 'Modulo', dtyp: 'str' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'content_type__model', tit: 'Modelo', dtyp: 'str'},
+            
+        ],
+    })
+</script>

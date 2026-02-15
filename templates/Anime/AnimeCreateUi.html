@@ -1,0 +1,175 @@
+<div class="ui_anime">
+    <form id="form_anime_{{ rr }}" class="form_anime">
+        <input type="hidden" 
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>Titulo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input 
+                        type="text" 
+                        name="title" 
+                        class="form-control" 
+                        placeholder="Titulo del anime"
+                        {% if mobj %} value="{{ mobj.title }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Genero</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input 
+                        type="text" 
+                        name="genre" 
+                        class="form-control" 
+                        placeholder="Genero del anime"
+                        {% if mobj %} value="{{ mobj.genre }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Fecha de lanzamiento</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input 
+                        type="date" 
+                        name="release_date" 
+                        class="form-control" 
+                        placeholder="Fecha de lanzamiento"
+                        {% if mobj %} value="{{ mobj.release_date|date:'Y-m-d' }}" {% endif %}
+                        />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Calificación</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input 
+                        type="text" 
+                        name="rating" 
+                        class="form-control" 
+                        placeholder="Calificación del anime"
+                        {% if mobj %} value="{{ mobj.rating }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+
+            
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Anime {{ mobj.pk }}{% else %}Crear Anime{% endif %}`;
+
+    save_anime = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Anime');
+        fdata.append('model_name', 'Anime');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_anime_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        seldis = [] //  select2 Fields
+        seldis.forEach((idx) => {
+            vv = $(`#form_anime_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        //edata['tere_fecarribo'] = edata['fechallegada']
+        //uc_fields is the json representation of the fields to create/update
+        log.info(`#form_anime_{{ rr }}edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        //methods to be called after create/update
+        log.info(`#form_anime_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        //the main action that will be performed the creation or the update of the record
+        log.info(`#form_anime_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([
+            //Actually just one method is used for creation and update at the same time
+            //The method should now when to perform creation or update based on the presence of pk in uc_fields
+            {
+                'module': 'Anime',
+                'package': 'mng_anime',
+                'attr': 'MAnime',
+                'mname': 'create_anime',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        //Methods to be called after the main action
+        log.info(`#form_anime_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_anime_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_anime_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_anime_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}', 
+            fdata, 
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_anime_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_anime_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_anime_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_anime_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_anime_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_anime_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_anime_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_anime_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_anime_{{ rr }} Submitting form`);
+        save_anime(event.target);
+    })
+
+
+</script>

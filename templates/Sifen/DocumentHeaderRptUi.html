@@ -1,0 +1,177 @@
+{% load static humanize io_tags %}
+<style>
+    #documentheader_{{ mobj.pk }} {
+        font-family: "Open Sans", serif;
+        font-size: 13px;
+        font-optical-sizing: auto;
+        font-weight: <weight>;
+        font-style: normal;
+        font-variation-settings:"wdth" 100;
+    }
+    {{ modal_selector }} .modal-header {
+        padding: unset !important;
+    }
+    {{ modal_selector }} .modal-body {
+        padding: unset !important;
+    }
+</style>
+{% if from_consultar_documentheader %}
+    <link href="{% static 'amui/amrpt.css' %}?{{ rr }}" rel="stylesheet" type="text/css" />
+    {% business_css_by_ruc mobj.ek_bs_ruc as custom_css_url %}
+    {% if custom_css_url %}
+    <link href="{{ custom_css_url }}?{{ rr }}" rel="stylesheet" type="text/css" />
+    {% endif %}
+{% else %}
+    {# Para PDF: inyectar CSS del negocio inline para que sobrescriba los estilos base #}
+    {% business_css_inline_by_ruc mobj.ek_bs_ruc %}
+{% endif %}
+<div class="">
+    <div class="" id="documentheader_{{ mobj.pk }}">
+        <!-- begin::Body-->
+        <div class="">
+            <!-- begin::Wrapper-->
+            <div>
+                <!-- begin::Header-->
+                {% include "HeaderDocumentRptUi.html"%}
+                <!--end::Header-->
+                <!--begin::Body-->
+                
+                <div class="mt-2">
+                    <!--begin::Wrapper-->
+                    {% if mobj.doc_tipo == "FE" %}
+                        {% include "Sifen/FeHeaderDocumentRptUi.html" %}
+                    {% endif %}
+                    {% if mobj.doc_tipo == "AF" %}
+                        {% include "Sifen/AfHeaderDocumentRptUi.html" %}
+                    {% endif %}
+                    {% if mobj.doc_tipo == "NC" %}
+                        {% include "Sifen/NcHeaderDocumentRptUi.html" %}
+                    {% endif %}                    
+                    <!--end::Wrapper-->
+                    
+                    <div class="mt-3 am-transac-tlabel">Valor venta</div>
+                    <table class="am-transac-table mt-1">
+                        <thead class="am-transac-thead">
+                            <tr>
+                                <th style="width: 70px;">Cod</th>
+                                <th style="width: 850px">Descripción</th>
+                                <th style="width: 120px">Medida</th>
+                                <th style="width: 100px">Cant.</th>
+                                <th style="width: 130px">P. Unitario</th>
+                                <th style="width: 130px">Descuento</th>
+                                <th style="width: 130px">Exentas</th>
+                                <th style="width: 130px">%5</th>
+                                <th style="width: 130px">10%</th>
+                            </tr>
+                        </thead>
+                        <tbody class="am-transac-body">
+                            {% for deobj in mobj.get_documentdetail %}
+                                <tr>
+                                    <td style="text-align: center;">{{ deobj.prod_cod }}</td>
+                                    <td style="text-align: left;">{{ deobj.prod_descripcion }}</td>
+                                    <td  style="text-align: center;">{{ deobj.prod_unidad_medida_desc }}</td>
+                                    <td  style="text-align: center;">{{ deobj.get_cantidad }}</td>
+                                    {% if mobj.doc_moneda == "USD" %}
+                                        <td  style="text-align: center;">{{ deobj.precio_unitario|floatformat:"2"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.descuento|floatformat:"2"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.exenta|floatformat:"2"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.gravada_5|floatformat:"2"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.gravada_10|floatformat:"2"|intcomma }}</td>
+                                    {% else %}
+                                        <td  style="text-align: center;">{{ deobj.precio_unitario|floatformat:"0"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.descuento|floatformat:"0"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.exenta|floatformat:"0"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.gravada_5|floatformat:"0"|intcomma }}</td>
+                                        <td  style="text-align: center;">{{ deobj.gravada_10|floatformat:"0"|intcomma }}</td>
+                                    {% endif %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="am-transac-tfoot">
+                            <tr>
+                                <td colspan="5" class="am-transac-total-text" style="text-align: left;">SUBTOTAL:</td>
+                                {% if mobj.doc_moneda == "USD" %}
+                                    <td  style="text-align: center;">{{ mobj.doc_descuento|floatformat:"2"|intcomma }}</td>
+                                    <td  style="text-align: center;">{{ mobj.get_total_exenta|floatformat:"2"|intcomma }}</td>
+                                    <td  style="text-align: center;">{{ mobj.get_total_gravada_5|floatformat:"2"|intcomma }}</td>
+                                    <td  style="text-align: center;">{{ mobj.get_total_gravada_10|floatformat:"2"|intcomma }}</td>
+                                {% else %}
+                                    <td  style="text-align: center;">{{ mobj.doc_descuento|floatformat:"0"|intcomma }}</td>
+                                    <td  style="text-align: center;">{{ mobj.get_total_exenta|floatformat:"0"|intcomma }}</td>
+                                    <td  style="text-align: center;">{{ mobj.get_total_gravada_5|floatformat:"0"|intcomma }}</td>
+                                    <td  style="text-align: center;">{{ mobj.get_total_gravada_10|floatformat:"0"|intcomma }}</td>
+                                {% endif %}
+                            </tr>
+                            {% if mobj.doc_descuento_global and mobj.doc_descuento_global > 0 %}
+                            <tr>
+                                <td colspan="5" class="am-transac-total-text" style="text-align: left;">DESCUENTO GLOBAL:</td>
+                                {% if mobj.doc_moneda == "USD" %}
+                                    <td  style="text-align: center;">{{ mobj.doc_descuento_global|floatformat:"2"|intcomma }}</td>
+                                {% else %}
+                                    <td  style="text-align: center;">{{ mobj.doc_descuento_global|floatformat:"0"|intcomma }}</td>
+                                {% endif %}
+                                <td colspan="3"></td>
+                            </tr>
+                            {% endif %}
+                                <td colspan="8" class="am-transac-total-text" style="text-align: left;">TOTAL DE LA OPERACIÓN:</td>
+                                {% if mobj.doc_moneda == "USD" %}
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_total_venta|floatformat:"2"|intcomma }}</td>
+                                {% else %}
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_total_venta|floatformat:"0"|intcomma }}</td>
+                                {% endif %}
+                            </tr>
+                            <tr>
+                                <td colspan="8" class="am-transac-total-text" style="text-align: left;background-color: #dedede;">TOTAL EN GUARANIES:</td>
+                                <td class="am-transac-total-op"  style="text-align: center;background-color: #dedede;">{{ mobj.get_total_venta_gs|floatformat:"0"|intcomma }}</td>
+                            </tr>
+
+                            <tr>
+                                    <td colspan="2" class="am-transac-total-text" style="text-align: left;">LIQUIDACION IVA:</td>
+                                {% if mobj.doc_moneda == "USD" %}
+                                    <td class="am-transac-total-op"  style="text-align: center;">(%5)</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_ivas_5_master|floatformat:"2"|intcomma }}</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">(%10)</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_ivas_10_master|floatformat:"2"|intcomma }}</td>
+                                    <td colspan="2" class="am-transac-total-op"  style="text-align: left; padding-left: 13px;">TOTAL IVA</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_ivas_master|floatformat:"2"|intcomma }}</td>
+                                {% else %}
+                                    <td class="am-transac-total-op"  style="text-align: center;">(%5)</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_ivas_5_master|floatformat:"0"|intcomma }}</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">(%10)</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_ivas_10_master|floatformat:"0"|intcomma }}</td>
+                                    <td colspan="2" class="am-transac-total-op"  style="text-align: left; padding-left: 13px;">TOTAL IVA</td>
+                                    <td class="am-transac-total-op"  style="text-align: center;">{{ mobj.get_ivas_master|floatformat:"0"|intcomma }}</td>
+                                {% endif %}
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="am-transac-total-text" style="text-align: left;">TOTAL A PAGAR:</td>
+                                <td colspan="8"  style="text-align: left;">{{ mobj.get_total_ventaword }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <!--end::Body-->
+            </div>
+            <div class="am-foot-transac">
+                <div class="am-foot-transac-left">
+                        {% if mobj.ek_qr_img %}
+                            <img style="height:150px;width:150px;" src="file://{{ mobj.ek_qr_img.path }}">
+                        {% endif %}
+                </div>
+                <div class="am-foot-transac-right">
+                    <p>Consulte la validez de esta Factura Electrónica con el número de CDC impreso abajo en:</p>
+                    <p>https://ekuatia.set.gov.py/consultas</p>
+                    {% if mobj.ek_cdc %}
+                        <p style="font-weight:bold; font-size: 12px;">CDC: {{ mobj.ek_cdc }}</p>
+                    {% endif %}
+                    <p>ESTE DOCUMENTO ES UNA REPRESENTACIÓN GRÁFICA DE UN DOCUMENTO ELECTRÓNICO (XML)</p>
+                    <p>Si su documento electrónico presenta algún error, podrá solicitar la modificación dentro de las 72 horas.</p>
+                </div>
+            </div>
+            <!-- end::Wrapper-->
+             
+        </div>
+        <!-- end::Body-->
+         
+    </div>
+</div>

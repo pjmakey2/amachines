@@ -1,0 +1,122 @@
+<div class="ui_actividadeconomica">
+    <form id="form_actividadeconomica_{{ rr }}" class="form_actividadeconomica">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-6">
+                <label>Código Actividad</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="codigo_actividad"
+                        class="form-control"
+                        placeholder="Código"
+                        {% if mobj %} value="{{ mobj.codigo_actividad }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Nombre Actividad</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="nombre_actividad"
+                        class="form-control"
+                        placeholder="Nombre"
+                        {% if mobj %} value="{{ mobj.nombre_actividad }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Actividad Económica {{ mobj.pk }}{% else %}Crear Actividad Económica{% endif %}`;
+
+    save_actividadeconomica = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'ActividadEconomica');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_actividadeconomica_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        log.info(`#form_actividadeconomica_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_actividadeconomica_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_actividadeconomica_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([]))
+        log.info(`#form_actividadeconomica_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_actividadeconomica_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_actividadeconomica_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_actividadeconomica_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_actividadeconomica_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_actividadeconomica_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_actividadeconomica_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_actividadeconomica_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_actividadeconomica_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_actividadeconomica_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_actividadeconomica_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_actividadeconomica_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_actividadeconomica_{{ rr }} Submitting form`);
+        save_actividadeconomica(event.target);
+    })
+
+</script>

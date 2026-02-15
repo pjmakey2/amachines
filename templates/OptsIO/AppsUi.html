@@ -1,0 +1,286 @@
+<div class="apps_ui_container container-fluid">
+    <div class="apps_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_apps" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_apps" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_apps" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_apps_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    apps_home_be = function (data, settings) {
+        tt = qelem(`#table_apps_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`apps_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_apps = `dtable_${OptsIO.s4generate()}`;
+    dt_apps_pc = Grid.datatables_wrapper({
+          t_guid: t_apps,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Apps',
+          tselector: 'table_apps_ui',
+          app_name: 'OptsIO',
+          model_name: 'Apps',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: apps_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-apps-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'prioridad',
+                 tit: 'Prioridad',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'menu',
+                 tit: 'Menú',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'menu_icon',
+                 tit: 'Icono Menú',
+                 cls: 'align-center',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `<i class="${data || 'mdi mdi-folder-outline'}" style="font-size: 1.3rem;"></i>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'app_name',
+                 tit: 'App Name',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'friendly_name',
+                 tit: 'Nombre',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'icon',
+                 tit: 'Icono App',
+                 cls: 'align-center',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `<i class="${data || 'mdi mdi-help'}" style="font-size: 1.3rem;"></i>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'url',
+                 tit: 'URL',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'background',
+                 tit: 'Color',
+                 cls: 'align-center',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `<div style="width: 40px; height: 25px; background-color: ${data}; border: 1px solid #ccc; border-radius: 3px; display: inline-block;"></div>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'version',
+                 tit: 'Versión',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'active',
+                 tit: 'Activo',
+                 cls: 'align-center',
+                 dtyp: 'bool',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? 'Sí' : 'No';
+                 }
+              },
+          ]
+      })
+
+    $(`#${t_apps} tbody`).on('click', '.tr-apps-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_apps}`).DataTable().row( elerow ).data()
+        apps_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_apps').addEventListener('click', function() {
+          apps_form_crud();
+      });
+
+    qelem('#btn_borrar_apps').addEventListener('click', function() {
+        let table = $(`#${t_apps}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'OptsIO');
+            gbe.append('package', 'io_apps');
+            gbe.append('attr', 'IOApps');
+            gbe.append('mname', 'delete_apps');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensage recibo del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_apps}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    apps_form_crud = (pk) => {
+        dattrs = {
+            title: 'Crear App',
+            t_guid: t_apps,
+            sui_rr: '{{ rr }}',
+            from_AppsUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'OptsIO',
+            model_name: 'Apps',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'OptsIO/AppsCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar App';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_apps').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_apps').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_app_name__icontains', 'value': qelem('input#input_buscar_apps').value
+                })
+                gmquery.push({
+                    'field': 'or_friendly_name__icontains', 'value': qelem('input#input_buscar_apps').value
+                })
+                gmquery.push({
+                    'field': 'or_url__icontains', 'value': qelem('input#input_buscar_apps').value
+                })
+            }
+            $(`#${t_apps}`).DataTable().ajax.reload();
+            
+        }
+    }
+
+$(`#${t_apps}`).on('draw.dt', function() {
+  tt = qelem(`#table_apps_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

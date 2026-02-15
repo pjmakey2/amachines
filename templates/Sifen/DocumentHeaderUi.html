@@ -1,0 +1,574 @@
+<div class="documentheader_ui_container container-fluid">
+    <div class="documentheader_ui_msgs"></div>
+    <div id="t_modal_documentheader"></div>
+
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_documentheader" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Facturar
+            </button>
+            <button id="btn_borrar_documentheader" class="btn btn-danger me-2">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+            <button id="btn_filtros_avanzados" class="btn btn-info">
+                <i class="mdi mdi-filter"></i> Filtros
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_documentheader" class="form-control am_input" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_documentheader_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    documentheader_home_be = function (data, settings) {
+        tt = qelem(`#table_documentheader_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`documentheader_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_documentheader = `dtable_${OptsIO.s4generate()}`;
+    dt_documentheader_pc = Grid.datatables_wrapper({
+          t_guid: t_documentheader,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Documentos',
+          tselector: 'table_documentheader_ui',
+          app_name: 'Sifen',
+          model_name: 'DocumentHeader',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: documentheader_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[6, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-documentheader-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
+                    <i title="Descargar PDF" class="tr-documentheader-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                `,
+                render: (data, type, rowobj) => {
+                    let icons = `
+                        <i title="Ver/Editar" class="tr-documentheader-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
+                        <i title="Descargar PDF" class="tr-documentheader-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                        <i title="Enviar Email" class="tr-documentheader-email text fs-5 mdi mdi-email-outline text-primary me-2"></i>
+                    `;
+                    if (rowobj.ek_xml_file_signed) {
+                        icons += `<i title="Ver XML Firmado" class="tr-documentheader-xml text fs-5 mdi mdi-xml text-success me-2"></i>`;
+                    }
+                    if (rowobj.lote_estado == 'RECIBIDO' && (!rowobj.lote || rowobj.lote == '' || rowobj.lote == '0' || rowobj.lote == 0)) {
+                        icons += `<i title="Reinicializar Lote" class="tr-documentheader-reinit-lote text fs-5 mdi mdi-refresh text-warning me-2"></i>`;
+                    }
+                    if (rowobj.ek_estado == 'Aprobado' && rowobj.ek_qr_link) {
+                        icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode"></i></a>`;
+                    }
+                    return icons;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'ek_qr_link', tit: 'QR Link', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'bs', tit: 'BS', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_moneda', tit: 'Moneda', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false,
+                render: (data, type, rowobj) => {
+                    return moment(data).format('DD/MM/YY');
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_tipo_desc', tit: 'Tipo Doc', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    const tipoMap = {
+                        'Factura electrónica': 'FE',
+                        'Nota de crédito electrónica': 'NCE',
+                        'Nota de débito electrónica': 'NDE',
+                        'Autofactura electrónica': 'AFE',
+                        'Nota de remisión electrónica': 'NRE'
+                    };
+                    return tipoMap[data] || data;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_numero', tit: 'Número', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    let est = String(rowobj.doc_establecimiento).padStart(3, '0');
+                    let exp = String(rowobj.doc_expedicion).padStart(3, '0');
+                    let num = String(data).padStart(7, '0');
+                    return `${est}-${exp}-${num}`;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'mdb', idx: 'ek_estado', 
+                 tit: 'Estado', cls: 'align-left',
+                 dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => {
+                    if ((rowobj.ek_estado == 'Aprobado') || (rowobj.lote_estado == 'Aprobado')) {
+                        return `<span class="badge bg-success">Aprobado</span>`
+                    }
+                    if (rowobj.lote_estado == 'Rechazado') {
+                        return `<span style="width: 12rem;" class="badge bg-danger text-wrap">${rowobj.lote_msg}</span>`
+                    }
+                    if (rowobj.lote_estado == 'Cancelado') {
+                        return `<span style="width: 12rem;" class="badge bg-danger text-wrap">${rowobj.lote_msg}</span>`
+                    }
+                    if (rowobj.lote_estado === 0) {
+                        return `<span class="badge bg-info">Pendiente</span>`
+                    }
+                    if (rowobj.lote_estado === 'ERROR') {
+                        return `<span class="badge bg-danger">${rowobj.lote_msg}</span>`
+                    }
+                    return `<span class="badge bg-info">${rowobj.lote_estado}</span>`
+                 }
+             },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'lote_estado', tit: 'lote_estado', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'lote_msg', tit: 'lote_msg', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'lote', tit: 'lote', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'ek_xml_file_signed', tit: 'ek_xml_file_signed', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_vencimiento', tit: 'Vencimiento', cls: 'align-left', dtyp: 'date', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_total', tit: 'Total', cls: 'align-right', dtyp: 'float', hide: false,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_total_redondeo', tit: 'Total Redondeo', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_iva', tit: 'IVA', cls: 'align-right', dtyp: 'float', hide: false,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_exenta', tit: 'Exenta', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_g10', tit: 'G10', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_i10', tit: 'I10', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_g5', tit: 'G5', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_i5', tit: 'I5', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_descuento', tit: 'Descuento', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_establecimiento', tit: 'Establecimiento', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_expedicion', tit: 'Expedición', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_innominado', tit: 'Innominado', cls: 'align-center', dtyp: 'bool', hide: true,
+                render: (data, type, rowobj) => {
+                    return data ? 'Sí' : 'No';
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_tipocontribuyente', tit: 'Tipo Contrib', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_type_business', tit: 'Tipo Negocio', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_codigo', tit: 'Código Cliente', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_ruc', tit: 'RUC', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    if (rowobj.pdv_ruc_dv !== null && rowobj.pdv_ruc_dv !== undefined && rowobj.pdv_ruc_dv !== '') {
+                        return `${data}-${rowobj.pdv_ruc_dv}`;
+                    }
+                    return data;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_ruc_dv', tit: 'RUC DV', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_nombrefactura', tit: 'Nombre Factura', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_direccion_entrega', tit: 'Dirección', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_celular', tit: 'Celular', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_email', tit: 'Email', cls: 'align-left', dtyp: 'str', hide: false },
+          ]
+      })
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-documentheader-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentheader}`).DataTable().row( elerow ).data()
+        documentheader_form(rowobj.id);
+    })
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-documentheader-pdf', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentheader}`).DataTable().row( elerow ).data();
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'generando_documentheader');
+        fdata.append('id', rowobj.id);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_documentheader_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                // Download the PDF file
+                let link = document.createElement("a");
+                link.href = data.ek_pdf_file;
+                link.target = "_blank";
+                link.click();
+                UiB.MsgSuccess(data.success);
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            log.error(`Error al generar PDF: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al generar el PDF.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    })
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-documentheader-email', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentheader}`).DataTable().row( elerow ).data();
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'send_invoice_from_ui');
+        fdata.append('id', rowobj.id);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_documentheader_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            UiB.BeMsgHandle({
+                rsps: data,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+        }).catch((err) => {
+            log.error(`Error al enviar email: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al enviar el email.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    })
+
+    // Ver XML Firmado
+    $(`#${t_documentheader} tbody`).on('click', '.tr-documentheader-xml', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentheader}`).DataTable().row( elerow ).data();
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'mostrar_xml_firmado');
+        fdata.append('id', rowobj.id);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_documentheader_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.xml_content) {
+                // Formatear XML para mejor visualización
+                let formattedXml = data.xml_content;
+                try {
+                    let parser = new DOMParser();
+                    let xmlDoc = parser.parseFromString(data.xml_content, 'text/xml');
+                    let xsltDoc = parser.parseFromString(`
+                        <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+                            <xsl:output method="xml" indent="yes"/>
+                            <xsl:template match="node()|@*">
+                                <xsl:copy><xsl:apply-templates select="node()|@*"/></xsl:copy>
+                            </xsl:template>
+                        </xsl:stylesheet>
+                    `, 'text/xml');
+                    let xsltProcessor = new XSLTProcessor();
+                    xsltProcessor.importStylesheet(xsltDoc);
+                    let resultDoc = xsltProcessor.transformToDocument(xmlDoc);
+                    formattedXml = new XMLSerializer().serializeToString(resultDoc);
+                } catch(e) {
+                    log.warn('No se pudo formatear XML: ' + e.message);
+                }
+                // Mostrar en modal
+                let modalHtml = `
+                    <div class="modal fade" id="xmlViewerModal" tabindex="-1">
+                        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">XML Firmado - Doc ${rowobj.doc_numero}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <pre style="background:#f5f5f5; padding:15px; border-radius:5px; overflow-x:auto; font-size:12px;"><code>${formattedXml.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                    <button type="button" class="btn btn-primary" onclick="navigator.clipboard.writeText(document.querySelector('#xmlViewerModal pre code').textContent.replace(/&lt;/g,'<').replace(/&gt;/g,'>')); UiB.MsgSuccess('XML copiado al portapapeles');">Copiar</button>
+                                    <a href="${data.xml_url}" download="${data.xml_filename}" class="btn btn-success"><i class="mdi mdi-download"></i> Descargar</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                // Remover modal anterior si existe
+                let existingModal = document.getElementById('xmlViewerModal');
+                if (existingModal) existingModal.remove();
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                let modal = new bootstrap.Modal(document.getElementById('xmlViewerModal'));
+                modal.show();
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            log.error(`Error al obtener XML: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al obtener el XML.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    })
+
+    // Reinicializar Lote
+    $(`#${t_documentheader} tbody`).on('click', '.tr-documentheader-reinit-lote', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentheader}`).DataTable().row( elerow ).data();
+
+        UiB.MsgSwall({
+            msg: `¿Reinicializar el estado del lote para el documento ${rowobj.doc_numero}? Esto permitirá reenviar el documento a SIFEN.`,
+            ttype: 'warning'
+        }).then((result) => {
+            let fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'reinicializar_lote');
+            fdata.append('id', rowobj.id);
+            fdata.append('dbcon', 'default');
+
+            let tt = qelem(`#table_documentheader_ui`);
+            tt.classList.add('overlay-container');
+            tt.classList.add('overlay');
+
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            }).then((rsp) => {
+                let data = rsp.data;
+                UiB.BeMsgHandle({
+                    rsps: data,
+                    timer: 2000,
+                    offcanvasglobal: true
+                });
+                $(`#${t_documentheader}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error al reinicializar lote: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al reinicializar el lote.');
+            }).finally(() => {
+                tt.classList.remove('overlay-container');
+                tt.classList.remove('overlay');
+            });
+        });
+    })
+
+    qelem('#btn_crear_documentheader').addEventListener('click', function() {
+          documentheader_form();
+      });
+
+    qelem('#btn_borrar_documentheader').addEventListener('click', function() {
+        let table = $(`#${t_documentheader}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_sifen');
+            gbe.append('attr', 'MSifen');
+            gbe.append('mname', 'delete_documentheader');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensage recibo del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_documentheader}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    documentheader_form = (pk) => {
+        dattrs = {
+            title: 'Crear Documento',
+            t_guid: t_documentheader,
+            sui_rr: '{{ rr }}',
+            from_DocumentHeaderUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'DocumentHeader',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/DocumentHeaderCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Documento';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_documentheader').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_documentheader').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_doc_numero__icontains', 'value': qelem('input#input_buscar_documentheader').value
+                })
+                gmquery.push({
+                    'field': 'or_pdv_nombrefactura__icontains', 'value': qelem('input#input_buscar_documentheader').value
+                })
+                gmquery.push({
+                    'field': 'or_pdv_ruc__icontains', 'value': qelem('input#input_buscar_documentheader').value
+                })
+            }
+            $(`#${t_documentheader}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_documentheader}`).on('draw.dt', function() {
+  tt = qelem(`#table_documentheader_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+// Función para abrir modal de filtros avanzados
+documentheader_advanced_search = () => {
+    let mid = `modal_${OptsIO.s4generate()}`;
+    let dattrs = {
+        modal_selector: `#${mid}`,
+        mid: mid,
+        t_guid: t_documentheader,
+        from_documentheader_ui: true,
+        sui_rr: '{{ rr }}'
+    };
+
+    OptsIO.getTmpl({
+        model_app_name: 'Sifen',
+        model_name: 'DocumentHeader',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: dattrs,
+        template: 'Sifen/DocumentHeaderSearchUi.html',
+        raw: true
+    }).then((rsp) => {
+        let data = rsp.data;
+        UiB.drawModal({
+            title: 'Filtros Avanzados',
+            content: data,
+            target: '#t_modal_documentheader',
+            nid: mid,
+        });
+        UiB.kILLLoaderAjax();
+    });
+}
+
+// Botón para abrir filtros
+qelem('#btn_filtros_avanzados').addEventListener('click', function() {
+    documentheader_advanced_search();
+});
+
+// Función para aplicar filtros desde el modal
+DrawDocumentHeaderHome = () => {
+    $(`#${t_documentheader}`).DataTable().ajax.reload();
+}
+
+</script>

@@ -1,0 +1,843 @@
+<style>
+    .select2-selection {
+        height: 50px !important;
+    }
+</style>
+
+<table style="border: 1px solid;border-spacing: 50px;" cellpadding="10" cellspacing="10">
+  <thead>
+  <tr>
+      <td style="background-color: #FFF;"><span class="text text-dark">Creado</span></td>
+      <td style="background-color: #FF00008A;"><span class="text text-dark">Anulado</span></td>
+      <td style="background-color: #F709FFB2;"><span class="text text-dark">Vencido</span></td>
+      <td style="background-color: #FCFF648A;"><span class="text text-dark">Con saldo</span></td>
+      <td style="background-color: #E99A238A;"><span class="text text-dark">Inutilizado</span></td>
+      <td style="background-color: #FF9900FF;"><span class="text text-dark">Rechazado</span></td>
+      <td style="background-color: #d1ffd7b0;"><span class="text text-dark">Aprobado</span></td>
+  </tr>
+  </thead>
+</table>
+
+<div
+    class="scroll pe-5 mt-2"
+    data-kt-scroll="true"
+    data-kt-scroll-height="auto"
+    data-kt-scroll-wrappers="#OrderHome"
+    data-kt-scroll-offset="100px">
+    <div id="OrderHome">
+        <div class="t_modal_documentheader"></div>
+        <h2 class="text text-left">Documentos</h2>
+        <div class="d-flex">
+          <div class="p-2 flex-grow-1">
+            
+          </div>
+          <div class="p-2">
+            {% if perms.OptsIO.table_documentheader_eje_anular  %}
+              <button title="Anular factura" id="btn-anular-{{rr}}-create" style="margin-top: 22px;"  class="mx-1 btn btn-lg btn-danger"><i class="mdi mdi-delete"></i></button>
+            {% endif %}
+            
+            {% if perms.OptsIO.table_documentheader_eje_autofactura  %}
+              <button title="Cargar autofactura" id="btn-af-{{rr}}-create" style="margin-top: 22px;"  class="mx-1 btn btn-lg btn-info">Auto Factura</button>
+            {% endif %}
+            {% if perms.OptsIO.table_documentheader_eje_nc  %}
+              <button title="Cargar nota de credito" id="btn-nc-{{rr}}-create" style="margin-top: 22px;"  class="mx-1 btn btn-lg btn-info">Nota Credito</button>
+            {% endif %}
+            {% if perms.OptsIO.table_documentheader_eje_factura  %}
+              <button title="Cargar factura" id="btn-proforma-{{rr}}-create" style="margin-top: 22px;"  class="mx-1 btn btn-lg btn-info">Factura</button>
+            {% endif %}
+            {% if perms.OptsIO.table_documentheader_eje_recibo  %}
+              <button title="Cargar recibo" id="btn-proforma-{{rr}}-recibo" style="margin-top: 22px;"  class="mx-1 btn btn-lg btn-primary d-none">Crear Recibo</button>
+            {% endif %}
+            {% if perms.OptsIO.table_documentheader_search  %}
+                <button onclick="documentheader_advanced_search()" style="margin-top: 22px;" class="mx-1 btn btn-lg btn-primary"><i class="ri-filter-3-line"></i></button>
+            {% endif %}
+          </div>
+        </div>
+        <div id="table_container_DocumentHeader"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+  doc_filter_date_0 = null;
+  doc_filter_date_1 = null;
+  $('select[name=qs_clientecodigo_id]').on('change', (evt) => {
+    DrawDocumentHeaderHome();
+  })
+  $('select[name=qs_doc_tipo]').on('change', (evt) => {
+    DrawDocumentHeaderHome();
+  })
+
+  $('select[name=qs_cobranza]').on('change', (evt) => {
+    DrawDocumentHeaderHome();
+  })
+
+  documentheader_home_be = function (data, settings) {
+      tt = qelem(`#table_container_DocumentHeader`);
+      tt.classList.add('overlay-container');
+      tt.classList.add('overlay');
+      crdata = Object.assign({}, settings.ajax.initquery);
+      mquery = [];
+      t_guid = settings.ajax.t_guid;
+      //clientecodigo = $('select[name=qs_clientecodigo]').val()
+      qs_clientecodigo_id = $('select[name=qs_clientecodigo_id]').val()
+
+
+
+      //qs_doc_fecha__year = $('select[name=qs_doc_fecha__year]').val();
+      //qs_doc_fecha__month = $('select[name=qs_doc_fecha__month]').val();
+
+      qs_doc_tipo = $('select[name=qs_doc_tipo]').val();
+
+      qs_cobranza = $('select[name=qs_cobranza]').val();
+
+      qs_producto_id = $('select[name=qs_producto_id]').val();
+
+      if ((qs_clientecodigo_id !== '') && (qs_clientecodigo_id !== null) && (qs_clientecodigo_id !== undefined)) {
+        mquery.push({field: 'pdv_codigo',  value: qs_clientecodigo_id});
+      }
+      if ((qs_doc_tipo !== '') && (qs_doc_tipo !== null) && (qs_doc_tipo !== undefined)) {
+        mquery.push({field: 'doc_tipo',  value: qs_doc_tipo});
+      }    
+
+      //if ((qs_doc_fecha__year !== '') && (qs_doc_fecha__year !== null) && (qs_doc_fecha__year !== undefined)) {
+      //  mquery.push({field: 'doc_fecha__year',  value: qs_doc_fecha__year});
+      //}    
+      //if ((qs_doc_fecha__month !== '') && (qs_doc_fecha__month !== null) && (qs_doc_fecha__month !== undefined)) {
+      //  mquery.push({field: 'doc_fecha__month',  value: qs_doc_fecha__month});
+      //}    
+
+      if ((doc_filter_date_0 !== '') && (doc_filter_date_0 !== null) && (doc_filter_date_0 !== undefined)) {
+        //mquery.push({field: 'doc_fecha__month',  value: doc_filter_date_0});
+        mquery.push({field: 'doc_fecha__gte',  value: doc_filter_date_0});
+        mquery.push({field: 'doc_fecha__lte',  value: doc_filter_date_1});
+      }    
+
+      
+      if ((qs_cobranza !== '') && (qs_cobranza !== null) && (qs_cobranza !== undefined)) {
+        if (qs_cobranza === 'pendiente_cobro') {
+          mquery.push({field: 'doc_saldo__gt',  value: 0});
+        } else {
+          mquery.push({field: 'doc_saldo',  value: 0});
+        }
+      }
+
+      if ((qs_producto_id !== '') && (qs_producto_id !== null) && (qs_producto_id !== undefined)) {
+        mquery.push({field: 'documentdetail__prod_descripcion',  value: qs_producto_id});
+      }
+
+      if (mquery.length > 0) {
+          crdata.mquery = jfy(mquery);
+      }
+      adata = Object.assign(data, crdata);
+      return adata
+    }
+
+      t_ofh = `dtable_${OptsIO.s4generate()}`;
+      crud_tmpl =  'Sifen/DocumentHeaderCreateUi.html'
+      dt_ofh_pc = Grid.datatables_wrapper({
+          t_guid: t_ofh,
+          url_exec: '{% url "iom" %}',
+          url_tmpl: '{% url "dtmpl" %}',
+          crud_tmpl: crud_tmpl,
+          with_crud: true,
+          with_gsearch: false,
+          title: '',
+          tselector: 'table_container_DocumentHeader',
+          app_name: 'Sifen',
+          model_name: 'DocumentHeader',
+          model_pk: 'id',
+          record_delete: true,
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          state_field: {},
+          dbcon: 'default',
+          mquery: [],
+          always_initquery: false,
+          plength: 300,
+          c_a: [{
+            'module': 'apps.Sifen',
+            'package': 'mng_sifen',
+            'attr': 'MSifen',
+            'mname': 'generando_documentheader',
+            'cont': false
+          }],
+          crud_btns: {
+            create: {btn: false, event: false, label: 'Factura'},
+            update: {btn: false, event: false},
+            delete: {btn: false, event: false, label: 'Anular'},
+          },
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              dom: 'it',
+              fixedHeader: false,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              createdRow: function( row, data, dataIndex) {
+                if (data.ek_estado === 'Aprobado') {
+                  row.style.backgroundColor = '#8EF07A';
+                }
+                if (data.ek_estado === 'Rechazado') {
+                    row.style.backgroundColor = '#FF9900FF';
+                }
+                if (data.ek_estado === 'Inutilizado') {
+                    row.style.backgroundColor = '#E99A238A';
+                }
+                
+                if (data.doc_tipo == "FE") {
+                  if (data.doc_saldo !== 0) {
+                    row.style.backgroundColor = '#FCFF648A';
+                  }
+                  if (data.doc_cre_tipo_cod === 2) {
+                    today = moment();
+                    vto = moment(data.doc_vencimiento);
+                    dd = vto.diff(today, 'days')
+                    if ((dd <= -30) || (dd === 0)) {
+                      row.style.backgroundColor = '#F709FFB2';
+                    }
+                  }
+                }
+                if ((data.anulado_tipo === 'NC') || (data.anulado_tipo === 'SIFEN')) {
+                  row.style.backgroundColor = '#FF00008A';
+                }
+                
+              },
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          builder_be: documentheader_home_be,
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false, 
+                dfcon: `
+                  {% if perms.OptsIO.table_documentheader_eje_abrirregistro  %}
+                    <i title="Ver formulario de carga" class="tr-orders-query fs-extra-lg text text-info mdi mdi-archive-eye-outline"></i>
+                  {% endif %}
+                  {% if perms.OptsIO.table_documentheader_eje_mostrarfactura  %}
+                    <i title="Ver factura en linea" class="tr-orders-nota fs-extra-lg text text-info mdi mdi-file-document-outline"></i>
+                  {% endif %}
+                  {% if perms.OptsIO.table_documentheader_eje_imprimir  %}
+                    <i title="Genera factura en PDF" class="tr-orders-print fs-extra-lg text text-info mdi mdi-printer-outline"></i>
+                  {% endif %}
+                `,
+               },
+              { fdis: true,
+                gre: true,
+                btyp: 'fdb',
+                idx: 'id',
+                tit: 'ID',
+                cls: 'align-left',
+                dtyp: 'str',
+                hide: true
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_tipo', 
+                tit: 'Tipo', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false
+              },              
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_numero', 
+                tit: 'Numero', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_fecha', 
+                tit: 'Fecha', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+                render: (data, type, rowobj) => {
+                    return moment(data).format('DD/MM/YY')
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_vencimiento', 
+                tit: 'Vto', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+                render: (data, type, rowobj) => {
+                    return moment(data).format('DD/MM/YY')
+                }
+              },
+              
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_establecimiento', 
+                tit: 'Sucursal', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false
+              },
+              { fdis: true, 
+                gre: true,
+                btyp: 'fdb',
+                idx: 'doc_expedicion',
+                tit: 'Caja',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: false,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_cre_tipo', 
+                tit: 'Condicion', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_nombrefactura', 
+                tit: 'Razon social', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+                render: (data, dtype, rowobj)=>{
+                  return `<span title="${rowobj.pdv_nombrefantasia} (${rowobj.pdv_codigo})">${data}</span>`;
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_nombrefantasia', 
+                tit: 'Nombre', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: true,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_ruc', 
+                tit: 'Ruc', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_moneda', 
+                tit: 'Moneda', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: true,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'mdb', 
+                idx: 'get_total_venta_gs', 
+                tit: 'Total', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+                render: (data, dtype, rowobj)=>{
+                  if (rowobj.moneda === 'USD') {
+                    return `<span>$ </span>${UiN.formatNumberU(data.toFixed(2))}`;
+                  }
+                  return `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`;
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'ek_estado', 
+                tit: 'Estado', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: true,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_saldo', 
+                tit: 'Saldo',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: false,
+                render: (data, dtype, rowobj)=> {
+                  if (rowobj.moneda === 'USD') {
+                    return `<span>$ </span>${UiN.formatNumberU(data.toFixed(2))}`;
+                  }
+                  return `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`;
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_redondeo', 
+                tit: 'Redondeo',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: false,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_codigo', 
+                tit: 'Saldo',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: true,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_cre_tipo_cod', 
+                tit: 'Forma Pago Codigo',
+                cls: 'align-left',
+                dtyp: 'int', 
+                hide: true,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'anulado_tipo', 
+                tit: 'Anulacion Tipo',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: false,
+              },
+              
+          ]
+      })
+
+
+      $(`#${t_ofh} tbody`).on('click', '.tr-orders-query', function () {
+        let row = $(this).closest('tr');
+        let data = $(`#${t_ofh}`).DataTable().row( row ).data().id;
+        //let mid =  `modal_${OptsIO.s4generate()}`;
+        dattrs = {
+            //modal_selector: `#${mid}`,
+            t_guid: t_ofh,
+            field_pk: 'id',
+            pk: data,
+            from_consultar_orders: true,
+            sui_rr: '{{ rr }}',
+            offcanvasglobal: true
+        };
+        OptsIO.getTmpl({
+            model_app_name: 'Sifen',
+            model_name: 'DocumentHeader',
+            pk: data,
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: crud_tmpl,
+            raw: true
+        }).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    })
+
+    
+    
+
+    $(`#${t_ofh} tbody`).on('click', '.tr-orders-nota', function () {
+      let row = $(this).closest('tr');
+      let data = $(`#${t_ofh}`).DataTable().row( row ).data().id;
+      let mid =  `modal_${OptsIO.s4generate()}`;
+      dattrs = {
+          modal_selector: `#${mid}`,
+          t_guid: t_ofh,
+          field_pk: 'id',
+          pk: data,
+          from_consultar_documentheader: true,
+          sui_rr: '{{ rr }}',
+      };
+      OptsIO.getTmpl({
+          model_app_name: 'Sifen',
+          model_name: 'DocumentHeader',
+          pk: data,
+          dbcon: 'default',
+          url: '{% url "dtmpl" %}',
+          dattrs: dattrs,
+          template: 'Sifen/DocumentHeaderRptUi.html',
+          raw: true
+      }).then((rsp)=>{
+          let data = rsp.data;
+          UiB.drawModal({
+              title: ``,
+              content: data,
+              target: '.t_modal_documentheader',
+              nid: mid
+          })
+          UiB.kILLLoaderAjax();
+      })
+  })
+
+  $(`#${t_ofh} tbody`).on('click', '.tr-orders-print', function () {
+    let row = $(this).closest('tr');
+    let data = $(`#${t_ofh}`).DataTable().row( row ).data().id;
+    let timerInterval;
+    Swal.fire({
+        html: `<h2 id="t_gen_documentheader_imprimir">PDF del documento ${data} creado con exito</h2>`,
+        timerProgressBar: true,
+        showCancelButton: false,
+        showConfirmButton: false,
+        didOpen: async () => {
+            Swal.showLoading();
+            $('#t_gen_documentheader_imprimir').html(`
+                <button class="btn btn-primary" type="button" disabled>
+                    <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                    <span role="status">Generando impresion...</span>
+                </button>`);
+            let gbe = new FormData();
+            gbe.append('module',  'apps.Sifen');
+            gbe.append('package',  'mng_sifen');
+            gbe.append('attr',  'MSifen');
+            gbe.append('mname',  'generando_documentheader');
+            gbe.append('dbcon',  'default');
+            gbe.append('id', data);
+            axios.post(
+                '{% url "iom" %}',
+                gbe,
+                {
+                   headers: {
+                        'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                  }
+                }
+            ).then((rsp)=>{
+                if (rsp.data.success) {
+                    //$('#t_gen_documentheader_imprimir').html(`<a class="link-underline-dark" href="${rsp.data.documentheader_urls.ek_pdf_file}" target="_blank">Descargar PDF</a>`);
+                    let link = document.createElement("a");
+                    link.href = rsp.data.documentheader_urls.ek_pdf_file;
+                    link.target = "_blank"
+                    link.click();
+                    Swal.close();
+                }
+            }).finally(Swal.hideLoading())
+        }
+      })
+  })
+
+
+  {% if perms.OptsIO.table_documentheader_eje_factura  %}
+  qelem(`#btn-proforma-{{rr}}-create`).addEventListener('click', (evt)=>{
+    //let mid =  `modal_${OptsIO.s4generate()}`;
+    dattrs = {
+        //modal_selector: `#${mid}`,
+        t_guid: t_ofh,
+        sui_rr: '{{ rr }}',
+        from_consultar_documentheader: true,
+        tipo: 'FE',
+        offcanvasglobal: true
+    }
+    OptsIO.getTmpl({
+        model_app_name: 'Sifen',
+        model_name: 'DocumentHeader',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: dattrs,
+        template: 'Sifen/DocumentHeaderCreateUi.html',
+        raw: true,
+        
+    }).then((rsp)=>{
+        let data = rsp.data;
+        $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+        bsOffcanvas.show();
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+        })
+        UiB.kILLLoaderAjax();
+    })
+  })
+  {% endif %}
+  
+
+
+
+{% if perms.OptsIO.table_documentheader_eje_nc  %}
+  qelem(`#btn-nc-{{rr}}-create`).addEventListener('click', (evt)=>{
+  //let mid =  `modal_${OptsIO.s4generate()}`;
+  dattrs = {
+      //modal_selector: `#${mid}`,
+      t_guid: t_ofh,
+      sui_rr: '{{ rr }}',
+      from_consultar_documentheader: true,
+      tipo: 'NC',
+      offcanvasglobal: true
+  }
+  OptsIO.getTmpl({
+      model_app_name: 'Sifen',
+      model_name: 'DocumentHeader',
+      dbcon: 'default',
+      url: '{% url "dtmpl" %}',
+      dattrs: dattrs,
+      template: 'Sifen/DocumentHeaderCreateUi.html',
+      raw: true,
+      
+  }).then((rsp)=>{
+      let data = rsp.data;
+      $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+        bsOffcanvas.show();
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+      })
+      UiB.kILLLoaderAjax();
+  })
+})
+{% endif %}
+
+{% if perms.OptsIO.table_documentheader_eje_autofactura  %}
+qelem(`#btn-af-{{rr}}-create`).addEventListener('click', (evt)=>{
+  //let mid =  `modal_${OptsIO.s4generate()}`;
+  dattrs = {
+      //modal_selector: `#${mid}`,
+      t_guid: t_ofh,
+      sui_rr: '{{ rr }}',
+      from_consultar_documentheader: true,
+      tipo: 'AF',
+      offcanvasglobal: true
+  }
+  OptsIO.getTmpl({
+      model_app_name: 'Sifen',
+      model_name: 'DocumentHeader',
+      dbcon: 'default',
+      url: '{% url "dtmpl" %}',
+      dattrs: dattrs,
+      template: 'Sifen/DocumentHeaderCreateUi.html',
+      raw: true,
+      
+  }).then((rsp)=>{
+      let data = rsp.data;
+      $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+        bsOffcanvas.show();
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+      })
+      UiB.kILLLoaderAjax();
+  })
+})
+{% endif %}
+
+DrawDocumentHeaderHome = ()=> {
+  $(`#${t_ofh}`).DataTable().ajax.reload(checkDocumentHeader);
+}
+
+OverlayDocumentHeaderHome = () => {
+  tt = qelem(`#table_container_DocumentHeader`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+}
+
+checkDocumentHeader = (rdata)  => {
+  if (rdata.data.length === 0) {
+    UiB.MsgInfo('Sin resultados');
+  }
+  OverlayDocumentHeaderHome();
+}
+
+
+
+$(`#${t_ofh}`).on('draw.dt', function() {
+  OverlayDocumentHeaderHome();
+})
+
+
+
+setOnselectTableDocumentHeader = () => {
+  let dt_pc = $(`#${t_ofh}`).DataTable();
+  dt_pc.on( 'select', function ( e, dt_pc, type, indexes ) {
+      if ( type === 'row' ) {
+          CheckGenerateReceive();
+      }
+  });
+  dt_pc.on( 'deselect', function ( e, dt_pc, type, indexes ) {
+      if ( type === 'row' ) {
+          CheckGenerateReceive();
+      }
+  });
+}
+
+CheckGenerateReceive = () => {
+  $('#btn-proforma-{{rr}}-recibo').addClass('d-none');
+  let dt_pc = $(`#${t_ofh}`).DataTable();
+  let rows = dt_pc.rows({ selected: true });
+  let rcount = rows.count();
+  same_pdv = new Set();
+
+  rows.every(function () {
+    let rowobj = this.data();
+    if ((rowobj.doc_saldo > 0 ) && (rowobj.doc_tipo == 'FE' ) ){
+      same_pdv.add(rowobj.pdv_codigo);
+    }
+  });
+  if (same_pdv.size === 1) {
+    $('#btn-proforma-{{rr}}-recibo').removeClass('d-none');
+  }
+}
+
+{% if perms.OptsIO.table_documentheader_eje_recibo  %}
+qelem(`#btn-proforma-{{rr}}-recibo`).addEventListener('click', (evt)=>{
+  //let mid =  `modal_${OptsIO.s4generate()}`;
+  dattrs = {
+      //modal_selector: `#${mid}`,
+      t_guid: t_ofh,
+      sui_rr: '{{ rr }}',
+      from_consultar_documentheader: true,
+      tipo: 'FE',
+      facturas: [],
+      offcanvasglobal: true
+  }
+  let dt_pc = $(`#${t_ofh}`).DataTable();
+  let rows = dt_pc.rows({ selected: true });
+  let rcount = rows.count();
+  facturas = [];
+  rows.every(function () {
+    let rowobj = this.data();
+    dattrs.facturas.push(rowobj.id);
+  });
+  OptsIO.getTmpl({
+      model_app_name: 'Sifen',
+      model_name: 'DocumentHeader',
+      dbcon: 'default',
+      url: '{% url "dtmpl" %}',
+      dattrs: dattrs,
+      specific_qdict: {
+        module: 'apps.Sifen',
+        package: 'mng_sifen',
+        attr: 'MSifen',
+        mname: 'get_facturas_recibo',
+      },
+      template: 'Sifen/DocumentReciboResumenUi.html',
+      raw: true,
+      
+  }).then((rsp)=>{
+      let data = rsp.data;
+      $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+        bsOffcanvas.show();
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+      })
+      UiB.kILLLoaderAjax();
+  })  
+})
+{% endif %}
+{% if perms.OptsIO.table_documentheader_eje_anular  %}
+qelem('#btn-anular-{{rr}}-create').addEventListener('click', (evt)=>{
+  let dt_pc = $(`#${t_ofh}`).DataTable();
+  let gbe = new FormData();
+  gbe.append('module','apps.Sifen');
+  gbe.append('package','mng_sifen');
+  gbe.append('attr', 'MSifen');
+  gbe.append('mname', 'anular_documento')
+  gbe.append('dbcon', 'default');
+  let rows = dt_pc.rows({ selected: true });
+  let rcount = rows.count();
+  facturas = [];
+  msg = [
+    'Esta seguro ?',
+    '<h1>Facturas a cancelar</h1>',
+    '<ul class="list-group">',
+  ]
+  rows.every(function () {
+    let rowobj = this.data();
+    if ((rowobj.doc_tipo === 'FE') && (rowobj.anulado_tipo === null) ) {
+      gbe.append('facturas', rowobj.id);
+      a_generar = "Rechazar en SIFEN"
+      today = moment();
+      dfec = moment(rowobj.doc_fecha);
+      dd = dfec.diff(today, 'days')
+      doc_fecha = dfec.format('DD/MM/YY');
+      if (dd <= -3) {
+        a_generar = "Rechazar con nota credito"
+      }
+      msg.push(`<li class="list-group-item">${ rowobj.doc_numero } - ${doc_fecha} - ${a_generar}</li>`);
+    }
+  });
+  
+  UiB.MsgSwall({msg: msg.join('') }).then((result)=>{
+      if (result.isConfirmed) {
+        tt = qelem(`#table_container_DocumentHeader`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        axios.post('{% url "iom" %}', gbe, {
+          headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp)=>{
+            data = rsp.data;
+            UiB.BeMsgHandle({
+              rsps: data,
+              timer: 3000,
+          })
+        }).finally(()=>{
+          OverlayDocumentHeaderHome();
+          setTimeout(()=>{
+            DrawDocumentHeaderHome();
+          }, 300);
+        })
+      }
+  })
+})
+{% endif %}
+
+
+
+documentheader_advanced_search = () => {
+      let mid =  `modal_${OptsIO.s4generate()}`;
+      dattrs = {
+        modal_selector: `#${mid}`,
+        mid: mid,
+        t_guid: t_ofh,
+        from_consultar_documentheader: true,
+        sui_rr: '{{ rr }}'
+      };
+      OptsIO.getTmpl({
+          model_app_name: 'FL_Paquetes',
+          model_name: 'documentheader',
+          dbcon: 'default',
+          url: '{% url "dtmpl" %}',
+          dattrs: dattrs,
+          template: 'Sifen/DocumentheaderSearchUi.html',
+          raw: true
+      }).then((rsp)=>{
+          let data = rsp.data;
+          UiB.drawModal({
+              title: ``,
+              content: data,
+              target: '#t_modal_global',
+              nid: mid
+          })
+          UiB.kILLLoaderAjax();
+      })
+    }
+
+setOnselectTableDocumentHeader();
+</script>

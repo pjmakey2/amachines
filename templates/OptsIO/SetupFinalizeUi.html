@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .setup-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        .setup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .setup-header h1 {
+            color: #667eea;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .setup-header p {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+            margin: 0 10px;
+        }
+        .step.active {
+            background: #667eea;
+            color: white;
+        }
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+        .btn-primary {
+            background: #667eea;
+            border: none;
+            padding: 12px 30px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .step-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+        }
+        .step-item.success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .step-item.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .step-item.pending {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .step-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .progress {
+            height: 25px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1><i class="mdi mdi-check-circle"></i> {{ page_title }}</h1>
+            <p>Ejecutando migraciones y configuración inicial</p>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step completed">1</div>
+            <div class="step completed">2</div>
+            <div class="step active">3</div>
+        </div>
+
+        <div id="message-container"></div>
+
+        <div id="progress-container" style="display: none;">
+            <div class="progress">
+                <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                     role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="steps-container" class="mb-4"></div>
+
+        <div class="text-center">
+            <button type="button" class="btn btn-primary" id="btn_finalize"
+                    data-url="{% url 'setup_finalize' %}"
+                    data-business-url="{% url 'setup_business' %}">
+                <i class="mdi mdi-rocket-launch"></i> Iniciar Configuración Final
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        function showMessage(message, type) {
+            const container = document.getElementById('message-container');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        function updateProgress(percent) {
+            const progressBar = document.getElementById('progress-bar');
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = percent + '%';
+        }
+
+        function addStepResult(step, success, message) {
+            const container = document.getElementById('steps-container');
+            const stepDiv = document.createElement('div');
+            stepDiv.className = `step-item ${success ? 'success' : 'error'}`;
+
+            const icon = success ?
+                '<i class="mdi mdi-check-circle step-icon text-success"></i>' :
+                '<i class="mdi mdi-alert-circle step-icon text-danger"></i>';
+
+            stepDiv.innerHTML = `
+                ${icon}
+                <div>
+                    <strong>${step}</strong><br>
+                    <small>${message}</small>
+                </div>
+            `;
+
+            container.appendChild(stepDiv);
+        }
+
+        document.getElementById('btn_finalize').addEventListener('click', async function() {
+            const btn = this;
+            const finalizeUrl = btn.dataset.url;
+            const businessUrl = btn.dataset.businessUrl;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando...';
+
+            // Mostrar progreso
+            document.getElementById('progress-container').style.display = 'block';
+            updateProgress(10);
+
+            try {
+                const response = await axios.post(finalizeUrl, {}, {
+                    headers: {'Content-Type': 'application/json'}
+                });
+
+                updateProgress(50);
+
+                if (response.data.success) {
+                    updateProgress(75);
+
+                    // Mostrar pasos ejecutados
+                    response.data.steps.forEach(step => {
+                        addStepResult(step.step, step.success, step.message);
+                    });
+
+                    updateProgress(100);
+
+                    showMessage(
+                        '<strong>¡Datos Cargados!</strong><br>' + response.data.message + '<br>Redirigiendo a configuración de empresa...',
+                        'success'
+                    );
+
+                    // Redirigir a configuración de empresa
+                    setTimeout(() => {
+                        window.location.href = response.data.redirect || businessUrl;
+                    }, 2000);
+                } else {
+                    updateProgress(100);
+
+                    // Mostrar pasos con errores
+                    if (response.data.steps) {
+                        response.data.steps.forEach(step => {
+                            addStepResult(step.step, step.success, step.message);
+                        });
+                    }
+
+                    showMessage(
+                        '<strong>Error en Setup:</strong><br>' + response.data.message,
+                        'danger'
+                    );
+
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="mdi mdi-rocket-launch"></i> Reintentar Configuración';
+                }
+            } catch (error) {
+                updateProgress(100);
+                const message = error.response?.data?.message || 'Error al finalizar setup';
+
+                showMessage('<strong>Error:</strong><br>' + message, 'danger');
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="mdi mdi-rocket-launch"></i> Reintentar Configuración';
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

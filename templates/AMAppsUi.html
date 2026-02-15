@@ -1,0 +1,744 @@
+{% load static %}
+{% load io_tags %}
+<style>
+    /* Sidebar Styles */
+    .sidebar-container {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        background: #2d3748;
+        color: white;
+        transition: width 0.3s ease, transform 0.3s ease;
+        z-index: 1000;
+        overflow: hidden;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar-container.collapsed {
+        width: 70px;
+    }
+
+    .sidebar-container.expanded {
+        width: 260px;
+    }
+
+    /* Sidebar Header */
+    .sidebar-header {
+        padding: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 70px;
+    }
+
+    .sidebar-container.collapsed .sidebar-header {
+        flex-direction: column;
+        gap: 5px;
+        padding: 10px 5px;
+    }
+
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+    }
+
+    .sidebar-container.collapsed .sidebar-logo {
+        justify-content: center;
+    }
+
+    .sidebar-logo img {
+        width: 35px;
+        height: 35px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+
+    .sidebar-logo-text {
+        font-size: 1.2rem;
+        font-weight: 700;
+        opacity: 1;
+        transition: opacity 0.3s;
+    }
+
+    .sidebar-container.collapsed .sidebar-logo-text {
+        opacity: 0;
+        display: none;
+    }
+
+    .sidebar-toggle {
+        background: transparent;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 4px;
+        transition: background 0.3s;
+        flex-shrink: 0;
+    }
+
+    .sidebar-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .sidebar-container.collapsed .sidebar-toggle {
+        margin: 0 auto;
+    }
+
+    /* Sidebar Content */
+    .sidebar-content {
+        height: calc(100vh - 70px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 10px 0;
+    }
+
+    .sidebar-content::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .sidebar-content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .sidebar-content::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+    }
+
+    /* Bookmarks Section */
+    .sidebar-section {
+        margin-bottom: 20px;
+    }
+
+    .sidebar-section-title {
+        padding: 10px 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.6);
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+
+    .sidebar-container.collapsed .sidebar-section-title {
+        opacity: 0;
+        display: none;
+    }
+
+    /* Menu Items */
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .sidebar-menu-item {
+        position: relative;
+    }
+
+    .sidebar-menu-link {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        color: rgba(255, 255, 255, 0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .sidebar-menu-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .sidebar-menu-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .sidebar-menu-icon {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 1.2rem;
+    }
+
+    .sidebar-container.collapsed .sidebar-menu-icon {
+        margin-right: 0;
+    }
+
+    .sidebar-menu-text {
+        flex: 1;
+        opacity: 1;
+        transition: opacity 0.3s;
+    }
+
+    .sidebar-container.collapsed .sidebar-menu-text {
+        opacity: 0;
+        display: none;
+    }
+
+    .sidebar-menu-arrow {
+        font-size: 0.8rem;
+        transition: transform 0.3s;
+    }
+
+    .sidebar-container.collapsed .sidebar-menu-arrow {
+        display: none;
+    }
+
+    .sidebar-menu-link.open .sidebar-menu-arrow {
+        transform: rotate(90deg);
+    }
+
+    /* Submenu */
+    .sidebar-submenu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        background: rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar-submenu.show {
+        max-height: 1000px;
+    }
+
+    .sidebar-submenu-item {
+        padding: 10px 20px 10px 56px;
+        color: rgba(255, 255, 255, 0.7);
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .sidebar-submenu-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+    }
+
+    .sidebar-container.collapsed .sidebar-submenu {
+        display: none;
+    }
+
+    /* Tooltip para modo colapsado */
+    .sidebar-tooltip {
+        position: fixed;
+        left: 75px;
+        background: #1a202c;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        z-index: 10000;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .sidebar-tooltip.show {
+        opacity: 1;
+    }
+
+    /* Main Content Area */
+    .main-content {
+        transition: margin-left 0.3s ease;
+        min-height: 100vh;
+        background: #f5f7fa;
+    }
+
+    .main-content.sidebar-collapsed {
+        margin-left: 70px;
+    }
+
+    .main-content.sidebar-expanded {
+        margin-left: 260px;
+    }
+
+    .main-content-inner {
+        padding: 30px;
+    }
+
+    /* Welcome Section */
+    .welcome-section {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .welcome-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d3748;
+        margin-bottom: 10px;
+    }
+
+    .welcome-subtitle {
+        color: #718096;
+        font-size: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .sidebar-container {
+            transform: translateX(-100%);
+            width: 280px !important;
+        }
+
+        .sidebar-container.collapsed {
+            transform: translateX(-100%);
+            width: 280px !important;
+        }
+
+        .sidebar-container.expanded,
+        .sidebar-container.mobile-open {
+            transform: translateX(0);
+            width: 280px !important;
+        }
+
+        /* Mostrar textos cuando sidebar está abierto en móvil */
+        .sidebar-container.mobile-open .sidebar-logo-text,
+        .sidebar-container.mobile-open .sidebar-section-title,
+        .sidebar-container.mobile-open .sidebar-menu-text,
+        .sidebar-container.mobile-open .sidebar-menu-arrow {
+            opacity: 1 !important;
+            display: inline !important;
+        }
+
+        .sidebar-container.mobile-open .sidebar-menu-icon {
+            margin-right: 12px !important;
+        }
+
+        .sidebar-container.mobile-open .sidebar-submenu {
+            display: block !important;
+        }
+
+        .main-content.sidebar-collapsed,
+        .main-content.sidebar-expanded {
+            margin-left: 0 !important;
+        }
+
+        .main-content-inner {
+            padding: 15px !important;
+            padding-top: 80px !important;
+        }
+
+        /* Overlay para cerrar sidebar en móvil */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* Welcome section ajustes móvil */
+        .welcome-section {
+            padding: 20px !important;
+        }
+
+        .welcome-title {
+            font-size: 1.3rem !important;
+            line-height: 1.3;
+        }
+
+        .welcome-subtitle {
+            font-size: 0.9rem !important;
+        }
+    }
+</style>
+
+<!-- Sidebar -->
+<div class="sidebar-container collapsed" id="appsSidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-logo">
+            <img src="{% business_logo %}" alt="{% business_name %}">
+            <span class="sidebar-logo-text">{% business_name %}</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebarToggle">
+            <i class="mdi mdi-menu" style="font-size: 1.5rem;"></i>
+        </button>
+    </div>
+
+    <div class="sidebar-content">
+        <!-- Menus Section -->
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">Menús</div>
+            <ul class="sidebar-menu" id="menusList">
+                <!-- Los menús se cargarán aquí -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Tooltip para modo colapsado -->
+<div class="sidebar-tooltip" id="sidebarTooltip"></div>
+
+<!-- Overlay para móvil -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- Main Content -->
+<div class="main-content sidebar-collapsed" id="mainContent">
+    <div class="main-content-inner">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 class="welcome-title">Bienvenido al Sistema</h1>
+            <p class="welcome-subtitle">Selecciona una aplicación del menú lateral para comenzar</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Variables globales
+    var menusData = [];
+    var appsData = [];
+    var isSidebarExpanded = false;
+    var isMobile = window.innerWidth <= 768;
+
+    // Toggle Sidebar
+    const sidebar = document.getElementById('appsSidebar');
+    const mainContent = document.getElementById('mainContent');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    var hoverTimeout = null;
+
+    // Detectar cambios de tamaño de ventana
+    window.addEventListener('resize', function() {
+        isMobile = window.innerWidth <= 768;
+        if (!isMobile) {
+            closeMobileSidebar();
+        }
+    });
+
+    // Función para cerrar sidebar en móvil
+    function closeMobileSidebar() {
+        sidebar.classList.remove('mobile-open');
+        sidebarOverlay.classList.remove('show');
+    }
+
+    // Función para abrir sidebar en móvil
+    function openMobileSidebar() {
+        sidebar.classList.add('mobile-open');
+        sidebarOverlay.classList.add('show');
+    }
+
+    // Escuchar evento del botón hamburguesa
+    window.addEventListener('mobileMenuToggle', function() {
+        if (sidebar.classList.contains('mobile-open')) {
+            closeMobileSidebar();
+        } else {
+            openMobileSidebar();
+        }
+    });
+
+    // Cerrar sidebar al hacer click en overlay
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+        if (isMobile) {
+            closeMobileSidebar();
+            return;
+        }
+
+        isSidebarExpanded = !isSidebarExpanded;
+
+        if (isSidebarExpanded) {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.add('expanded');
+            mainContent.classList.remove('sidebar-collapsed');
+            mainContent.classList.add('sidebar-expanded');
+        } else {
+            sidebar.classList.remove('expanded');
+            sidebar.classList.add('collapsed');
+            mainContent.classList.remove('sidebar-expanded');
+            mainContent.classList.add('sidebar-collapsed');
+        }
+
+        // Disparar evento para que el toolbar se ajuste
+        window.dispatchEvent(new CustomEvent('sidebarToggle', { detail: { expanded: isSidebarExpanded } }));
+    });
+
+    // Hover functionality - expandir temporalmente cuando está colapsado (solo desktop)
+    sidebar.addEventListener('mouseenter', function() {
+        // No hacer hover en móvil - verificar ancho directamente
+        if (window.innerWidth <= 768) return;
+
+        if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = null;
+        }
+
+        // Solo expandir con hover si está en modo colapsado (no fijado expandido)
+        if (!isSidebarExpanded) {
+            sidebar.classList.remove('collapsed');
+            sidebar.classList.add('expanded');
+        }
+    });
+
+    sidebar.addEventListener('mouseleave', function() {
+        // No hacer hover en móvil - verificar ancho directamente
+        if (window.innerWidth <= 768) return;
+
+        // Solo contraer si no está fijado en modo expandido
+        if (!isSidebarExpanded) {
+            hoverTimeout = setTimeout(function() {
+                sidebar.classList.remove('expanded');
+                sidebar.classList.add('collapsed');
+            }, 300);
+        }
+    });
+
+    // Tooltip functions para modo colapsado
+    function showTooltip(text, targetElement) {
+        if (isSidebarExpanded) return;
+
+        const tooltip = document.getElementById('sidebarTooltip');
+        const rect = targetElement.getBoundingClientRect();
+
+        tooltip.textContent = text;
+        tooltip.style.top = rect.top + 'px';
+        tooltip.classList.add('show');
+    }
+
+    function hideTooltip() {
+        const tooltip = document.getElementById('sidebarTooltip');
+        tooltip.classList.remove('show');
+    }
+
+    // Cargar datos
+    async function loadMenusAndApps() {
+        try {
+            let fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'get_apps');
+
+            const response = await axios.post('/io/iom/', fdata);
+            appsData = response.data || [];
+
+            // Agrupar apps por menú
+            const menuMap = {};
+            appsData.forEach(app => {
+                if (!app.active) return;
+
+                const menuName = app.menu || 'Otros';
+                if (!menuMap[menuName]) {
+                    menuMap[menuName] = {
+                        name: menuName,
+                        apps: []
+                    };
+                }
+                menuMap[menuName].apps.push(app);
+            });
+
+            menusData = Object.values(menuMap);
+
+            renderMenus();
+        } catch (error) {
+            console.error('Error al cargar menús:', error);
+        }
+    }
+
+
+    // Renderizar menús
+    function renderMenus() {
+        const menusList = document.getElementById('menusList');
+        menusList.innerHTML = '';
+
+        menusData.forEach((menu, index) => {
+            const menuId = `menu-${index}`;
+            const menuItem = document.createElement('li');
+            menuItem.className = 'sidebar-menu-item';
+
+            // Obtener el icono del primer app del menú (todos tienen el mismo menu_icon)
+            const menuIcon = menu.apps[0]?.menu_icon || 'mdi mdi-folder-outline';
+
+            const menuLink = document.createElement('a');
+            menuLink.className = 'sidebar-menu-link';
+            menuLink.innerHTML = `
+                <span class="sidebar-menu-icon">
+                    <i class="${menuIcon}"></i>
+                </span>
+                <span class="sidebar-menu-text">${menu.name}</span>
+                <span class="sidebar-menu-arrow">
+                    <i class="mdi mdi-chevron-right"></i>
+                </span>
+            `;
+
+            menuLink.addEventListener('mouseenter', function() {
+                showTooltip(menu.name, this);
+            });
+
+            menuLink.addEventListener('mouseleave', hideTooltip);
+
+            menuLink.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                // Toggle submenu (siempre, sin importar si está expandido o colapsado)
+                const submenu = menuItem.querySelector('.sidebar-submenu');
+                const isOpen = submenu.classList.contains('show');
+
+                // Cerrar todos los submenús
+                document.querySelectorAll('.sidebar-submenu').forEach(sm => {
+                    sm.classList.remove('show');
+                });
+                document.querySelectorAll('.sidebar-menu-link').forEach(link => {
+                    link.classList.remove('open');
+                });
+
+                if (!isOpen) {
+                    submenu.classList.add('show');
+                    menuLink.classList.add('open');
+                }
+            });
+
+            // Crear submenu
+            const submenu = document.createElement('ul');
+            submenu.className = 'sidebar-submenu';
+
+            menu.apps.forEach(app => {
+                const appItem = document.createElement('li');
+                appItem.className = 'sidebar-submenu-item';
+                appItem.innerHTML = `
+                    <i class="${app.icon || 'mdi mdi-file-outline'}" style="margin-right: 8px;"></i>
+                    ${app.friendly_name}
+                `;
+                appItem.dataset.appId = app.id;
+
+                appItem.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    // Cerrar sidebar en móvil al seleccionar app
+                    const sidebarEl = document.getElementById('appsSidebar');
+                    const overlayEl = document.getElementById('sidebarOverlay');
+                    const shouldClose = sidebarEl.classList.contains('mobile-open');
+                    console.log('App clicked, mobile-open:', shouldClose);
+
+                    openApp(app);
+
+                    // Cerrar con pequeño delay para que la navegación se procese
+                    if (shouldClose) {
+                        setTimeout(function() {
+                            console.log('Closing sidebar now');
+                            sidebarEl.classList.remove('mobile-open');
+                            overlayEl.classList.remove('show');
+                        }, 150);
+                    }
+                });
+
+                submenu.appendChild(appItem);
+            });
+
+            menuItem.appendChild(menuLink);
+            menuItem.appendChild(submenu);
+            menusList.appendChild(menuItem);
+        });
+    }
+
+
+    // Función para insertar HTML y ejecutar scripts
+    function setInnerHTMLWithScripts(container, htmlContent) {
+        // Limpiar el contenedor
+        container.innerHTML = '';
+
+        // Crear un div temporal para parsear el HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+
+        // Extraer todos los scripts ANTES de insertar el contenido
+        const scripts = tempDiv.querySelectorAll('script');
+        const scriptElements = Array.from(scripts);
+
+        // Remover scripts del HTML temporal para insertarlos después
+        scriptElements.forEach(script => script.remove());
+
+        // Insertar el HTML sin scripts
+        container.innerHTML = tempDiv.innerHTML;
+
+        // Ejecutar scripts en orden
+        scriptElements.forEach(oldScript => {
+            const newScript = document.createElement('script');
+
+            // Copiar atributos
+            Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+
+            // Manejar scripts externos vs inline
+            if (oldScript.src) {
+                // Script externo: copiar src
+                newScript.src = oldScript.src;
+                // Agregar al head para que se cargue
+                document.head.appendChild(newScript);
+            } else {
+                // Script inline: copiar contenido y agregar al container
+                newScript.textContent = oldScript.textContent;
+                // Agregar al container para que se ejecute en contexto
+                container.appendChild(newScript);
+            }
+        });
+    }
+
+    // Abrir app - Cargar template en #mainContent
+    async function openApp(app) {
+        try {
+            // Mostrar loader en el área de contenido
+            const mainContentInner = document.querySelector('.main-content-inner');
+            mainContentInner.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center" style="min-height: 400px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+            `;
+
+            // Construir URL con parámetros GET
+            const params = new URLSearchParams();
+            params.append('tmpl', app.url);
+
+            // Hacer petición al backend para obtener el template de la app
+            const response = await axios.get(`/io/dtmpl/?${params.toString()}`);
+
+            // Insertar el template en #mainContent Y EJECUTAR SCRIPTS
+            if (response.data) {
+                setInnerHTMLWithScripts(mainContentInner, response.data);
+            }
+        } catch (error) {
+            console.error('Error al cargar app:', error);
+            const mainContentInner = document.querySelector('.main-content-inner');
+            mainContentInner.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <h4 class="alert-heading">Error al cargar la aplicación</h4>
+                    <p>${error.message || 'No se pudo cargar la aplicación. Por favor, intenta de nuevo.'}</p>
+                </div>
+            `;
+        }
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', function() {
+        loadMenusAndApps();
+    });
+</script>

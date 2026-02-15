@@ -1,0 +1,486 @@
+<style>
+    .select2-selection {
+        height: 50px !important;
+    }
+</style>
+{% if mobj %}
+    <h3 class="text text-left" id="form_retencion_title">Ver retencion {{ mobj.doc_tipo }} {{ mobj.retencion_numero }}</h3>
+{% else %}
+    <h3 class="text text-left" id="form_retencion_title">Creacion de retencion</h3>
+{% endif %}
+
+<div id="form_retencion_dropdown_{{ rr }}"></div>
+
+<div class="u_retencion">
+    {% if perms.OptsIO.form_retencion_ver %}
+        <form id="form_retencion_{{ rr }}" class="form_retencion">
+            <input type="hidden" name="id"
+                {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+            >
+            <div class="row">
+                {% if perms.OptsIO.form_retencion_pdv_codigo_ver %}
+                    <div class="col-md-3">
+                        <label><i class="text-danger ri-user-line"></i>Cliente</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_retencion_pdv_codigo_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="pdv_codigo" class="fl_select form-select form-select-lg">
+                                {% if mobj %}
+                                    <option selected value="{{ mobj.pdv_codigo }}">{{ mobj.pdv_nombrefactura }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_retencion_pdv_ruc_ver %}
+                    <div class="col-md-3">
+                        <label>Ruc</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="2" type="text" 
+                                {% if not perms.OptsIO.form_retencion_pdv_ruc_edita %} readonly disabled {% endif %} name="pdv_ruc"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_ruc }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <label>Dv</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="3" type="text" 
+                                {% if not perms.OptsIO.form_retencion_pdv_ruc_edita %} readonly disabled {% endif %} 
+                                name="pdv_ruc_dv" 
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_ruc_dv }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                {% if perms.OptsIO.form_retencion_pdv_nombrefactura_ver %}
+                    <div class="col-md-6">
+                        <label>Razón social</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="4" type="text" 
+                                {% if not perms.OptsIO.form_retencion_pdv_nombrefactura_edita %} readonly disabled {% endif %} name="pdv_nombrefactura"
+                                class="fl_input form-control form-control-lg" 
+                                oninput="form_validation.just_number(event)"
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_nombrefactura }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                {% if perms.OptsIO.form_retencion_retencion_fecha_ver %}
+                    <div class="col-md-2">
+                        <label>Fecha</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="8" type="date" 
+                                {% if not perms.OptsIO.form_retencion_retencion_fecha_edita %} readonly disabled {% endif %} name="retencion_fecha"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.retencion_fecha }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_retencion_retencion_numero_ver %}
+                    <div class="col-md-3">
+                        <label>Numero</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input required 
+                                tabindex="9" 
+                                type="text" 
+                                {% if not perms.OptsIO.form_retencion_retencion_numero_edita %} readonly disabled {% endif %} name="retencion_numero"
+                                class="fl_input form-control form-control-lg" 
+                                data-inputmask="'mask': '999-999-9999999'"
+                                {% if mobj %}
+                                    value="{{ mobj.retencion_numero|stringformat:"07d" }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="row">
+                {% if perms.OptsIO.form_retencion_factura_relacionada_ver %}
+                    <div class="col-md-4">
+                        <label>Factura relacionada</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                    {% if not perms.OptsIO.form_retencion_doc_loop_link_edita  %}
+                                        readonly
+                                        disabled
+                                    {% endif %}
+                                    required tabindex="10" 
+                                    name="doc_loop_link" 
+                                    class="fl_select form-select form-select-lg">
+                                    
+                                </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Monto</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input required tabindex="11" 
+                                type="text" 
+                                name="retencion" 
+                                class="fl_input form-control form-control-lg" 
+                                oninput="form_validation.just_number(event)"
+                                {% if mobj %}
+                                    value="{{ mobj.retencion }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-12 mb-3 mt-3" id="form_retencion-btn-container">
+                {% if mobj %}
+                    {% if perms.OptsIO.form_retencion_btn_actualizar_retencion %}
+                        <button
+                            tabindex="18"
+                            id="btn_actualizar_retencion"
+                            style="margin-top: 12px;" 
+                            class="btn btn-info btn-lg fl_focus_highlight">
+                            <i class="mdi mdi-update"></i>
+                            Actualizar</button>
+                    {% endif %}
+                {% else %}
+                    {% if perms.OptsIO.form_retencion_btn_crear_retencion %}
+                        <button
+                            tabindex="19"
+                            id="btn_crear_retencion"
+                            style="margin-top: 12px;" 
+                            class="btn btn-info btn-lg fl_focus_highlight">
+                            <i class="mdi mdi-save"></i>
+                            Crear</button>
+                    {% endif %}
+                {% endif %}
+                <div id="form_package_messages" class="mt-1"></div>
+            </div>
+        </form>
+    {% endif %}
+    
+    {% if mobj %}
+        <div id="info_order_state" class="mt-3">
+            <table class="table table-bordered">
+                <tbody>
+                    {% if perms.OptsIO.form_retencion_info_cargado_usuario_ver %}
+                        {% if mobj.cargado_usuario %}
+                            <tr>
+                                <td>Cargado por: </td>
+                                <td>{{ mobj.cargado_usuario }} - {% if mobj.cargado_fecha %}{{ mobj.cargado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_retencion_info_anulado_usuario_ver %}
+                        {% if mobj.anulado_usuario %}
+                            <tr>
+                                <td>Anulado por: </td>
+                                <td>{{ mobj.anulado_usuario }} - {% if mobj.anulado_fecha %}{{ mobj.anulado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_retencion_info_actualizado_usuario_ver %}
+                        {% if mobj.actualizado_usuario %}
+                            <tr>
+                                <td>Actualizado por: </td>
+                                <td>{{ mobj.actualizado_usuario }} - {% if mobj.actualizado_fecha %}{{ mobj.actualizado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+<script type="text/javascript">
+    {% if perms.OptsIO.form_retencion_retencion_fecha_ver %}
+        qelem('#form_retencion_{{ rr }} input[name=retencion_fecha]').value = moment().format('YYYY-MM-DD');
+    {% endif %}
+    form_search.se_select({
+        surl: '{% url "iom" %}',
+        dele: '#form_retencion_{{ rr }} select[name=pdv_codigo]',
+        app_name: 'FL_Structure',
+        model_name: 'Clientes',
+        field_display: ['normalize_name', 'clientecodigo'],
+        field_id: ['clientecodigo'],
+        db_fields: ['clientecodigo', 'clientemail', 'sucursal__sucursal'],
+        db_methods: ['normalize_name', 'get_ruc'],
+        qs_be: [
+            {% if request.user|user_has_group:"Manager de Sucursal" %}
+                {'field': 'sucursal__pk', 'value': '{{ request.user.sucursal.pk }}' },
+            {% endif %}
+        ],
+        sterm: [
+            'or_clientenombre__icontains', 
+            'or_clienteapellido__icontains',
+            'or_clientecodigo__icontains'
+        ],
+        dbcon: 'fl',
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        specific_search: {
+            'module': 'apps.ReceptionPackages',
+            'package': 'mng_packages',
+            'attr': 'MPackages',
+            'mname': 'search_client',
+        },
+        theme: 'bootstrap-5',
+        width: '100%',
+        dejoin: ' ',
+        templateSelection: (dd) => {
+            return dd.id;
+        },
+        {% if modal_selector %}
+          dropdownParent: $('{{ modal_selector }}'),
+        {% else %}
+            dropdownParent: $('#form_retencion_dropdown_{{ rr }}')
+        {% endif %}
+    });
+
+    $('#form_retencion_{{ rr }} select[name=pdv_codigo]').on('change', (evt)=>{
+        let pdv_codigo = $('#form_retencion_{{ rr }} select[name=pdv_codigo]').val();
+        gbe = new FormData();
+        gbe.append('module','apps.OptsIO');
+        gbe.append('package','io_serial');
+        gbe.append('attr', 'IoS');
+        gbe.append('mname', 'seModel')
+        gbe.append('model_app_name', 'FL_Structure');
+        gbe.append('model_name', 'Clientes');
+        gbe.append('fields', jfy(['clientecodigo', 'sucursal__sucursal']));
+        gbe.append('methods', jfy(['normalize_name', 'get_ruc']));
+        gbe.append('dbcon', 'fl');
+        gbe.append('mquery', jfy([{'field': 'clientecodigo', 'value':  pdv_codigo }]));
+        axios.post('{% url "iom" %}', gbe, { 
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp)=>{
+            let rdata = rsp.data.qs[0];
+            $('#form_retencion_{{ rr }} input[name=pdv_ruc]').val(rdata.get_ruc);
+            $('#form_retencion_{{ rr }} input[name=pdv_nombrefactura]').val(rdata.normalize_name);
+            form_input.calculate_dv('#form_retencion_{{ rr }} input[name=pdv_ruc]', '#form_retencion_{{ rr }} input[name=pdv_ruc_dv]')
+            $('#form_retencion_{{ rr }} input[name=retencion_numero]').focus();
+            get_factuas_retencion();
+        });
+        
+    })
+
+    {% if perms.OptsIO.form_retencion_ver %}
+    qelem('#form_retencion_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        {% if mobj.anulado_fecha %}
+            UiB.BeMsgHandle({
+                rsps: [{'error': 'El documento esta anulado, no se puede modificar'}],
+                timer: 5000,
+                //n_modal: '{{ modal_selector }}',
+            })
+            return false;
+        {% endif %}
+        btn_submitter_id = evt.submitter.attributes['id'].value;
+        var fdata = new FormData();
+        fdata.append('module', 'apps.OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('dbcon', 'default')
+        let formData = new FormData(event.target);
+        let edata = form_serials.form_to_json(formData);
+        seldis = ['pdv_codigo']
+        seldis.forEach((idx) => {
+            vv = $(`#form_retencion_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        fdata.append('uc_fields', jfy(edata));
+        console.log(edata);
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([
+            {% if mobj %}
+                {
+                    'module': 'apps.Sifen',
+                    'package': 'mng_sifen',
+                    'attr': 'MSifen',
+                    'mname': 'actualizar_retencion',
+                    'cont': false,
+                    'show_success': true
+                },
+            {% else %}
+                {
+                    'module': 'apps.Sifen',
+                    'package': 'mng_sifen',
+                    'attr': 'MSifen',
+                    'mname': 'crear_retencion',
+                    'cont': false,
+                    'show_success': true
+                },
+            {% endif %}
+        ]))
+        fdata.append('a_vals', jfy([]));
+        document.querySelector('#form_retencion_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_retencion_{{ rr }}').classList.add('overlay');
+        axios.post(
+            '{% url "iom" %}', 
+            fdata, 
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            got_error = false;
+            oid = undefined
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    got_error = true;
+                }
+                if (ee.record_id) {
+                    oid = ee.record_id;
+                }
+            })                
+            if (Array.isArray(msgs)) {
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 3000,
+                })
+            }
+            return {'msgs': msgs, 'record_id': oid};
+        }).then((msgs)=>{
+            if (got_error === false) {
+                {% if t_guid %}
+                    $('#{{t_guid}}').DataTable().ajax.reload();
+                {% endif %}
+                {% if modal_selector %}
+                    my_modal = document.querySelector('{{ modal_selector }}')
+                    modalobj = bootstrap.Modal.getInstance(my_modal) // Retrieve a Carousel instance
+                    modalobj.dispose();
+                    qelem('{{ modal_selector }}').remove();
+                {% endif %}
+                {% if offcanvas %}
+                    $('{{ offcanvas }}Body').html('');
+                    $('{{ offcanvas }} button[data-bs-dismiss=offcanvas]').click();
+                {% endif %}
+            }
+        }).catch((err)=>{
+            UiB.MsgError(err);
+        }).finally(()=>{
+            let ft = document.querySelector('#form_retencion_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    })
+    {% endif %}
+    
+    Inputmask().mask(document.querySelectorAll("input[name=retencion_numero"));
+
+
+    get_factuas_retencion = () => {
+        form_search.se_populate({
+            surl: '{% url "iom" %}',
+            dele: '#form_retencion_{{ rr }} select[name=doc_loop_link]',
+            app_name: 'Sifen',
+            model_name: 'DocumentHeader',
+            field_display: ['doc_numero'],
+            field_id: ['id'],
+            db_fields: ['id', 'prof_number', 'doc_numero'],
+            db_methods: ['get_total_operacion_redondeo', 'get_ivas_master'],
+            qs_be: [
+                { field: 'pdv_codigo', value: $('#form_retencion_{{ rr }} select[name=pdv_codigo]').val() },
+                { field: 'doc_tipo', value: 'FE' },
+                { field: 'retencionobj__isnull', value: 1},
+                { field: 'doc_numero__gt', value: 0},
+                { field: 'doc_iva__gt', value: 0}
+            ],
+            dbcon: 'default',
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            },
+            specific_populate: {
+                'module': 'apps.Sifen',
+                'package': 'mng_sifen',
+                'attr': 'MSifen',
+                'mname': 'search_factura_retencion',
+            },
+            theme: 'bootstrap-5',
+            width: '100%',
+            dejoin: ' ',
+            {% if mobj %}
+                clean: false,
+            {% else %}
+                clean: true,
+            {% endif %}
+            templateResult: (dd) => {
+                if (!dd.id) {
+                    return dd.text
+                }
+                dset = dd.element.dataset;
+                return $(`<span class="fw-bold fs-3">Nro:</span><span class="fw-bold fs-3 w-2">${dset.doc_numero}</span><span class="fw-bold fs-3"> Total: <span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(dset.get_total_operacion_redondeo))}</span>`)
+            },
+            init_select2: true,
+            templateSelection: (dd) => {
+                if (dd.id) {
+                    dset = dd.element.dataset;
+                    if (!dset.doc_numero) {
+                        tx = dd.text.split('-');
+                        doc_numero = tx[0].trim();
+                        get_total_operacion_redondeo = tx[1].trim();
+                        return $(`<span class="fw-bold fs-3">Nro:</span><span class="fw-bold fs-3 w-2">${doc_numero}</span><span class="fw-bold fs-3"> Total: <span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(get_total_operacion_redondeo))}</span>`)
+                    }
+                    return $(`<span class="fw-bold fs-3">Nro:</span><span class="fw-bold fs-3 w-2">${dset.doc_numero}</span><span class="fw-bold fs-3"> Total: <span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(dset.get_total_operacion_redondeo))}</span>`)
+                }
+            },
+            {% if modal_selector %}
+                dropdownParent: $('{{ modal_selector }}'),
+            {% else %}
+                dropdownParent: $('#form_retencion_dropdown_{{ rr }}')
+            {% endif %}
+        }).then((rsp)=>{
+            {% if mobj %}
+                var data = {
+                    id: "{{ mobj.doc_loop_link }}",
+                    text: '{{ mobj.doc_relacion_numero }}-{{ mobj.doc_relacion_monto|floatformat:"0" }}'
+                };
+                var newOption = new Option(data.text, data.id, false, true);
+                $('#form_retencion_{{ rr }} select[name=doc_loop_link]').append(newOption).trigger('change');
+            {% else %}
+                if (rsp.data.qs.length > 0) {
+                    $('#form_retencion_{{ rr }} select[name=doc_loop_link]').val(rsp.data.qs[0].id);
+                    $('#form_retencion_{{ rr }} select[name=doc_loop_link]').trigger('change');
+                }
+            {% endif %}
+        });
+    }
+    {% if mobj %}
+        get_factuas_retencion()
+    {% endif %}
+
+    $('#form_retencion_{{ rr }} select[name=doc_loop_link]').on('change', (evt)=>{
+        console.log(evt)
+        let dd = $('#form_retencion_{{ rr }} select[name=doc_loop_link]').select2('data');
+        dd = dd[0];
+        let dset = dd.element.dataset;
+        retm = (dset.get_ivas_master * 0.3).toFixed(2);
+        $('#form_retencion_{{ rr }} input[name=retencion]').val(retm);
+    })
+</script>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        .setup-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+        }
+        .setup-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .setup-header h1 {
+            color: #667eea;
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .setup-header p {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+            margin: 0 10px;
+        }
+        .step.active {
+            background: #667eea;
+            color: white;
+        }
+        .step.completed {
+            background: #28a745;
+            color: white;
+        }
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: #667eea;
+            border: none;
+            padding: 12px 30px;
+            font-weight: 500;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        .alert {
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .section-title {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        .form-section {
+            margin-bottom: 30px;
+        }
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1><i class="mdi mdi-domain"></i> {{ page_title }}</h1>
+            <p>Configure los datos de su empresa para facturación electrónica</p>
+        </div>
+
+        <div class="step-indicator">
+            <div class="step completed">1</div>
+            <div class="step completed">2</div>
+            <div class="step completed">3</div>
+            <div class="step active">4</div>
+        </div>
+
+        <div id="message-container"></div>
+
+        <form id="form_business" enctype="multipart/form-data" action="{% url 'setup_business' %}" data-login-url="{% url 'glogin' %}">
+            <!-- Datos Básicos -->
+            <div class="form-section">
+                <h5 class="section-title"><i class="mdi mdi-information"></i> Datos Básicos</h5>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="name" class="form-label">Nombre de la Empresa *</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="abbr" class="form-label">Abreviatura</label>
+                        <input type="text" class="form-control" id="abbr" name="abbr" maxlength="10">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="logo" class="form-label">Logo de la Empresa</label>
+                        <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                        <small class="text-muted">PNG o JPG, max 2MB. Se mostrará en login y documentos.</small>
+                    </div>
+                    <div class="col-md-6 mb-3 d-flex align-items-center justify-content-center">
+                        <div id="logo-preview" class="logo-preview-container" style="display: none;">
+                            <img id="logo-preview-img" src="" alt="Preview" style="max-width: 150px; max-height: 100px; object-fit: contain; border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px;">
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="clearLogoPreview()">
+                                <i class="mdi mdi-close"></i>
+                            </button>
+                        </div>
+                        <div id="logo-placeholder" class="text-muted text-center" style="padding: 20px;">
+                            <i class="mdi mdi-image-outline" style="font-size: 40px;"></i>
+                            <p class="mb-0 small">Vista previa del logo</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="ruc" class="form-label">RUC *</label>
+                        <input type="text" class="form-control" id="ruc" name="ruc" required placeholder="Ej: 80012345">
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <label for="ruc_dv" class="form-label">DV *</label>
+                        <input type="text" class="form-control" id="ruc_dv" name="ruc_dv" required maxlength="1" placeholder="0">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="contribuyente" class="form-label">Tipo Contribuyente *</label>
+                        <select class="form-select" id="contribuyente" name="contribuyente" required>
+                            <option value="">Seleccione...</option>
+                            {% for tc in contribuyentes %}
+                            <option value="{{ tc.codigo }}">{{ tc.descripcion }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Datos de Facturación -->
+            <div class="form-section">
+                <h5 class="section-title"><i class="mdi mdi-file-document"></i> Datos de Facturación</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="nombrefactura" class="form-label">Nombre en Factura</label>
+                        <input type="text" class="form-control" id="nombrefactura" name="nombrefactura">
+                        <small class="text-muted">Si es diferente al nombre de la empresa</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="nombrefantasia" class="form-label">Nombre de Fantasía</label>
+                        <input type="text" class="form-control" id="nombrefantasia" name="nombrefantasia">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="actividad" class="form-label">Actividad Económica *</label>
+                        <select class="form-select" id="actividad" name="actividad" required style="width: 100%;">
+                            <option value="">Buscar actividad...</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="denominacion" class="form-label">Denominación</label>
+                        <select class="form-select" id="denominacion" name="denominacion">
+                            <option value="">Ninguna</option>
+                            <option value="S.A.">S.A. (Sociedad Anónima)</option>
+                            <option value="S.R.L.">S.R.L. (Sociedad de Resp. Limitada)</option>
+                            <option value="E.I.R.L.">E.I.R.L. (Empresa Ind. Resp. Limitada)</option>
+                            <option value="Unipersonal">Unipersonal</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dirección -->
+            <div class="form-section">
+                <h5 class="section-title"><i class="mdi mdi-map-marker"></i> Dirección</h5>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label for="direccion" class="form-label">Dirección *</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="numero_casa" class="form-label">Número</label>
+                        <input type="text" class="form-control" id="numero_casa" name="numero_casa">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="departamento" class="form-label">Departamento *</label>
+                        <select class="form-select" id="departamento" name="departamento" required>
+                            <option value="">Seleccione departamento...</option>
+                            {% for dep in departamentos %}
+                            <option value="{{ dep.codigo }}">{{ dep.descripcion }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="ciudad" class="form-label">Ciudad *</label>
+                        <select class="form-select" id="ciudad" name="ciudad" required disabled>
+                            <option value="">Seleccione departamento primero...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contacto -->
+            <div class="form-section">
+                <h5 class="section-title"><i class="mdi mdi-phone"></i> Contacto</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="telefono" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="telefono" name="telefono">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="celular" class="form-label">Celular</label>
+                        <input type="text" class="form-control" id="celular" name="celular">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="correo" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="correo" name="correo" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="web" class="form-label">Sitio Web</label>
+                        <input type="url" class="form-control" id="web" name="web" placeholder="https://">
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="mdi mdi-check"></i> Crear Empresa y Finalizar Setup
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Datos de departamentos y ciudades desde el contexto
+        const departamentosData = {
+            {% for dep in departamentos %}
+            "{{ dep.codigo }}": [
+                {% for ciudad in dep.ciudades %}
+                {"id": {{ ciudad.id }}, "text": "{{ ciudad.descripcion }}"}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        // Datos de actividades económicas desde el contexto
+        const actividadesData = [
+            {% for ae in actividades %}
+            {"id": {{ ae.id }}, "text": "{{ ae.codigo }} - {{ ae.descripcion|escapejs }}"}{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        function showMessage(message, type) {
+            const container = document.getElementById('message-container');
+            container.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+        }
+
+        $(document).ready(function() {
+            // Convertir datos de departamentos a formato Select2
+            const departamentosSelect2Data = Object.keys(departamentosData).map(function(codigo) {
+                // Buscar el nombre del departamento
+                const depOption = $('#departamento option[value="' + codigo + '"]');
+                return {
+                    id: codigo,
+                    text: depOption.text()
+                };
+            });
+
+            // Inicializar Select2 para Departamento
+            $('#departamento').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Buscar departamento...',
+                allowClear: true
+            });
+
+            // Inicializar Select2 para Ciudad (vacío inicialmente)
+            function initCiudadSelect2(data) {
+                // Destruir si ya existe
+                if ($('#ciudad').hasClass('select2-hidden-accessible')) {
+                    $('#ciudad').select2('destroy');
+                }
+
+                // Limpiar y agregar opciones
+                $('#ciudad').empty();
+
+                if (data && data.length > 0) {
+                    $('#ciudad').prop('disabled', false);
+                    $('#ciudad').append('<option value="">Buscar ciudad...</option>');
+                    data.forEach(function(ciudad) {
+                        $('#ciudad').append(`<option value="${ciudad.id}">${ciudad.text}</option>`);
+                    });
+                } else {
+                    $('#ciudad').prop('disabled', true);
+                    $('#ciudad').append('<option value="">Seleccione departamento primero...</option>');
+                }
+
+                // Inicializar Select2
+                $('#ciudad').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: data && data.length > 0 ? 'Buscar ciudad...' : 'Seleccione departamento primero...',
+                    allowClear: true
+                });
+            }
+
+            // Inicializar ciudad vacía
+            initCiudadSelect2(null);
+
+            // Manejar cambio de departamento
+            $('#departamento').on('change', function() {
+                const depCodigo = $(this).val();
+                const ciudadesData = depCodigo ? departamentosData[depCodigo] : null;
+                initCiudadSelect2(ciudadesData);
+            });
+
+            // Inicializar Select2 para Tipo Contribuyente
+            $('#contribuyente').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Seleccione tipo...',
+                allowClear: true,
+                minimumResultsForSearch: Infinity // No mostrar búsqueda para pocos items
+            });
+
+            // Inicializar Select2 para actividades económicas con datos locales
+            $('#actividad').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Buscar actividad económica...',
+                allowClear: true,
+                data: actividadesData,
+                matcher: function(params, data) {
+                    if ($.trim(params.term) === '') {
+                        return data;
+                    }
+                    const term = params.term.toLowerCase();
+                    if (data.text.toLowerCase().indexOf(term) > -1) {
+                        return data;
+                    }
+                    return null;
+                }
+            });
+
+            // Inicializar Select2 para Denominación
+            $('#denominacion').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Seleccione...',
+                allowClear: true,
+                minimumResultsForSearch: Infinity
+            });
+        });
+
+        // Vista previa del logo
+        document.getElementById('logo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validar tamaño (max 2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    showMessage('El logo no debe superar los 2MB', 'warning');
+                    this.value = '';
+                    return;
+                }
+
+                // Validar tipo
+                if (!file.type.startsWith('image/')) {
+                    showMessage('Solo se permiten archivos de imagen', 'warning');
+                    this.value = '';
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logo-preview-img').src = e.target.result;
+                    document.getElementById('logo-preview').style.display = 'flex';
+                    document.getElementById('logo-placeholder').style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function clearLogoPreview() {
+            document.getElementById('logo').value = '';
+            document.getElementById('logo-preview').style.display = 'none';
+            document.getElementById('logo-placeholder').style.display = 'block';
+        }
+
+        // Auto-completar nombre en factura
+        document.getElementById('name').addEventListener('blur', function() {
+            const nombrefactura = document.getElementById('nombrefactura');
+            if (!nombrefactura.value) {
+                nombrefactura.value = this.value;
+            }
+        });
+
+        // Enviar formulario
+        document.getElementById('form_business').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const formUrl = this.action;
+            const loginUrl = this.dataset.loginUrl;
+
+            // Agregar valor de select2 actividad
+            const actividadSelect = $('#actividad').select2('data');
+            if (actividadSelect.length > 0) {
+                formData.set('actividad', actividadSelect[0].id);
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creando empresa...';
+
+            try {
+                const response = await axios.post(formUrl, formData);
+
+                if (response.data.success) {
+                    showMessage(response.data.message, 'success');
+
+                    setTimeout(() => {
+                        window.location.href = response.data.redirect || loginUrl;
+                    }, 1500);
+                } else {
+                    showMessage(response.data.message, 'danger');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="mdi mdi-check"></i> Crear Empresa y Finalizar Setup';
+                }
+            } catch (error) {
+                const message = error.response?.data?.message || 'Error al crear empresa';
+                showMessage(message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="mdi mdi-check"></i> Crear Empresa y Finalizar Setup';
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

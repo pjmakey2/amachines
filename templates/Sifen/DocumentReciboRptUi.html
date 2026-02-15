@@ -1,0 +1,148 @@
+{% load static humanize %}
+<style>
+    #documentrecibo_{{ mobj.pk }} {
+        font-family: "Open Sans", serif;
+        font-size: 13px;
+        font-optical-sizing: auto;
+        font-weight: <weight>;
+        font-style: normal;
+        font-variation-settings:"wdth" 100;
+    }
+    {{ modal_selector }} .modal-header {
+        padding: unset !important;
+    }
+    {{ modal_selector }} .modal-body {
+        padding: unset !important;
+    }
+</style>
+{% if from_consultar_documentrecibo %}
+    <link href="{% static 'amui/amrpt.css' %}?{{ rr }}" rel="stylesheet" type="text/css" />
+{% endif %}
+<div class="">
+    <div class="" id="documentrecibo_{{ mobj.pk }}">
+        <!-- begin::Body-->
+        <div class="">
+            <!-- begin::Wrapper-->
+            <div>
+                <!-- begin::Header-->
+                {% include "HeaderDocumentRptUi.html"%}
+                <!--end::Header-->
+                <!--begin::Body-->
+                <div class="mt-2">
+                    <!--begin::Wrapper-->
+                    <div class="am-header-transac">
+                        <div class="am-header-transac-left">
+                            <p><b>Fecha y hora de emisión:</b> {{ mobj.doc_establecimiento_ciudad }}, {{ mobj.doc_fecha|date:"d" }} DE {{ mobj.doc_fecha|date:"E"|upper }} DE {{ mobj.doc_fecha|date:"Y" }}</p>
+                            <p><b>Recibimos de:</b> {{ mobj.pdv_nombrefactura }}</p>
+                            <p><b>RUC:</b> {{ mobj.pdv_ruc }}</p>
+                            <p><b>Guaranies:</b> {{ mobj.get_total_cobrado }}</p>
+                            <p><b>Caja Cobranza:</b> {{ mobj.pk }}</p>
+                        </div>
+                    </div>
+                    <!--end::Wrapper-->
+                    <div class="am-receive-tables">
+                        <div class="am-receive-table-left">
+                            <table>
+                                <thead class="am-transac-thead">
+                                    <tr>
+                                        <th style="width: 220px;">Fac. Pagadas</th>
+                                        <th style="width: 220px">Importe</th>
+                                        <th style="width: 220px">Nota de credito</th>
+                                        <th style="width: 220px">Importe</th>
+                                        {% comment %} <th style="width: 220px; text-align: left;">TOTAL FACTURAS</th>
+                                        <th style="width: 220px; text-align: left;">{{ mobj.get_total_fe|floatformat:0|intcomma }}</th> {% endcomment %}
+                                    </tr>
+                                </thead>
+                                <tbody class="am-transac-body">
+                                    {% for feobj, ncobj in mobj.get_fe_ncs %}
+                                        <tr>
+                                            <td style="text-align: center;">{{ feobj.get_number_full }}</td>
+                                            <td style="text-align: center;">{{ feobj.total|floatformat:0|intcomma }}</td>
+                                            {% if ncobj %}
+                                                <td style="text-align: center;">{{ ncobj.establecimiento }}-{{ ncobj.expedicion }}-{{ ncobj.numero }}</td>
+                                                <td style="text-align: center;">{{ ncobj.total|floatformat:0|intcomma }}</td>
+                                            {% else %}
+                                                <td style="text-align: center;"></td>
+                                                <td style="text-align: center;"></td>
+                                            {% endif %}
+                                        </tr>
+                                    {% endfor %}
+                                    <tr>
+                                        <td style="text-align: center;"><br></td>
+                                        <td style="text-align: center;"><br></td>
+                                        <td style="text-align: center;"><br></td>
+                                        <td style="text-align: center;"><br></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot class="am-transac-tfoot tfoot-border">
+                                    <tr>
+                                        <td class="am-transac-total-text" style="text-align: center;">TOTAL FACTURAS:</td>
+                                        {% if mobj.doc_moneda == "USD" %}
+                                            <td  style="text-align: center;">{{ mobj.get_total_fe|floatformat:"2"|intcomma }}</td>
+                                        {% else %}
+                                            <td  style="text-align: center;">{{ mobj.get_total_fe|floatformat:"0"|intcomma }}</td>
+                                        {% endif %}
+                                        <td class="am-transac-total-text" style="text-align: center;">TOTAL NC:</td>
+                                        {% if mobj.doc_moneda == "USD" %}
+                                            <td  style="text-align: center;">{{ mobj.get_total_nc|floatformat:"2"|intcomma }}</td>
+                                        {% else %}
+                                            <td  style="text-align: center;">{{ mobj.get_total_nc|floatformat:"0"|intcomma }}</td>
+                                        {% endif %}
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="am-receive-table-right">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px;">TOTAL FACTURAS</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px;">{{ mobj.doc_total_factura|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px;">RETENCION</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px;">{{ mobj.doc_retencion|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px;">EFECTIVO</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px;">{{ mobj.doc_efectivo|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px">CHEQUE</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px">{{ mobj.doc_cheque|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px">TOTAL COBRADO</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px">{{ mobj.doc_cobrado|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                </div>
+                <!--end::Body-->
+            </div>
+            <div class="am-foot-receive mt-5">
+                <div class="am-foot-receive-left border border-secondary">
+                        <br>
+                        <br>
+                        <br>
+                        <br>
+                        <p class="mt-4 text text-center">FIRMA</p>
+                </div>
+                <div class="am-foot-receive-right">
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <p class="mt-4 text text-center">APELLIDO, NOMBRE</p>
+                </div>
+            </div>
+            <!-- end::Wrapper-->
+        </div>
+        <!-- end::Body-->
+    </div>
+</div>

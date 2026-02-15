@@ -1,0 +1,31 @@
+[Unit]
+Description=Amachine ERP Docker Compose Application
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/var/www/amachine
+User=am
+Group=am
+
+# Variables de entorno
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+
+# Comando para iniciar
+ExecStart=/usr/bin/docker compose up -d
+
+# Comando para detener
+ExecStop=/usr/bin/docker compose down
+
+# Comando para reload
+ExecReload=/usr/bin/docker compose restart
+
+# Reiniciar en caso de fallo
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

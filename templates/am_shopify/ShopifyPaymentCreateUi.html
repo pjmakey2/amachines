@@ -1,0 +1,364 @@
+{% load io_tags %}
+<div class="ui_shopifypayment">
+    <form id="form_shopifypayment_{{ rr }}" class="form_shopifypayment">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>Shopify Order ID</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="shopify_order_id"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.shopify_order_id }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>N° Orden</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="order_number"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.order_number }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Nombre</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="order_name"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.order_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <label>Total</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_price"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_price }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Subtotal</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="subtotal_price"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.subtotal_price }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Impuestos</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_tax"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_tax }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Descuentos</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_discounts"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_discounts }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Cliente</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_name"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_name|default:'N/A' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Email</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_email"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_email|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Teléfono</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_phone"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_phone|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Tags del Cliente (RUC)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_tags"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_tags|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Innominado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="is_innominado"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{% if mobj.is_innominado %}SÍ{% else %}NO{% endif %}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Gateway Pago</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="payment_gateway"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.payment_gateway }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Estado Conversión</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="conversion_status"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.conversion_status }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Fecha Orden</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="order_created_at"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.order_created_at|date:'d/m/Y H:i' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Sincronizado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="created_at"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.created_at|date:'d/m/Y H:i' }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        {% if mobj.document_header %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="alert alert-success mb-0">
+                    <strong>Factura SIFEN:</strong> DocumentHeader #{{ mobj.document_header.id }}
+                    {% if mobj.converted_at %}
+                    <br><strong>Convertido el:</strong> {{ mobj.converted_at|date:"d/m/Y H:i" }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.conversion_error %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="alert alert-danger mb-0">
+                    <strong>Error de Conversión:</strong> {{ mobj.conversion_error }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.note %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Nota</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea
+                        name="note"
+                        class="form-control"
+                        readonly
+                        rows="2"
+                    >{{ mobj.note }}</textarea>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.tags %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Tags</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="tags"
+                        class="form-control"
+                        readonly
+                        value="{{ mobj.tags }}"
+                    />
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj %}
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h6 class="border-bottom pb-2 mb-3">
+                    <i class="mdi mdi-cart-outline"></i> Productos de la Orden
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered" id="tbl_line_items_{{ rr }}">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">P. Unit.</th>
+                                <th class="text-center">Cant.</th>
+                                <th class="text-end">Bruto</th>
+                                <th class="text-end">Desc.</th>
+                                <th class="text-end">Neto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody_line_items_{{ rr }}">
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr id="tr_subtotal_{{ rr }}"></tr>
+                            <tr id="tr_shipping_{{ rr }}"></tr>
+                            <tr id="tr_total_{{ rr }}"></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Pago: {{ mobj.order_name }}{% else %}Pago{% endif %}`;
+
+    {% if mobj %}
+    // Renderizar line items
+    (function() {
+        const lineItems = JSON.parse('{{ mobj.line_items|to_json|escapejs }}');
+        const shipping = parseFloat('{{ mobj.total_shipping|default_if_none:0 }}') || 0;
+        const totalPrice = parseFloat('{{ mobj.total_price|default_if_none:0 }}') || 0;
+        const currency = '{{ mobj.currency|default:"PYG" }}';
+        const tbody = document.getElementById('tbody_line_items_{{ rr }}');
+
+        let sumBruto = 0;
+        let sumDescuento = 0;
+        let sumNeto = 0;
+
+        lineItems.forEach((item, idx) => {
+            const price = parseFloat(item.price || 0);
+            const qty = parseInt(item.quantity || 1);
+            const bruto = price * qty;
+
+            // Obtener descuento del item
+            let itemDiscount = 0;
+            if (item.discount_allocations && item.discount_allocations.length > 0) {
+                item.discount_allocations.forEach(d => {
+                    itemDiscount += parseFloat(d.amount || 0);
+                });
+            }
+
+            const neto = bruto - itemDiscount;
+
+            sumBruto += bruto;
+            sumDescuento += itemDiscount;
+            sumNeto += neto;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.title || 'Producto'}</td>
+                <td class="text-end">${UiN.formatNumberU(price.toFixed(0))}</td>
+                <td class="text-center">${qty}</td>
+                <td class="text-end">${UiN.formatNumberU(bruto.toFixed(0))}</td>
+                <td class="text-end ${itemDiscount > 0 ? 'text-danger' : ''}">${itemDiscount > 0 ? UiN.formatNumberU(itemDiscount.toFixed(0)) : '-'}</td>
+                <td class="text-end">${UiN.formatNumberU(neto.toFixed(0))}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // Subtotal row
+        document.getElementById('tr_subtotal_{{ rr }}').innerHTML = `
+            <td colspan="3" class="text-end">Subtotal Productos:</td>
+            <td class="text-end">${UiN.formatNumberU(sumBruto.toFixed(0))}</td>
+            <td class="text-end text-danger">${sumDescuento > 0 ? UiN.formatNumberU(sumDescuento.toFixed(0)) : '-'}</td>
+            <td class="text-end">${UiN.formatNumberU(sumNeto.toFixed(0))}</td>
+        `;
+
+        // Shipping row
+        if (shipping > 0) {
+            document.getElementById('tr_shipping_{{ rr }}').innerHTML = `
+                <td colspan="5" class="text-end">Envío:</td>
+                <td class="text-end text-info">${UiN.formatNumberU(shipping.toFixed(0))}</td>
+            `;
+        }
+
+        // Total row
+        document.getElementById('tr_total_{{ rr }}').innerHTML = `
+            <td colspan="5" class="text-end fs-5">TOTAL:</td>
+            <td class="text-end fs-5">${currency} ${UiN.formatNumberU(totalPrice.toFixed(0))}</td>
+        `;
+    })();
+    {% endif %}
+</script>

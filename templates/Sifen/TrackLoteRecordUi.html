@@ -1,0 +1,79 @@
+<div class="container-fluid p-4">
+    <div class="row">
+        <div class="col-12">
+            <h4 class="mb-4">Trazabilidad del Lote</h4>
+        </div>
+    </div>
+
+    {% if mobj %}
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="mdi mdi-package-variant"></i> Información del Lote</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="fw-bold">Número de Lote:</label>
+                        <p class="mb-1">{{ mobj.lote }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Estado:</label>
+                        <p class="mb-1">
+                            {% if mobj.estado == 'RECIBIDO' %}
+                                <span class="badge bg-info">{{ mobj.estado }}</span>
+                            {% elif mobj.estado == 'PROCESANDO' %}
+                                <span class="badge bg-warning">{{ mobj.estado }}</span>
+                            {% elif mobj.estado == 'CONCLUIDO' %}
+                                <span class="badge bg-success">{{ mobj.estado }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ mobj.estado }}</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Código Resultado:</label>
+                        <p class="mb-1">{{ mobj.dcodreslot }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="mdi mdi-information"></i> Detalles</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="fw-bold">Mensaje:</label>
+                        <p class="mb-1">{{ mobj.msge }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="fw-bold">Fecha de Proceso:</label>
+                        <p class="mb-1">{{ mobj.fecha|date:"d/m/Y H:i:s" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="mdi mdi-information-outline"></i>
+                <strong>Información:</strong> Esta es la última actualización registrada para el lote <strong>{{ mobj.lote }}</strong>.
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <i class="mdi mdi-alert"></i>
+                No se encontró información del lote.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>

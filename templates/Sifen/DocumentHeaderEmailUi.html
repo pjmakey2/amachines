@@ -1,0 +1,41 @@
+{% extends "BaseAmReportMailUi.html" %}
+{% load humanize io_tags %}
+{% block rpt_c %}
+    <h1 style="color: #61279e;">Hola, {{ razon_social }}</h1>
+    <p>Se ha emitido el documento <b>{{ tipo }}</b>. con numero <b>{{ numero }}</b></p>
+    
+    <table border="0" cellpadding="0" cellspacing="0" style="border-collapse:separate;width:100%" role="presentation">
+    <tbody>
+        <tr>
+        <td style="font-family:sans-serif;font-size:14px;vertical-align:top">
+            <h1 style="text-align:center">DATOS DE TU DOCUMENTO</h1>
+            <table border="0" cellpadding="0" cellspacing="0" style="border-collapse:separate;margin-bottom:15px;width:100%;background:#ffffff;border-radius:3px;border:1px solid #60269e" role="presentation">
+            <thead>
+                <tr style="background:#60269e;color:#ffffff">
+                    <th style="text-align:left;padding:10px;border:1px solid #60269e">TIPO</th>
+                    <th style="text-align:left;padding:10px;border:1px solid #60269e">RAZON SOCIAL</th>
+                    <th style="text-align:left;padding:10px;border:1px solid #60269e">RUC</th>
+                    <th style="text-align:left;padding:10px;border:1px solid #60269e">MONTO</th>
+                    <th style="text-align:left;padding:10px;border:1px solid #60269e">LINK CONSULTA</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="text-align:left;border:1px solid #60269e;height:40px">
+                    <td>{{ tipo }}</td>
+                    <td>{{ razon_social }}</td>
+                    <td>{{ ruc }}</td>
+                    <td>{{ monto|floatformat:0|intcomma }}</td>
+                    <td><a href="{{ link }}" target="_blank">Consulta SET</a></td>
+                </tr>
+            </tbody>
+            </table>
+        </td>
+        </tr>
+    </tbody>
+    </table>
+    <hr>
+
+    <p>
+        Si usted no realizo ninguna compra y considera que este mail le llego por error favor contáctenos a <a href="mailto:{% business_email %}">{% business_email %}</a>
+    </p>
+{% endblock %}

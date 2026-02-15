@@ -1,0 +1,479 @@
+<div class="ui_cliente">
+    <form id="form_cliente_{{ rr }}" class="form_cliente">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <!-- Datos Principales -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="mdi mdi-account"></i> Datos Principales
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Codigo</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_codigo"
+                                class="form-control"
+                                placeholder="Codigo"
+                                {% if mobj %} value="{{ mobj.pdv_codigo }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Anclaje Cliente</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="anclaje_cliente"
+                                class="form-control"
+                                placeholder="Anclaje Cliente"
+                                {% if mobj %} value="{{ mobj.anclaje_cliente }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="required">RUC / CI</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_ruc"
+                                class="form-control"
+                                placeholder="RUC o CI"
+                                required
+                                {% if mobj %} value="{{ mobj.pdv_ruc }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>DV</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_ruc_dv"
+                                class="form-control"
+                                placeholder="DV"
+                                {% if mobj %} value="{{ mobj.pdv_ruc_dv }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Estado RUC</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_ruc_estado"
+                                class="form-control"
+                                placeholder="Estado RUC"
+                                {% if mobj %} value="{{ mobj.pdv_ruc_estado }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="required">Nombre Factura</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_nombrefactura"
+                                class="form-control"
+                                placeholder="Nombre para factura"
+                                required
+                                {% if mobj %} value="{{ mobj.pdv_nombrefactura }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="required">Nombre Fantasia</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_nombrefantasia"
+                                class="form-control"
+                                placeholder="Nombre fantasia"
+                                required
+                                {% if mobj %} value="{{ mobj.pdv_nombrefantasia }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <label>Tipo Negocio</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="pdv_type_business" class="form-control">
+                                <option value="B2C" {% if mobj and mobj.pdv_type_business == 'B2C' %}selected{% elif not mobj %}selected{% endif %}>B2C (Consumidor Final)</option>
+                                <option value="B2B" {% if mobj and mobj.pdv_type_business == 'B2B' %}selected{% endif %}>B2B (Empresa)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Tipo Contribuyente</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="pdv_tipocontribuyente" class="form-control">
+                                <option value="1" {% if mobj and mobj.pdv_tipocontribuyente == '1' %}selected{% elif not mobj %}selected{% endif %}>1 - Fisica</option>
+                                <option value="2" {% if mobj and mobj.pdv_tipocontribuyente == '2' %}selected{% endif %}>2 - Juridica</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Es Contribuyente</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="pdv_es_contribuyente" class="form-control">
+                                <option value="true" {% if mobj and mobj.pdv_es_contribuyente %}selected{% elif not mobj %}selected{% endif %}>Si</option>
+                                <option value="false" {% if mobj and not mobj.pdv_es_contribuyente %}selected{% endif %}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Innominado</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="pdv_innominado" class="form-control">
+                                <option value="false" {% if mobj and not mobj.pdv_innominado %}selected{% elif not mobj %}selected{% endif %}>No</option>
+                                <option value="true" {% if mobj and mobj.pdv_innominado %}selected{% endif %}>Si</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contacto -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <i class="mdi mdi-phone"></i> Contacto
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>Telefono</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_telefono"
+                                class="form-control"
+                                placeholder="Telefono"
+                                {% if mobj %} value="{{ mobj.pdv_telefono }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Celular</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_celular"
+                                class="form-control"
+                                placeholder="Celular"
+                                {% if mobj %} value="{{ mobj.pdv_celular }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Email</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="email"
+                                name="pdv_email"
+                                class="form-control"
+                                placeholder="Email"
+                                {% if mobj %} value="{{ mobj.pdv_email }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ubicacion -->
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <i class="mdi mdi-map-marker"></i> Ubicacion
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label>Pais Codigo</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_pais_cod"
+                                class="form-control"
+                                placeholder="PRY"
+                                {% if mobj %} value="{{ mobj.pdv_pais_cod }}" {% else %} value="PRY" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Pais</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_pais"
+                                class="form-control"
+                                placeholder="Paraguay"
+                                {% if mobj %} value="{{ mobj.pdv_pais }}" {% else %} value="Paraguay" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Departamento Cod</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_dpto_cod"
+                                class="form-control"
+                                placeholder="Cod Dpto"
+                                {% if mobj %} value="{{ mobj.pdv_dpto_cod }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Departamento</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_dpto_nombre"
+                                class="form-control"
+                                placeholder="Nombre Dpto"
+                                {% if mobj %} value="{{ mobj.pdv_dpto_nombre }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <label>Distrito Cod</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_distrito_cod"
+                                class="form-control"
+                                placeholder="Cod Distrito"
+                                {% if mobj %} value="{{ mobj.pdv_distrito_cod }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Distrito</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_distrito_nombre"
+                                class="form-control"
+                                placeholder="Nombre Distrito"
+                                {% if mobj %} value="{{ mobj.pdv_distrito_nombre }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Ciudad Cod</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_ciudad_cod"
+                                class="form-control"
+                                placeholder="Cod Ciudad"
+                                {% if mobj %} value="{{ mobj.pdv_ciudad_cod }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Ciudad</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_ciudad_nombre"
+                                class="form-control"
+                                placeholder="Nombre Ciudad"
+                                {% if mobj %} value="{{ mobj.pdv_ciudad_nombre }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Direccion Entrega</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_direccion_entrega"
+                                class="form-control"
+                                placeholder="Direccion de entrega"
+                                {% if mobj %} value="{{ mobj.pdv_direccion_entrega }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Nro Casa</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_numero_casa"
+                                class="form-control"
+                                placeholder="Nro Casa"
+                                {% if mobj %} value="{{ mobj.pdv_numero_casa }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label>Nro Casa Entrega</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="number"
+                                name="pdv_numero_casa_entrega"
+                                class="form-control"
+                                placeholder="Nro Casa Entrega"
+                                {% if mobj %} value="{{ mobj.pdv_numero_casa_entrega }}" {% else %} value="0" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Calle Secundaria</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_dir_calle_sec"
+                                class="form-control"
+                                placeholder="Calle secundaria"
+                                {% if mobj %} value="{{ mobj.pdv_dir_calle_sec }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Direccion Complemento</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="pdv_direccion_comple"
+                                class="form-control"
+                                placeholder="Complemento de direccion"
+                                {% if mobj %} value="{{ mobj.pdv_direccion_comple }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    <i class="mdi mdi-content-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Cliente {{ mobj.pdv_nombrefactura }}{% else %}Crear Cliente{% endif %}`;
+
+    save_cliente = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Clientes');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_cliente_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+        seldis = ['pdv_type_business', 'pdv_tipocontribuyente', 'pdv_es_contribuyente', 'pdv_innominado']
+        seldis.forEach((idx) => {
+            vv = $(`#form_cliente_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_cliente_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_cliente_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_cliente_{{ rr }} c_a to be sent: `);
+        fdata.append('c_a', jfy([
+            {
+                'module': 'Sifen',
+                'package': 'mng_sifen',
+                'attr': 'MSifen',
+                'mname': 'create_cliente',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_cliente_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_cliente_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_cliente_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_cliente_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_cliente_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_cliente_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_cliente_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return {msgs: msgs, got_error: got_error};
+        }).then((result)=>{
+            if (result.got_error === false) {
+                log.success(`#form_cliente_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_cliente_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_cliente_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_cliente_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_cliente_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_cliente_{{ rr }} Submitting form`);
+        save_cliente(event.target);
+    })
+
+</script>

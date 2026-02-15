@@ -1,0 +1,324 @@
+<div class="ui_user">
+    <form id="form_user_{{ rr }}" class="form_user">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <!-- Datos del Usuario -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="mdi mdi-account"></i> Datos del Usuario
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="required">Nombre de Usuario</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="username"
+                                class="form-control"
+                                placeholder="Nombre de usuario"
+                                required
+                                {% if mobj %} value="{{ mobj.username }}" readonly {% endif %}
+                            />
+                        </div>
+                        {% if mobj %}
+                        <small class="text-muted">El nombre de usuario no se puede modificar</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="required">Email</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="email"
+                                name="email"
+                                class="form-control"
+                                placeholder="correo@ejemplo.com"
+                                required
+                                {% if mobj %} value="{{ mobj.email }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Nombre</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="first_name"
+                                class="form-control"
+                                placeholder="Nombre"
+                                {% if mobj %} value="{{ mobj.first_name }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Apellido</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="last_name"
+                                class="form-control"
+                                placeholder="Apellido"
+                                {% if mobj %} value="{{ mobj.last_name }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <i class="mdi mdi-lock"></i> Contraseña
+                {% if mobj %}<small>(Dejar en blanco para no cambiar)</small>{% endif %}
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <label {% if not mobj %}class="required"{% endif %}>Contraseña</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="password"
+                                name="password"
+                                class="form-control"
+                                placeholder="Contraseña"
+                                {% if not mobj %}required{% endif %}
+                            />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label {% if not mobj %}class="required"{% endif %}>Confirmar Contraseña</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="password"
+                                name="password_confirm"
+                                class="form-control"
+                                placeholder="Confirmar contraseña"
+                                {% if not mobj %}required{% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Permisos -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <i class="mdi mdi-shield-check"></i> Permisos
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label>Usuario Activo</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="is_active" class="form-control">
+                                <option value="true" {% if mobj and mobj.is_active %}selected{% elif not mobj %}selected{% endif %}>Si</option>
+                                <option value="false" {% if mobj and not mobj.is_active %}selected{% endif %}>No</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Es Staff</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="is_staff" class="form-control">
+                                <option value="false" {% if mobj and not mobj.is_staff %}selected{% elif not mobj %}selected{% endif %}>No</option>
+                                <option value="true" {% if mobj and mobj.is_staff %}selected{% endif %}>Si</option>
+                            </select>
+                        </div>
+                        <small class="text-muted">Acceso al admin de Django</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Es Superusuario</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="is_superuser" class="form-control">
+                                <option value="false" {% if mobj and not mobj.is_superuser %}selected{% elif not mobj %}selected{% endif %}>No</option>
+                                <option value="true" {% if mobj and mobj.is_superuser %}selected{% endif %}>Si</option>
+                            </select>
+                        </div>
+                        <small class="text-muted">Todos los permisos</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Foto de Perfil -->
+        <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+                <i class="mdi mdi-camera"></i> Foto de Perfil
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        {% if mobj %}
+                            {% with profile=mobj.userprofile_set.first %}
+                                {% if profile and profile.photo %}
+                                    <div class="mb-2">
+                                        <img src="{{ profile.photo.url }}" alt="{{ mobj.username }}"
+                                             id="preview_photo_{{ rr }}"
+                                             style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px;">
+                                    </div>
+                                {% else %}
+                                    <div class="mb-2" id="preview_container_{{ rr }}" style="display: none;">
+                                        <img src="" alt="Preview" id="preview_photo_{{ rr }}"
+                                             style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px;">
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <div class="mb-2" id="preview_container_{{ rr }}" style="display: none;">
+                                <img src="" alt="Preview" id="preview_photo_{{ rr }}"
+                                     style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px;">
+                            </div>
+                        {% endif %}
+                        <input type="file" name="photo" class="form-control"
+                               accept="image/*" id="input_photo_{{ rr }}">
+                        <small class="text-muted">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">
+                <i class="mdi mdi-close"></i> Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="mdi mdi-content-save"></i> Guardar
+            </button>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not mobj %}
+        setTimeout(() => {
+            $('#form_user_{{ rr }} input[name="username"]').val('');
+        }, 400)
+    {% endif %}
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Usuario {{ mobj.username }}{% else %}Crear Usuario{% endif %}`;
+
+    // Preview de foto
+    qelem('#input_photo_{{ rr }}').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var preview = qelem('#preview_photo_{{ rr }}');
+                preview.src = e.target.result;
+                {% if not mobj %}
+                    qelem('#preview_container_{{ rr }}').style.display = 'block';
+                {% else %}
+                    {% with profile=mobj.userprofile_set.first %}
+                        {% if not profile or not profile.photo %}
+                            qelem('#preview_container_{{ rr }}').style.display = 'block';
+                        {% endif %}
+                    {% endwith %}
+                {% endif %}
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    save_user = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'auth');
+        fdata.append('model_name', 'User');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_user_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+        seldis = ['is_active', 'is_staff', 'is_superuser']
+        seldis.forEach((idx) => {
+            vv = $(`#form_user_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_user_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_user_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_user_{{ rr }} c_a to be sent: `);
+        fdata.append('c_a', jfy([
+            {
+                'module': 'OptsIO',
+                'package': 'mng_master',
+                'attr': 'MMaster',
+                'mname': 'create_user',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_user_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_user_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_user_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_user_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_user_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_user_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_user_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return {msgs: msgs, got_error: got_error};
+        }).then((result)=>{
+            if (result.got_error === false) {
+                log.success(`#form_user_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_user_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_user_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_user_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_user_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_user_{{ rr }} Submitting form`);
+        save_user(event.target);
+    })
+
+</script>

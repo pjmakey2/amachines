@@ -1,0 +1,272 @@
+<div class="shopifyorder_ui_container container-fluid">
+    <div class="shopifyorder_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_sync_ordenes" class="btn btn-primary me-2">
+                <i class="mdi mdi-sync"></i> Sincronizar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_ordenes" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_shopifyorder_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    shopifyorder_home_be = function (data, settings) {
+        tt = qelem(`#table_shopifyorder_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`shopifyorder_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_shopifyorder = `dtable_${OptsIO.s4generate()}`;
+    dt_shopifyorder_pc = Grid.datatables_wrapper({
+          t_guid: t_shopifyorder,
+          url_exec: '{% url "iom" %}',
+          title: 'Órdenes de Shopify',
+          tselector: 'table_shopifyorder_ui',
+          app_name: 'am_shopify',
+          model_name: 'ShopifyOrder',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: shopifyorder_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_shopifyorder_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-shopifyorder-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'shopify_id',
+                 tit: 'Shopify ID',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'order_number',
+                 tit: 'N° Orden',
+                 cls: 'align-right',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'name',
+                 tit: 'Nombre',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'customer_email',
+                 tit: 'Cliente Email',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'customer_tags',
+                 tit: 'Tags (RUC)',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     if (data && data.toLowerCase().includes('ruc:')) {
+                         return `<span class="badge bg-success">${data}</span>`;
+                     }
+                     return data || '';
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'total_price',
+                 tit: 'Total',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `${rowobj.currency} ${UiN.formatNumberU(parseFloat(data || 0).toFixed(0))}`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'financial_status',
+                 tit: 'Estado Financiero',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     let badgeClass = data === 'paid' ? 'bg-success' : (data === 'pending' ? 'bg-warning' : 'bg-secondary');
+                     return `<span class="badge ${badgeClass}">${data}</span>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'fulfillment_status',
+                 tit: 'Estado Envío',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'created_at_shopify',
+                 tit: 'Fecha',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? moment(data).format('DD/MM/YYYY HH:mm') : '';
+                 }
+              },
+          ]
+      })
+
+    $(`#${t_shopifyorder} tbody`).on('click', '.tr-shopifyorder-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_shopifyorder}`).DataTable().row( elerow ).data()
+        shopifyorder_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_sync_ordenes').addEventListener('click', function() {
+        UiB.MsgSwall({
+            msg: '¿Desea sincronizar las órdenes desde Shopify?',
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'sync_orders_from_ui');
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs || [rsp.data],
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifyorder}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al sincronizar: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al sincronizar. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    shopifyorder_form_crud = (pk) => {
+        dattrs = {
+            title: 'Ver Orden',
+            t_guid: t_shopifyorder,
+            sui_rr: '{{ rr }}',
+            from_ShopifyOrderUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'am_shopify',
+            model_name: 'ShopifyOrder',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'am_shopify/ShopifyOrderCreateUi.html',
+            raw: true,
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Detalle de la Orden';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_ordenes').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_ordenes').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_name__icontains', 'value': qelem('input#input_buscar_ordenes').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_email__icontains', 'value': qelem('input#input_buscar_ordenes').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_first_name__icontains', 'value': qelem('input#input_buscar_ordenes').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_last_name__icontains', 'value': qelem('input#input_buscar_ordenes').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_tags__icontains', 'value': qelem('input#input_buscar_ordenes').value
+                })
+            }
+            $(`#${t_shopifyorder}`).DataTable().ajax.reload();
+        }
+    }
+
+$(`#${t_shopifyorder}`).on('draw.dt', function() {
+  tt = qelem(`#table_shopifyorder_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

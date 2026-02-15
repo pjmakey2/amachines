@@ -1,0 +1,300 @@
+html, body {
+    font-family: 'Inter', 'Literata', 'Roboto', sans-serif !important;
+}
+
+.fl_body {
+    overflow: auto !important;
+}
+
+.btn-fl-toolbar-pos {
+    margin-top: 20px !important;
+}
+
+.btn-fl-toolbar {
+    height: 46px;
+}
+
+.btn-fl-xs {
+    height: 35px;
+}
+
+
+
+.btn-fl-xxl {
+    height: 55px !important;
+}
+
+
+.fl_input:required {
+  border-color: #ff9b9b !important;
+  border-width: 0.5px !important;
+}
+
+.fl_input[readonly] {
+    background-color: #f1f1f1 !important;
+    border-width: 0.8px !important;
+    color: black !important;
+}
+
+
+.fl_select:required {
+  border-color: #ff9b9b !important;
+  border-width: 0.5px !important;
+}
+
+.fl_focus_highlight:focus-within input {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.fl_focus_highlight:focus-within select {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.fl_focus_highlight:focus-within textarea {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.fl_focus_highlight:focus-within .select2-selection {
+    border: rgb(247, 1, 255) solid 2px !important;
+}
+
+.fl_focus_highlight:focus {
+    border:  rgb(247, 1, 255) solid 2px !important;
+}
+
+.fl_checkbox {
+    height: 30px;
+    width: 30px;
+}
+
+.fl_input-group-checkbox  {
+    background-color: black !important;
+}
+
+#fl_datatable-packages_info {
+      font-weight: bold !important;
+      color: black !important;
+}
+
+
+#fl_reception_table_container .dt-buttons {
+    padding-left: 30px !important;
+}
+
+.dt_row_danger {
+    background-color: #f8d7da !important;
+}
+
+.fl_modal {
+    max-width: 1700px !important;
+    width: 90% !important;
+}
+
+
+/* Reset some default styles for better consistency */
+/* fl_rpt */
+.fl_rpt table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 5px;
+    
+}
+
+/* Style for table rows */
+.fl_rpt tr {
+    transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+/* Style for table header */
+.fl_rpt th {
+    /* background-color: #f2f2f2; */
+    color: black;
+    font-size: 16px !important;
+    /* font-weight: bold; */
+    padding: 0px;
+    text-align: left;
+}
+
+/* Style for table cells */
+.fl_rpt td {
+    padding: 0px;
+    border-bottom: 1px solid #ddd; /* Soft gray border */
+}
+
+/* Hover effect for table rows */
+.fl_rpt tr:hover {
+    background-color: #f5f5f5; /* Lighter gray background on hover */
+}
+
+.fl_group_title {
+    margin-top: 10px !important;
+    margin-bottom: 0px !important;
+    margin-left: 10px !important;
+    float: left !important;
+}
+
+.fl_group_metrics {
+    margin-top: 0px !important;
+    margin-bottom: 0px !important;
+    margin-left: 15px !important;
+    float: left !important;
+    
+}
+
+/* table.dataTable tbody > tr.selected,
+fl_table.dataTable tbody > tr > .selected {
+    background-color: rgba(116, 5, 101, 0.138) !important;
+  }
+table.dataTable tbody > tr.selected td,
+table.dataTable tbody > tr > .selected td {
+    border-color: black !important;
+} */
+
+.fl_tall_select {
+    height: 400px !important;
+}
+
+.fl_medium_tall_select {
+    height: 200px !important;
+}
+
+.fl_main_content {
+    margin-left: 12px;
+}
+
+/* select2 personalization */
+.select2-container {
+    display: block !important;
+}
+
+.overlay-container {
+    position: relative;
+}
+
+.overlay-container.overlay::after {
+    content: 'Procesando';
+    font-size: 18px !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Adjust the color and opacity as needed */
+    z-index: 1; /* Ensure the overlay is above the content */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.overlay-container.overlay::after .spinner {
+    border: 4px solid rgba(0, 0, 0, 0.3); /* Light gray border */
+    border-top: 4px solid #333; /* Dark gray border for the spinner */
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite; /* Rotate animation */
+}
+
+
+div.dts div.dataTables_scrollBody table {
+    background-color: inherit !important;
+    z-index: 2;
+}
+
+.table-sm th, .table-sm td {
+    padding: 0.25rem 0.25rem !important;
+}
+
+.table-esm th, .table-esm td {
+    padding: 0.20rem 0.20rem !important;
+}
+
+.table-sesm th, .table-sesm td {
+    padding: 0.15rem 0.15rem !important;
+}
+
+.text-lower-12 {
+    font-size: 12px !important;
+}
+
+.btn-recepcion-paquete {
+    height: 75px !important;
+    width: 140px !important;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fl_paq_depo_baja {
+    background-color: #f1416cb0!important;
+}
+
+.fl_paq_carga {
+    background-color: #5094eeb0!important;
+}
+
+.fl_paq_proceso {
+    background-color: #ffc10794!important;
+}
+
+.fl_paq_recepcion {
+    background-color: #d1ffd7b0!important;
+}
+
+.fl_paq_resuelto {
+    background-color: #d1ffd7b0!important
+}
+
+.fs-extra-lg {
+    font-size: 23.332px !important;
+}
+
+.fs-icon-menu {
+    font-size: 28px !important;
+}
+
+.sub-menu-icon {
+    color: #7c01ff !important;
+}
+
+.fl_cursor {
+    cursor: pointer;
+}
+
+.swal2-modal {
+    display: inline-table !important;
+}
+
+table.dataTable>tbody>tr.selected>* {
+    box-shadow: inset 0 0 0 9999px #b5d6ff47 !important;
+    color: var(--bs-text-inverse) !important;
+}
+
+table.dataTable>tbody>tr.selected:hover>* {
+    box-shadow: inset 0 0 0 9999px #b5d6ff47 !important;
+    color: var(--bs-text-inverse) !important;
+}
+
+table.dataTable.hover>tbody>tr.selected:hover>*, table.dataTable.display>tbody>tr.selected:hover>* {
+    box-shadow: inset 0 0 0 9999px #b5d6ff47 !important;
+    box-shadow: inset 0 0 0 9999px  #b5d6ff47 !important;
+}
+
+.ele-edit:hover {
+    cursor:grab;
+}
+
+.btn-close-modal {
+    position: absolute;
+    z-index: 9999;
+    
+}
+
+.floating-btn {
+    position: fixed;
+    
+    z-index: 1000; /* Ensures it's above other elements */
+}
+

@@ -1,0 +1,16 @@
+<div class="am-header-transac">
+    <div class="am-header-transac-left">
+        <p><b>Fecha:</b> {{ mobj.doc_establecimiento_ciudad }}, {{ mobj.doc_fecha|date:"d/m/Y" }}</p>
+        <p><b>Vencimiento:</b> {{ mobj.doc_vencimiento|date:"d/m/Y"}}</p>
+        <p><b>Tipo Transacción:</b> {{ mobj.doc_tipo_ope_desc }}</p>
+        <p><b>Moneda:</b> {{ mobj.doc_moneda }}</p>
+        <p><b>Condición:</b> {% if mobj.doc_cre_tipo_cod == 2 %}Crédito{% else %}Contado{% endif %}</p>
+    </div>
+    <div class="am-header-transac-right">
+        <p><b>RUC / Doc. Identidad:</b> {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv %}-{{ mobj.pdv_ruc_dv }}{% endif %}</p>
+        <p><b>Nombre / Razón Social:</b> {{ mobj.pdv_nombrefactura }}</p>
+        <p><b>Dirección:</b> {% if mobj.pdv_direccion_entrega and mobj.pdv_direccion_entrega != "ND" %}{{ mobj.pdv_direccion_entrega }}{% else %}-{% endif %}</p>
+        <p><b>Correo:</b> {{ mobj.pdv_email|default:"-" }}</p>
+        <p><b>Teléfono:</b> {{ mobj.pdv_celular|default:"-" }}</p>
+    </div>
+</div>

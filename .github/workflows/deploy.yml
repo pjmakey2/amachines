@@ -1,0 +1,33 @@
+name: Deploy to Production
+
+on:
+  release:
+    types: [published]  # Deploy cuando se publica un release
+  workflow_dispatch:    # También permite ejecución manual
+
+env:
+  PROJECT_PATH: /var/www/toca3d
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to Digital Ocean
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            cd /var/www/toca3d
+            ./deployment/deploy.sh
+
+      - name: Notify success
+        if: success()
+        run: echo "✅ Deploy exitoso a toca3d.altamachines.com"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "❌ Deploy falló - revisar logs"

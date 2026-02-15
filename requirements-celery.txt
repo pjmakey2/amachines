@@ -1,0 +1,12 @@
+# Celery and dependencies
+celery>=5.3.0
+redis>=5.0.0
+
+# Utilities
+boltons>=21.0.0
+
+# Optional: For better performance
+hiredis>=2.2.0
+
+# Optional: For monitoring (Flower)
+flower>=2.0.0

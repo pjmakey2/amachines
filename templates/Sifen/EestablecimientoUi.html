@@ -1,0 +1,227 @@
+<div class="eestablecimiento_ui_container container-fluid">
+    <div class="eestablecimiento_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_eestablecimiento" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_eestablecimiento" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_eestablecimiento" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_eestablecimiento_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    eestablecimiento_home_be = function (data, settings) {
+        tt = qelem(`#table_eestablecimiento_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`eestablecimiento_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_eestablecimiento = `dtable_${OptsIO.s4generate()}`;
+    dt_eestablecimiento_pc = Grid.datatables_wrapper({
+          t_guid: t_eestablecimiento,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Establecimientos',
+          tselector: 'table_eestablecimiento_ui',
+          app_name: 'Sifen',
+          model_name: 'Eestablecimiento',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          check_gmquery: true,
+          builder_be: eestablecimiento_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-eestablecimiento-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'timbradoobj__timbrado',
+                 tit: 'Timbrado',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'establecimiento',
+                 tit: 'Establecimiento',
+                 cls: 'align-right',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'expedicion',
+                 tit: 'Expedición',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'direccion',
+                 tit: 'Dirección',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'numero_casa',
+                 tit: 'Número Casa',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+          ]
+      })
+
+    $(`#${t_eestablecimiento} tbody`).on('click', '.tr-eestablecimiento-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_eestablecimiento}`).DataTable().row( elerow ).data()
+        eestablecimiento_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_eestablecimiento').addEventListener('click', function() {
+          eestablecimiento_form_crud();
+      });
+
+    qelem('#btn_borrar_eestablecimiento').addEventListener('click', function() {
+        let table = $(`#${t_eestablecimiento}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_eestablecimiento');
+            gbe.append('attr', 'MEestablecimiento');
+            gbe.append('mname', 'delete_eestablecimiento');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_eestablecimiento}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    eestablecimiento_form_crud = (pk) => {
+        dattrs = {
+            title: 'Crear Establecimiento',
+            t_guid: t_eestablecimiento,
+            sui_rr: '{{ rr }}',
+            from_EestablecimientoUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'Eestablecimiento',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/EestablecimientoCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Establecimiento';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_eestablecimiento').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_eestablecimiento').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_establecimiento__icontains', 'value': qelem('input#input_buscar_eestablecimiento').value
+                })
+                gmquery.push({
+                    'field': 'or_direccion__icontains', 'value': qelem('input#input_buscar_eestablecimiento').value
+                })
+            }
+            $(`#${t_eestablecimiento}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_eestablecimiento}`).on('draw.dt', function() {
+  tt = qelem(`#table_eestablecimiento_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

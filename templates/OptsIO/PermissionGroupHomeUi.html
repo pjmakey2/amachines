@@ -1,0 +1,61 @@
+<h2 class="text text-left">Grupo de permisos</h2>
+<div id="permissiongroup_table_container"></div>
+<script type="text/javascript">
+    Grid.datatables_wrapper({
+        url_exec: '{% url "iom" %}',
+        url_tmpl: '{% url "dtmpl" %}',
+        crud_tmpl: 'OptsIO/PermissionGroupCreateUi.html',
+        title: 'Crear grupo',
+        tselector: 'permissiongroup_table_container',
+        app_name: 'auth',
+        model_name: 'Group',
+        model_pk: 'id',
+        record_delete: true,
+        state_field: {},
+        dbcon: 'default',
+        cls_table: 'table align-middle table-row-bordered gy-5 gs-7',
+        cls_thead: 'fw-semibold fs-2 text-gray-800',
+        t_fsize: '14px',
+        mquery: [],
+        detail_objs: [
+            {
+            'dset': 'permissions',
+            'dfilter': {},
+            'sfields': ['name', 'codename', 'content_type__model']
+            },
+            {
+                'dset': 'user_set',
+                'dfilter': {'is_active': 1},
+                'sfields': ['username', 'first_name']
+            },
+        ],
+        t_opts: {
+            select: { style: 'single' },
+            order: [[0, 'asc']],
+        },
+        columns: [
+            { fdis: true, gre: true, btyp:'fdb', idx: 'name', tit: 'Grupo', dtyp: 'str' },
+            { fdis: true, gre: false, btyp: undefined, idx: 'user_set', tit: 'Usuarios', 
+                render: (data, type, rowobj)=>{
+                    dhtml = '<table class="table table-sm table-bordered"><tbody>';
+                    data.forEach((ii)=>{
+                        dhtml += `<tr><td class="list-group-item">${ii.username} (${ii.first_name})</td></tr>`
+                    })
+                    dhtml += '</tbody></table>'
+                    return dhtml;
+                }
+            },
+            { fdis: true, gre: false, btyp: undefined, idx: 'permissions', tit: 'Permisos', 
+                render: (data, type, rowobj)=>{
+                    dhtml = '<table class="table table-sm table-bordered"><tbody>';
+                    data.forEach((ii)=>{
+                        dhtml += `<tr><td class="list-group-item">${ii.name}</td></tr>`
+                    })
+                    dhtml += '</tbody></table>'
+                    return dhtml;
+                }, hide: true
+            },
+            
+        ],
+    })
+</script>

@@ -1,0 +1,292 @@
+<div class="ui_apps">
+    <form id="form_apps_{{ rr }}" class="form_apps">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>Prioridad</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="prioridad"
+                        class="form-control"
+                        placeholder="Prioridad"
+                        {% if mobj %} value="{{ mobj.prioridad }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Menú</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        name="menu"
+                        class="form-control"
+                        {% if mobj %} value="{{ mobj.menu }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>App Name</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="app_name"
+                        class="form-control"
+                        placeholder="App Name"
+                        {% if mobj %} value="{{ mobj.app_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Nombre</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="friendly_name"
+                        class="form-control"
+                        placeholder="Nombre amigable"
+                        {% if mobj %} value="{{ mobj.friendly_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>URL</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="url"
+                        class="form-control"
+                        placeholder="URL"
+                        {% if mobj %} value="{{ mobj.url }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Icono App <small class="text-muted">(icono individual de la app)</small></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <span class="input-group-text">
+                        <i id="icon_preview" class="{% if mobj %}{{ mobj.icon }}{% else %}mdi mdi-help{% endif %}"></i>
+                    </span>
+                    <input
+                        type="text"
+                        name="icon"
+                        id="icon_input"
+                        class="form-control"
+                        placeholder="mdi mdi-icon-name"
+                        {% if mobj %} value="{{ mobj.icon }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Icono Menú <small class="text-muted">(icono del grupo de menú)</small></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <span class="input-group-text">
+                        <i id="menu_icon_preview" class="{% if mobj %}{{ mobj.menu_icon }}{% else %}mdi mdi-folder-outline{% endif %}"></i>
+                    </span>
+                    <input
+                        type="text"
+                        name="menu_icon"
+                        id="menu_icon_input"
+                        class="form-control"
+                        placeholder="mdi mdi-folder-outline"
+                        {% if mobj %} value="{{ mobj.menu_icon }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Versión</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="version"
+                        class="form-control"
+                        placeholder="1.0.0"
+                        {% if mobj %} value="{{ mobj.version }}" {% else %} value="1" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Background</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="color"
+                        name="background"
+                        class="form-control"
+                        {% if mobj %} value="{{ mobj.background }}" {% else %} value="#000000" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Activo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="active" class="form-control">
+                        <option value="true" {% if mobj and mobj.active %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.active %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+
+
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar App {{ mobj.pk }}{% else %}Crear App{% endif %}`;
+
+    // Populate Menu select using se_populate
+    {% comment %} form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_apps_{{ rr }} select[name=menu]',
+        app_name: 'OptsIO',
+        model_name: 'Apps',
+        field_display: ['menu'],
+        field_id: ['menu'],
+        db_fields: ['menu'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: true,
+        placeholder: 'Seleccione un menú',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        distinct: ['menu'],
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        sort: [
+            {'dataIndx': 'menu', 'dir': 'up'},
+        ]
+    }).then(() => {
+        {% if mobj %}
+        // Set the selected value if editing
+        $('#form_apps_{{ rr }} select[name=menu]').val('{{ mobj.menu }}').trigger('change');
+        {% endif %}
+    }); {% endcomment %}
+
+    save_apps = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'OptsIO');
+        fdata.append('model_name', 'Apps');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_apps_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        seldis = ['menu']
+        seldis.forEach((idx) => {
+            vv = $(`#form_apps_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_apps_{{ rr }}edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_apps_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_apps_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'OptsIO',
+                'package': 'io_apps',
+                'attr': 'IOApps',
+                'mname': 'create_apps',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_apps_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_apps_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_apps_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_apps_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_apps_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_apps_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_apps_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_apps_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_apps_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_apps_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_apps_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_apps_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_apps_{{ rr }} Submitting form`);
+        save_apps(event.target);
+    })
+
+    // Preview de iconos en tiempo real
+    const iconInput = qelem('#icon_input');
+    const iconPreview = qelem('#icon_preview');
+    const menuIconInput = qelem('#menu_icon_input');
+    const menuIconPreview = qelem('#menu_icon_preview');
+
+    if (iconInput) {
+        iconInput.addEventListener('input', function() {
+            iconPreview.className = this.value || 'mdi mdi-help';
+        });
+    }
+
+    if (menuIconInput) {
+        menuIconInput.addEventListener('input', function() {
+            menuIconPreview.className = this.value || 'mdi mdi-folder-outline';
+        });
+    }
+
+</script>

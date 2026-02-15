@@ -1,0 +1,211 @@
+<style>
+.daterangepicker .ranges ul {
+    max-height: 282px !important;
+}
+</style>
+
+<form id="form_consultar_documentheader">
+    <div class="d-flex gap-2 align-items-end">
+        <!-- Filtro de Fecha -->
+        <div style="flex: 1; min-width: 250px;">
+            <label class="form-label fw-bold mb-1">Fecha</label>
+            <div id="documentheadersearch_filter_date"
+                style="background: #fff; cursor: pointer; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px;">
+                <i class="mdi mdi-calendar"></i>
+                <span></span>
+                <i class="mdi mdi-chevron-down float-end"></i>
+            </div>
+        </div>
+
+        <!-- Filtro de Tipo -->
+        <div style="flex: 0 0 auto; min-width: 120px;">
+            <label class="form-label fw-bold mb-1">
+                <i onclick="$('select[name=qs_doc_tipo]').val('').trigger('change')"
+                   class="text-danger mdi mdi-close-circle" style="cursor: pointer;"></i>
+                Tipo
+            </label>
+            <select name="qs_doc_tipo" class="form-select">
+                <option value="">Todos</option>
+                <option value="FE">Factura</option>
+                <option value="NC">Nota de Crédito</option>
+                <option value="ND">Nota de Débito</option>
+                <option value="AF">Autofactura</option>
+            </select>
+        </div>
+
+        <!-- Filtro de Estado de Cobranza -->
+        <div style="flex: 0 0 auto; min-width: 140px;">
+            <label class="form-label fw-bold mb-1">
+                <i onclick="$('select[name=qs_cobranza]').val('').trigger('change')"
+                   class="text-danger mdi mdi-close-circle" style="cursor: pointer;"></i>
+                Estado
+            </label>
+            <select name="qs_cobranza" class="form-select">
+                <option value="">Todos</option>
+                <option value="pendiente_cobro">PENDIENTE</option>
+                <option value="cobrado">COBRADO</option>
+            </select>
+        </div>
+
+        <!-- Botón Buscar -->
+        <div style="flex: 0 0 auto;">
+            <button type="submit" class="btn btn-primary">
+                <i class="mdi mdi-magnify"></i> Buscar
+            </button>
+        </div>
+
+        <!-- Botón Reporte -->
+        <div style="flex: 0 0 auto;">
+            <button type="button" id="btn-rpt_libro_vta-{{ rr }}-create" class="btn btn-success"
+                    title="Descargar reporte de facturación">
+                <i class="mdi mdi-file-excel"></i>
+            </button>
+        </div>
+    </div>
+</form>
+
+<script type="text/javascript">
+    var doc_filter_date_0 = null;
+    var doc_filter_date_1 = null;
+
+    // Inicializar daterangepicker
+    $(function() {
+        const start = moment().startOf('month');
+        const end = moment().endOf('month');
+
+        function cb(start, end) {
+            $('#documentheadersearch_filter_date span').html(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
+            doc_filter_date_0 = start.format('YYYY-MM-DD');
+            doc_filter_date_1 = end.format('YYYY-MM-DD');
+        }
+
+        $('#documentheadersearch_filter_date').daterangepicker({
+            startDate: start,
+            endDate: end,
+            locale: {
+                format: 'DD/MM/YYYY',
+                separator: ' - ',
+                applyLabel: 'Aplicar',
+                cancelLabel: 'Cancelar',
+                fromLabel: 'Desde',
+                toLabel: 'Hasta',
+                customRangeLabel: 'Personalizado',
+                weekLabel: 'S',
+                daysOfWeek: ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'],
+                monthNames: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+                firstDay: 1
+            },
+            ranges: {
+               'Hoy': [moment(), moment()],
+               'Ayer': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+               'Últimos 7 días': [moment().subtract(6, 'days'), moment()],
+               'Últimos 30 días': [moment().subtract(29, 'days'), moment()],
+               'Este mes': [moment().startOf('month'), moment().endOf('month')],
+               'Mes pasado': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+               'Este año': [moment().startOf('year'), moment().endOf('year')]
+            }
+        }, cb);
+
+        cb(start, end);
+    });
+
+    // Submit del formulario de búsqueda
+    $('#form_consultar_documentheader').on('submit', function(evt) {
+        evt.preventDefault();
+        aplicarFiltrosDocumentHeader();
+    });
+
+    // Listeners para cambios en los selects
+    $('select[name=qs_doc_tipo]').on('change', function() {
+        aplicarFiltrosDocumentHeader();
+    });
+
+    $('select[name=qs_cobranza]').on('change', function() {
+        aplicarFiltrosDocumentHeader();
+    });
+
+    // Función para aplicar filtros
+    function aplicarFiltrosDocumentHeader() {
+        gmquery = [];
+
+        // Filtro de fecha
+        if (doc_filter_date_0 && doc_filter_date_1) {
+            gmquery.push({field: 'doc_fecha__gte', value: doc_filter_date_0});
+            gmquery.push({field: 'doc_fecha__lte', value: doc_filter_date_1});
+        }
+
+        // Filtro de tipo
+        const qs_doc_tipo = $('select[name=qs_doc_tipo]').val();
+        if (qs_doc_tipo !== '' && qs_doc_tipo !== null) {
+            gmquery.push({field: 'doc_tipo', value: qs_doc_tipo});
+        }
+
+        // Filtro de cobranza
+        const qs_cobranza = $('select[name=qs_cobranza]').val();
+        if (qs_cobranza !== '' && qs_cobranza !== null) {
+            if (qs_cobranza === 'pendiente_cobro') {
+                gmquery.push({field: 'doc_saldo__gt', value: 0});
+            } else {
+                gmquery.push({field: 'doc_saldo', value: 0});
+            }
+        }
+
+        // Llamar a la función del padre para recargar la tabla
+        DrawDocumentHeaderHome();
+    }
+
+    // Botón Reporte Libro de Ventas
+    qelem('#btn-rpt_libro_vta-{{ rr }}-create').addEventListener('click', function(evt) {
+        evt.preventDefault();
+
+        const qs_doc_tipo = $('select[name=qs_doc_tipo]').val();
+        const qs_cobranza = $('select[name=qs_cobranza]').val();
+
+        const gbe = new FormData();
+        gbe.append('module', 'Sifen');
+        gbe.append('package', 'mng_sifen');
+        gbe.append('attr', 'MSifen');
+        gbe.append('mname', 'rpt_libro_vta');
+        gbe.append('qs_doc_fecha_0', doc_filter_date_0);
+        gbe.append('qs_doc_fecha_1', doc_filter_date_1);
+
+        if (qs_doc_tipo !== '' && qs_doc_tipo !== null) {
+            gbe.append('qs_doc_tipo', qs_doc_tipo);
+        }
+        if (qs_cobranza !== '' && qs_cobranza !== null) {
+            gbe.append('qs_cobranza', qs_cobranza);
+        }
+
+        gbe.append('dbcon', 'default');
+
+        const tt = qelem('#table_documentheader_ui');
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', gbe, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            const data = rsp.data;
+            if (data.hasOwnProperty('error')) {
+                UiB.MsgError(data.error);
+            } else if (data.success && data.furl) {
+                // Descargar archivo Excel
+                const link = document.createElement('a');
+                link.href = `/${data.furl}`;
+                link.download = data.file_name;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                UiB.MsgSuccess('Reporte generado exitosamente');
+            }
+        }).catch((err) => {
+            log.error(`Error al generar reporte: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al generar el reporte.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    });
+</script>

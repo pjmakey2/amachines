@@ -1,0 +1,238 @@
+<div class="businessuser_ui_container container-fluid">
+    <div class="businessuser_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_businessuser" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_businessuser" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_businessuser" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_businessuser_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    businessuser_home_be = function (data, settings) {
+        tt = qelem(`#table_businessuser_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`businessuser_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_businessuser = `dtable_${OptsIO.s4generate()}`;
+    dt_businessuser_pc = Grid.datatables_wrapper({
+          t_guid: t_businessuser,
+          url_exec: '{% url "iom" %}',
+          title: 'Usuarios de Negocio',
+          tselector: 'table_businessuser_ui',
+          app_name: 'OptsIO',
+          model_name: 'UserBusiness',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          check_gmquery: true,
+          builder_be: businessuser_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-businessuser-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'userprofileobj__username',
+                 tit: 'Usuario',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'businessobj__name',
+                 tit: 'Negocio',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'businessobj__ruc',
+                 tit: 'RUC',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: false,
+                 btyp: 'fdb',
+                 idx: 'active',
+                 tit: 'Activo',
+                 cls: 'align-center',
+                 dtyp: 'bool',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
+                 }
+              }
+          ]
+      });
+
+    $(`#${t_businessuser}`).on('draw.dt', function() {
+        tt = qelem(`#table_businessuser_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+
+    $(`#${t_businessuser} tbody`).on('click', '.tr-businessuser-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_businessuser}`).DataTable().row( elerow ).data()
+        businessuser_form_crud(rowobj.id);
+    })
+
+    qelem('#input_buscar_businessuser').addEventListener('input', (e)=>{
+        dt_businessuser_pc.dt_businessuser.search(e.target.value).draw();
+    })
+
+    qelem('#btn_crear_businessuser').addEventListener('click', function() {
+          businessuser_form_crud();
+      })
+
+    qelem('#btn_borrar_businessuser').addEventListener('click', ()=>{
+        rows = dt_businessuser_pc.dt_businessuser.rows({ selected: true }).data();
+        if (rows.length === 0) {
+            UiB.MsgError('Por favor seleccione al menos un registro');
+            return;
+        }
+
+        UiB.MsgConfirm({
+            title: '¿Confirmar eliminación?',
+            text: `Se eliminarán ${rows.length} asignación(es)`,
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            onConfirm: function() {
+                ids = [];
+                for (let i = 0; i < rows.length; i++) {
+                    ids.push(rows[i].id);
+                }
+
+                var fdata = new FormData();
+                fdata.append('module', 'OptsIO');
+                fdata.append('package', 'io_maction');
+                fdata.append('attr', 'IOMaction');
+                fdata.append('mname', 'process_record');
+                fdata.append('model_app_name', 'OptsIO');
+                fdata.append('model_name', 'UserBusiness');
+                fdata.append('dbcon', 'default');
+                fdata.append('ids', jfy(ids));
+                fdata.append('uc_fields', jfy({}));
+                fdata.append('b_vals', jfy([]));
+                fdata.append('c_a', jfy([]));
+                fdata.append('a_vals', jfy([{
+                    'module': 'OptsIO',
+                    'package': 'mng_master',
+                    'attr': 'MMaster',
+                    'mname': 'delete_userbusiness',
+                    'cont': false,
+                    'show_success': true
+                }]));
+
+                axios.post('{% url "iom" %}', fdata, {
+                    headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+                }).then((rsp) => {
+                    var msgs = rsp.data.msgs;
+                    if (!rsp.data.hasOwnProperty('msgs')) {
+                        msgs = [rsp.data];
+                    }
+                    var got_error = false;
+                    msgs.forEach((ee) => {
+                        if (ee.error) {
+                            got_error = true;
+                        }
+                    });
+                    UiB.BeMsgHandle({
+                        rsps: msgs,
+                        timer: 2000
+                    });
+                    if (!got_error) {
+                        dt_businessuser_pc.dt_businessuser.ajax.reload();
+                    }
+                }).catch((err) => {
+                    log.error('Error deleting records: ' + jfy(err));
+                    UiB.MsgError('Error al eliminar registros');
+                });
+            }
+        });
+    })
+
+    businessuser_form_crud = (pk) => {
+        dattrs = {
+            title: 'Asignar Negocio a Usuario',
+            t_guid: t_businessuser,
+            sui_rr: '{{ rr }}',
+            from_BusinessUserUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'OptsIO',
+            model_name: 'UserBusiness',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'OptsIO/BusinessUserCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Asignación de Negocio';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+        }).catch((err)=>{
+            log.error(`Error al obtener el template: ${jfy(err)}`);
+            UiB.MsgError('Error al abrir el formulario');
+        })
+    }
+</script>

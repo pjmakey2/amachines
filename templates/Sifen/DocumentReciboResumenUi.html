@@ -1,0 +1,250 @@
+{% load humanize %}
+<h3 class="text text-center">Recibo a generar para el cliente {{ clobj.normalize_name }} </h3>
+<br>
+<h2 class="text text-center"></h2>
+<h2 class="text text-center">Facturas</h2>
+<p class="text text-light text-center bg-info fs-3">Total a cobrar <span class="badge fs-4 bg-secondary text text-dark">{{ total|floatformat:0|intcomma }}</span> - {{ total_word }}</p>
+<br>
+<table class="table table-bordered fs-4">
+    <thead>
+        <th class="text text-center" colspan="2">Factura</th>
+        <th class="text text-center" colspan="2">Retencion</th>
+    </thead>
+    <thead>
+        <th>Numero</th>
+        <th>Monto</th>
+        <th>Numero</th>
+        <th>Monto</th>
+    </thead>
+    <tbody>
+        {% for f in fdata %}
+            <tr>
+                <td>{{ f.numero }} </td>
+                <td>{{ f.monto|floatformat:0|intcomma }}</td>
+                <td>{{ f.retencion_numero }} </td>
+                <td>{{ f.retencion|floatformat:0|intcomma }} </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% if ndata %}
+    <h2 class="text text-center">Notas de credito</h2>
+    <b>Total NC {{ total_nc|floatformat:0|intcomma }} - {{ total_word_nc }}</b>
+    <br>
+    <table class="table table-bordered">
+        <thead>
+            <th>Numero</th>
+            <th>Monto</th>
+        </thead>
+        <tbody>
+            {% for f in ndata %}
+                <tr>
+                    <td>{{ f.numero }} </td>
+                    <td>{{ f.monto|floatformat:0|intcomma }} </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+<div class="row">
+    <div class="col">
+      <label>Forma de pago</label>
+      <div class="input-group flex-nowrap fl_focus_highlight">
+          <select readonly
+              required 
+              tabindex="12"  
+              name="forma_pago_id"
+              class="fl_select form-select form-select-lg">
+          </select>
+      </div>      
+    </div>
+    <div class="col">
+      <label>Monto</label>
+      <input oninput="form_validation.just_number(event)" onkeyup="sum_pagos();" type="text" name="doc_efectivo" class="form-control" placeholder="Efectivo" value=0>
+    </div>
+    <div class="col d-none">
+        <label>Cheque</label>
+        <input oninput="form_validation.just_number(event)" onkeyup="sum_pagos();" type="text" name="doc_cheque" class="form-control" placeholder="Cheque" value=0>
+    </div>
+    <div class="col mt-5">
+        <button onclick="generar_recibo()" class="btn btn-lg btn-primary">GENERAR RECIBO</button>
+    </div>
+</div>
+<br>
+<p class="text text-dark text-center bg-danger-subtle fs-3">Saldo <span class="badge fs-4 bg-secondary text text-dark" id="receive_saldo"></span></p>
+<p class="text text-light text-center bg-success fs-3">Total pagado <span class="badge fs-4 bg-secondary text text-dark" id="receive_pago"></span></p>
+<script type="text/javascript">
+    a_cobrar = parseFloat("{{ total }}");
+    total_nc = parseFloat("{{ total_nc }}");
+    a_cobrar = a_cobrar - total_nc;
+
+    check_pagos = () => {
+        efectivo = parseFloat($('input[name=doc_efectivo]').val());
+        cheque = parseFloat($('input[name=doc_cheque]').val());
+        total_cargado = (efectivo + cheque);
+        if (total_cargado !== a_cobrar) {
+            return false;
+        }
+        return true;
+    }
+    sum_pagos = () => {
+        let total_pagar = parseFloat("{{ total }}");
+        efectivo = parseFloat($('input[name=doc_efectivo]').val());
+        cheque = parseFloat($('input[name=doc_cheque]').val());
+        total_cargado = (efectivo + cheque);
+        if (isNaN(total_cargado)) {
+            total_cargado = 0;
+        }
+        $('#receive_pago').html(UiN.formatNumberP(total_cargado));
+        $('#receive_saldo').html(UiN.formatNumberP(total_pagar-total_cargado));
+        
+    }
+    generar_recibo = () => {
+        if (check_pagos() === false ) {
+            //UiB.MsgError(`El valor cargado ${UiN.formatNumberP(total_cargado)} no es igual al valor de las facturas ${UiN.formatNumberP(a_cobrar)}`);
+            UiB.MsgError(`El valor del recibo debe coincidir con valor del total factura`);
+            return false;
+        }
+        
+        var fdata = new FormData();
+        fdata.append('module', 'apps.OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('dbcon', 'default')
+        let formData = new FormData();
+        let edata = {
+            'facturas': [],
+            'ncs': [],
+        }
+        {% for f in fdata %}
+            edata['facturas'].push('{{ f.id }}')
+        {% endfor %}
+        {% for n in ndata %}
+            edata['ncs'].push('{{ n.id }}')
+        {% endfor %}
+        forma_pago_id = $('select[name=forma_pago_id]').val();
+        if (forma_pago_id === '') {
+            UiB.MsgError('Debe seleccionar un metodo de pago');
+            return false;
+        }
+        forma_pago_id = forma_pago_id.split('^');
+        
+        
+        efectivo = parseFloat($('input[name=doc_efectivo]').val());
+        cheque = parseFloat($('input[name=doc_cheque]').val());
+        edata['doc_efectivo'] = efectivo;
+        edata['doc_cheque'] = cheque;
+        //edata['detail'] = document_detail;
+        edata['forma_pago_id'] = forma_pago_id[0];
+        edata['forma_pago'] = forma_pago_id[1];
+        fdata.append('uc_fields', jfy(edata));
+        console.log(edata);
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'apps.Sifen',
+                'package': 'mng_sifen',
+                'attr': 'MSifen',
+                'mname': 'crear_recibo',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        fdata.append('a_vals', jfy([]));
+        
+        document.querySelector('body').classList.add('overlay-container');
+        document.querySelector('body').classList.add('overlay');
+        axios.post(
+            '{% url "iom" %}', 
+            fdata, 
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            got_error = false;
+            oid = undefined
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    got_error = true;
+                }
+                if (ee.record_id) {
+                    oid = ee.record_id;
+                }
+            })
+            if (Array.isArray(msgs)) {
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 3000,
+                })
+            }
+            return {'msgs': msgs, 'record_id': oid};
+        }).then((msgs)=>{
+            if (got_error === false) {
+                {% if t_guid %}
+                    $('#{{t_guid}}').DataTable().ajax.reload();
+                {% endif %}
+                {% if modal_selector %}
+                    my_modal = document.querySelector('{{ modal_selector }}')
+                    modalobj = bootstrap.Modal.getInstance(my_modal) // Retrieve a Carousel instance
+                    modalobj.dispose();
+                    qelem('{{ modal_selector }}').remove();
+                {% endif %}
+                {% if offcanvas %}
+                    $('{{ offcanvas }}Body').html('');
+                    $('{{ offcanvas }} button[data-bs-dismiss=offcanvas]').click();
+                {% endif %}
+                {% if offcanvasglobal %}
+                    $('#offcanvasDaBoUiBody').html('');
+                    $('#btn-offcanvas-global-close').click();
+                {% endif %}
+                if (forma_pago_id[1] === 'Efectivo') {
+                    axios.get('http://localhost:9000/open_cd/').then(response => {
+                        if (response.data !== 'Caja registradora abierta con exitos') {
+                        UiB.MsgError('Error al abrir la caja registradora');
+                        }
+                    }).catch(error => {
+                        UiB.MsgError('Error al abrir la caja registradora');
+                    })
+                }
+            }
+        }).catch((err)=>{
+            UiB.MsgError(err);
+        }).finally(()=>{
+            let ft = document.querySelector('body');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    
+    get_metodos_de_pagos = () => {
+        let gbe = new FormData();
+        gbe.append('module',  'apps.Sifen');
+        gbe.append('package',  'mng_sifen');
+        gbe.append('attr',  'MSifen');
+        gbe.append('mname',  'metodos_de_pagos');
+        gbe.append('dbcon',  'default');
+        gbe.append('doc_cre_tipo_cod', 1);
+        axios.post('{% url "iom" %}',gbe,{ headers: HEADERS })
+        .then((rsp) => {
+            data = rsp.data;
+            selected = '';
+            $('select[name=forma_pago_id]').html('<option value="">Seleccione un metodo de pago</option>');
+            if (data.length === 1 ) {
+                selected = 'selected'
+            }
+            data.forEach((it)=> {
+                $('select[name=forma_pago_id]').append(`
+                    <option ${selected} value="${it.id}^${it.nombre}">${it.nombre}</option>
+                `)
+            })
+        })
+    }
+    get_metodos_de_pagos();
+    sum_pagos();
+</script>

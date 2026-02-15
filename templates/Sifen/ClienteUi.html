@@ -1,0 +1,289 @@
+<div class="cliente_ui_container container-fluid">
+    <div class="cliente_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_cliente" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_cliente" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_cliente" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_cliente_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    cliente_home_be = function (data, settings) {
+        tt = qelem(`#table_cliente_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`cliente_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_cliente = `dtable_${OptsIO.s4generate()}`;
+    dt_cliente_pc = Grid.datatables_wrapper({
+          t_guid: t_cliente,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Clientes',
+          tselector: 'table_cliente_ui',
+          app_name: 'Sifen',
+          model_name: 'Clientes',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: cliente_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[2, 'asc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-cliente-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_codigo',
+                 tit: 'Codigo',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'anclaje_cliente',
+                 tit: 'Anclaje',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_ruc',
+                 tit: 'RUC',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_nombrefactura',
+                 tit: 'Nombre Factura',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_nombrefantasia',
+                 tit: 'Nombre Fantasia',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_type_business',
+                 tit: 'Tipo',
+                 cls: 'align-center',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     if (data === 'B2B') {
+                         return `<span class="badge bg-primary">B2B</span>`;
+                     }
+                     return `<span class="badge bg-secondary">B2C</span>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_email',
+                 tit: 'Email',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_celular',
+                 tit: 'Celular',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_ciudad_nombre',
+                 tit: 'Ciudad',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'pdv_es_contribuyente',
+                 tit: 'Contribuyente',
+                 cls: 'align-center',
+                 dtyp: 'bool',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? '<span class="badge bg-success">Si</span>' : '<span class="badge bg-warning">No</span>';
+                 }
+              },
+          ]
+      })
+
+    $(`#${t_cliente} tbody`).on('click', '.tr-cliente-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_cliente}`).DataTable().row( elerow ).data()
+        cliente_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_cliente').addEventListener('click', function() {
+          cliente_form_crud();
+      });
+
+    qelem('#btn_borrar_cliente').addEventListener('click', function() {
+        let table = $(`#${t_cliente}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estas seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta accion no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_sifen');
+            gbe.append('attr', 'MSifen');
+            gbe.append('mname', 'delete_cliente');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_cliente}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrio un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    cliente_form_crud = (pk) => {
+        dattrs = {
+            title: 'Crear Cliente',
+            t_guid: t_cliente,
+            sui_rr: '{{ rr }}',
+            from_ClienteUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'Clientes',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/ClienteCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Cliente';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_cliente').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_cliente').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_anclaje_cliente__icontains', 'value': qelem('input#input_buscar_cliente').value
+                })
+                gmquery.push({
+                    'field': 'or_pdv_ruc__icontains', 'value': qelem('input#input_buscar_cliente').value
+                })
+                gmquery.push({
+                    'field': 'or_pdv_nombrefactura__icontains', 'value': qelem('input#input_buscar_cliente').value
+                })
+                gmquery.push({
+                    'field': 'or_pdv_nombrefantasia__icontains', 'value': qelem('input#input_buscar_cliente').value
+                })
+                gmquery.push({
+                    'field': 'or_pdv_email__icontains', 'value': qelem('input#input_buscar_cliente').value
+                })
+            }
+            $(`#${t_cliente}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_cliente}`).on('draw.dt', function() {
+  tt = qelem(`#table_cliente_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

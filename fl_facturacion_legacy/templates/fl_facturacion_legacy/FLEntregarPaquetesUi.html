@@ -1,0 +1,690 @@
+<!--
+    FLEntregarPaquetesUi.html - Entrega de Paquetes
+    Equivalente a entregar.php del sistema Frontliner
+    Usa Select2 para búsqueda de clientes (igual que PHP)
+-->
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="mdi mdi-package-variant me-2"></i>Entrega de Paquetes</h5>
+        </div>
+        <div class="card-body">
+            <!-- Búsqueda de Cliente con Select2 -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Cliente</label>
+                    <select id="fl_select_cliente" class="form-control" style="width: 100%;">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Cotización USD</label>
+                    <div class="input-group">
+                        <span class="input-group-text">Gs.</span>
+                        <input type="text" id="fl_tasa_usd" class="form-control" value="7500" readonly>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Tarifa USD/Kg</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" id="fl_tarifa" class="form-control" value="22.50" step="0.01">
+                    </div>
+                    <small class="text-muted" id="fl_tarifa_info"></small>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Sucursal</label>
+                    <input type="text" id="fl_sucursal" class="form-control" readonly
+                           style="font-weight: bold;">
+                </div>
+            </div>
+
+            <!-- Datos del cliente seleccionado -->
+            <div id="fl_datos_cliente" class="row mb-4 d-none">
+                <div class="col-md-3">
+                    <label class="form-label">Persona Autorizada</label>
+                    <input type="text" id="fl_persona_autorizada" class="form-control" readonly>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">CI Autorizado</label>
+                    <input type="text" id="fl_ci_autorizado" class="form-control" readonly>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Estante</label>
+                    <input type="text" id="fl_estante" class="form-control" readonly>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Tarifa Cliente</label>
+                    <input type="text" id="fl_tarifa_cliente" class="form-control" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Buscar por Tracking</label>
+                    <input type="text" id="fl_buscar_tracking" class="form-control"
+                           placeholder="Escanear o escribir tracking">
+                </div>
+            </div>
+
+            <!-- Hidden inputs -->
+            <input type="hidden" id="fl_clientecodigo" value="">
+            <input type="hidden" id="fl_peso_original" value="0">
+            <input type="hidden" id="fl_se_puede_cambiar_tarifa" value="SI">
+
+            <!-- Grilla de Paquetes -->
+            <div id="fl_seccion_paquetes" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0">PAQUETES DEL CLIENTE</h6>
+                    <span class="badge bg-secondary" id="fl_cant_paquetes">0 paquetes seleccionados</span>
+                </div>
+
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-bordered table-hover table-sm" id="fl_tabla_paquetes">
+                        <thead class="table-dark sticky-top">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" id="fl_check_all" class="form-check-input">
+                                </th>
+                                <th>Tracking</th>
+                                <th>Descripción</th>
+                                <th>Fecha Embarque</th>
+                                <th>Peso (Kg)</th>
+                                <th>Fecha Recepción</th>
+                                <th>Embarque</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <!-- Totales -->
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <td class="fw-bold">Cantidad Paquetes:</td>
+                                <td id="fl_total_cantidad" class="text-end">0</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Peso Total (Kg):</td>
+                                <td id="fl_total_peso" class="text-end">0.0000</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-bordered">
+                            <tr>
+                                <td class="fw-bold">Total USD:</td>
+                                <td id="fl_total_usd" class="text-end fw-bold text-primary">$ 0.00</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Total Guaraníes:</td>
+                                <td id="fl_total_gs" class="text-end fw-bold text-success">Gs. 0</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Botón Generar Ticket -->
+                <div class="text-center mt-3">
+                    <button class="btn btn-lg btn-success px-5" id="fl_btn_generar_ticket" disabled>
+                        <i class="mdi mdi-ticket-confirmation me-2"></i>Generar Ticket
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mensaje cuando no hay paquetes -->
+            <div id="fl_sin_paquetes" class="alert alert-warning d-none">
+                <i class="mdi mdi-alert me-2"></i>No se encontraron paquetes pendientes para este cliente.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+(function() {
+    const MODULE = 'fl_facturacion_legacy';
+    const PACKAGE = 'mng_fl';
+    const ATTR = 'MFLFacturacion';
+
+    // Tarifas escalonadas según PHP (limitesTarifario en entregar.php)
+    const LIMITES_TARIFARIOS = {
+        peso_limite_superior: [5, 8, 20, 1000000],
+        tarifa: [22.50, 21.90, 21.00, 22.50]
+    };
+
+    let clienteSeleccionado = null;
+    let paquetesData = [];
+    let tasaUSD = 7500;
+
+    // Inicialización
+    document.addEventListener('DOMContentLoaded', init);
+    if (document.readyState !== 'loading') init();
+
+    function init() {
+        // Configurar jQuery AJAX para incluir CSRF token
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", OptsIO.getCookie('csrftoken'));
+                }
+            }
+        });
+
+        cargarCotizacion();
+        inicializarSelect2();
+        setupEventListeners();
+    }
+
+    // Inicializar Select2 como en PHP (PaqueteEntrega_inicializarObjetoCliente)
+    function inicializarSelect2() {
+        $('#fl_select_cliente').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Buscar cliente por nombre, apellido o código...',
+            allowClear: true,
+            minimumInputLength: 3,
+            ajax: {
+                url: '/io/iom/',
+                type: 'POST',
+                dataType: 'json',
+                delay: 400,
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('X-CSRFToken', OptsIO.getCookie('csrftoken'));
+                },
+                data: function(params) {
+                    return {
+                        module: MODULE,
+                        package: PACKAGE,
+                        attr: ATTR,
+                        mname: 'buscar_clientes_select2',
+                        q: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data, params) {
+                    params.page = params.page || 1;
+                    console.log('Select2 response:', data);
+                    return {
+                        results: data.items || [],
+                        pagination: {
+                            more: (params.page * 30) < (data.total_count || 0)
+                        }
+                    };
+                },
+                error: function(xhr, status, error) {
+                    console.error('Select2 AJAX error:', status, error, xhr.responseText);
+                },
+                cache: true
+            },
+            escapeMarkup: function(markup) {
+                return markup;
+            },
+            templateResult: function(data) {
+                if (data.loading) return 'Buscando...';
+                return data.text || data.id;
+            },
+            templateSelection: function(data) {
+                return data.text || data.id;
+            }
+        });
+
+        // Evento al seleccionar cliente (como en PHP: select2:select)
+        $('#fl_select_cliente').on('select2:select', function(e) {
+            const data = e.params.data;
+            obtenerDatosParaEntrega(data.id);
+        });
+
+        // Evento al limpiar selección
+        $('#fl_select_cliente').on('select2:clear', function(e) {
+            limpiarFormulario();
+        });
+    }
+
+    function setupEventListeners() {
+        // Seleccionar todos los paquetes
+        document.getElementById('fl_check_all').addEventListener('change', function(e) {
+            document.querySelectorAll('.fl-paquete-check').forEach(cb => {
+                cb.checked = e.target.checked;
+            });
+            calcularPesoTotal();
+            actualizarTotales();
+        });
+
+        // Cambio de tarifa manual
+        document.getElementById('fl_tarifa').addEventListener('change', function() {
+            this.dataset.manual = 'true';
+            analizarSiSePuedeCambiarTarifa();
+            actualizarTotales();
+        });
+
+        // Buscar por tracking (como en PHP: PaqueteEntrega_buscarTracking)
+        document.getElementById('fl_buscar_tracking').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                buscarTracking();
+            }
+        });
+
+        // Generar ticket
+        document.getElementById('fl_btn_generar_ticket').addEventListener('click', generarTicket);
+    }
+
+    async function cargarCotizacion() {
+        try {
+            const fdata = new FormData();
+            fdata.append('module', MODULE);
+            fdata.append('package', PACKAGE);
+            fdata.append('attr', ATTR);
+            fdata.append('mname', 'get_cotizacion');
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            if (response.data.cotizacion) {
+                tasaUSD = parseFloat(response.data.cotizacion);
+                document.getElementById('fl_tasa_usd').value = UiN.formatNumberU(tasaUSD.toFixed(0));
+            }
+        } catch (error) {
+            console.error('Error cargando cotización:', error);
+        }
+    }
+
+    // Obtener datos del cliente para entrega (como PHP: PaqueteEntrega_obtenerDatosParaEntrega)
+    async function obtenerDatosParaEntrega(clientecodigo) {
+        limpiarFormulario();
+        document.getElementById('fl_clientecodigo').value = clientecodigo;
+
+        try {
+            const fdata = new FormData();
+            fdata.append('module', MODULE);
+            fdata.append('package', PACKAGE);
+            fdata.append('attr', ATTR);
+            fdata.append('mname', 'get_datos_cliente_entrega');
+            fdata.append('clientecodigo', clientecodigo);
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            if (response.data.error) {
+                Swal.fire('Error', response.data.error, 'error');
+                return;
+            }
+
+            procesarDatosEntrega(response.data);
+        } catch (error) {
+            console.error('Error obteniendo datos cliente:', error);
+            Swal.fire('Error', 'Error al obtener datos del cliente', 'error');
+        }
+    }
+
+    // Procesar datos de entrega (como PHP: PaqueteEntrega_procesarDatosEntrega)
+    function procesarDatosEntrega(data) {
+        if (!data.resultado_exitoso) {
+            Swal.fire('Aviso', data.mensaje || 'Error al obtener datos', 'warning');
+            return;
+        }
+
+        clienteSeleccionado = data.dato;
+        const persona = data.dato.personaAutorizada;
+        const paquetes = data.dato.listaPaquetes;
+
+        // Mostrar datos del cliente
+        document.getElementById('fl_persona_autorizada').value =
+            (persona.nombreAutorizada || '') + ' ' + (persona.apellidoAutorizada || '');
+        document.getElementById('fl_ci_autorizado').value = persona.cedulaAutorizada || '';
+        document.getElementById('fl_estante').value = persona.estante || '';
+        document.getElementById('fl_tarifa_cliente').value = '$ ' + (persona.tarifa || '22.50');
+
+        // Tarifa del cliente
+        const tarifaCliente = parseFloat(persona.tarifa) || 22.50;
+        document.getElementById('fl_tarifa').value = tarifaCliente.toFixed(2);
+
+        // Sucursal con color de fondo
+        const sucursalInput = document.getElementById('fl_sucursal');
+        sucursalInput.value = persona.sucursalNombre || '';
+        if (persona.sucursalColorFondo) {
+            sucursalInput.style.backgroundColor = persona.sucursalColorFondo;
+            sucursalInput.style.color = persona.sucursalColorTexto || '#ffffff';
+        }
+
+        document.getElementById('fl_datos_cliente').classList.remove('d-none');
+
+        // Analizar si se puede cambiar tarifa
+        analizarSiSePuedeCambiarTarifa();
+
+        // Mostrar paquetes
+        if (paquetes && paquetes.length > 0) {
+            mostrarPaquetes(paquetes);
+        } else {
+            document.getElementById('fl_seccion_paquetes').classList.add('d-none');
+            document.getElementById('fl_sin_paquetes').classList.remove('d-none');
+            Swal.fire('Aviso',
+                'No se encontraron paquetes para el cliente en la sucursal ' + (persona.sucursalNombre || ''),
+                'warning');
+        }
+    }
+
+    // Analizar si se puede cambiar tarifa (como PHP: PaqueteEntrega_analizarSiSePuedeCambiarTarifa)
+    function analizarSiSePuedeCambiarTarifa() {
+        const tarifaEstandar = LIMITES_TARIFARIOS.tarifa[0]; // 22.50
+        const tarifaUsuario = parseFloat(document.getElementById('fl_tarifa').value);
+
+        if (tarifaUsuario === tarifaEstandar) {
+            document.getElementById('fl_se_puede_cambiar_tarifa').value = 'SI';
+        } else {
+            document.getElementById('fl_se_puede_cambiar_tarifa').value = 'NO';
+        }
+    }
+
+    // Mostrar paquetes en la grilla (como PHP: PaqueteEntrega_actualizarLista)
+    function mostrarPaquetes(paquetes) {
+        paquetesData = paquetes;
+        const tbody = document.querySelector('#fl_tabla_paquetes tbody');
+        tbody.innerHTML = '';
+
+        paquetes.forEach(paq => {
+            const tr = document.createElement('tr');
+            tr.dataset.paquetecodigo = paq.paquetecodigo;
+            tr.dataset.embarquecodigo = paq.embarquecodigo;
+            tr.dataset.peso = paq.peso_real || 0;
+
+            tr.innerHTML = `
+                <td class="text-center">
+                    <input type="checkbox" class="form-check-input fl-paquete-check"
+                           data-id="${paq.paquetecodigo}"
+                           data-peso="${paq.peso_real || 0}"
+                           data-embarque="${paq.embarquecodigo || 0}">
+                </td>
+                <td>${paq.tracking || ''}</td>
+                <td>${paq.descripcion || ''}</td>
+                <td class="text-center">${paq.fecha_embarque || ''}</td>
+                <td class="text-end">${parseFloat(paq.peso_real || 0).toFixed(4)}</td>
+                <td class="text-center">${paq.fecha_llegada || ''}</td>
+                <td class="text-center">${paq.embarquecodigo || ''}</td>
+            `;
+            tbody.appendChild(tr);
+
+            // Event listener para checkbox
+            tr.querySelector('.fl-paquete-check').addEventListener('change', function() {
+                calcularPesoTotal();
+                actualizarTotales();
+            });
+        });
+
+        document.getElementById('fl_sin_paquetes').classList.add('d-none');
+        document.getElementById('fl_seccion_paquetes').classList.remove('d-none');
+    }
+
+    // Buscar tracking (como PHP: PaqueteEntrega_buscarTracking)
+    function buscarTracking() {
+        const input = document.getElementById('fl_buscar_tracking');
+        const tracking = input.value.trim().toUpperCase();
+
+        if (tracking === '') return;
+
+        let encontrado = false;
+        document.querySelectorAll('#fl_tabla_paquetes tbody tr').forEach(tr => {
+            const trackingCell = tr.cells[1].textContent.toUpperCase();
+            if (trackingCell === tracking) {
+                const checkbox = tr.querySelector('.fl-paquete-check');
+                checkbox.checked = true;
+                tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                tr.style.backgroundColor = '#fff3cd';
+                setTimeout(() => tr.style.backgroundColor = '', 2000);
+                encontrado = true;
+            }
+        });
+
+        if (!encontrado) {
+            Swal.fire('Aviso', 'No se encontró el paquete', 'warning');
+        } else {
+            input.value = '';
+            calcularPesoTotal();
+            actualizarTotales();
+        }
+
+        input.focus();
+    }
+
+    // Obtener tarifa según peso (como PHP: PaqueteEntrega_obtenerTarifa)
+    function obtenerTarifa(pesoTotal) {
+        if (document.getElementById('fl_se_puede_cambiar_tarifa').value === 'SI') {
+            const limites = LIMITES_TARIFARIOS.peso_limite_superior;
+            const tarifas = LIMITES_TARIFARIOS.tarifa;
+
+            for (let i = 0; i < limites.length; i++) {
+                if (pesoTotal <= limites[i]) {
+                    return tarifas[i];
+                }
+            }
+            return tarifas[tarifas.length - 1];
+        } else {
+            return parseFloat(document.getElementById('fl_tarifa').value);
+        }
+    }
+
+    // Calcular peso total (como PHP: PaqueteEntrega_calcularPesoTotal)
+    function calcularPesoTotal() {
+        const checkboxes = document.querySelectorAll('.fl-paquete-check:checked');
+        let pesoTotal = 0;
+        let cantidadPaquetes = checkboxes.length;
+
+        // Agrupar por embarque para calcular tarifa por embarque
+        const embarques = {};
+
+        checkboxes.forEach(cb => {
+            const peso = parseFloat(cb.dataset.peso) || 0;
+            const embarquecodigo = cb.dataset.embarque;
+
+            if (!embarques[embarquecodigo]) {
+                embarques[embarquecodigo] = { peso: 0, paquetes: 0 };
+            }
+            embarques[embarquecodigo].peso += peso;
+            embarques[embarquecodigo].paquetes += 1;
+            pesoTotal += peso;
+        });
+
+        // Control de peso mínimo (como PHP: control peso 10/04/2022)
+        let pesoAjustado = 0;
+        Object.values(embarques).forEach(emb => {
+            let pesoEmbarque = emb.peso;
+            if (pesoEmbarque < 0.1) {
+                pesoEmbarque = 0.1;
+            }
+            pesoAjustado += pesoEmbarque;
+        });
+
+        pesoTotal = parseFloat(pesoAjustado.toFixed(4));
+
+        document.getElementById('fl_total_cantidad').textContent = cantidadPaquetes;
+        document.getElementById('fl_cant_paquetes').textContent = cantidadPaquetes + ' paquetes seleccionados';
+
+        // Guardar peso original
+        document.getElementById('fl_peso_original').value = pesoTotal;
+
+        // Actualizar tarifa si se puede cambiar
+        if (document.getElementById('fl_se_puede_cambiar_tarifa').value === 'SI') {
+            const nuevaTarifa = obtenerTarifa(pesoTotal);
+            document.getElementById('fl_tarifa').value = nuevaTarifa.toFixed(2);
+
+            // Mostrar info de tarifa
+            const infoTarifa = document.getElementById('fl_tarifa_info');
+            if (pesoTotal <= 5) infoTarifa.textContent = '≤5kg: $22.50';
+            else if (pesoTotal <= 8) infoTarifa.textContent = '5-8kg: $21.90';
+            else if (pesoTotal <= 20) infoTarifa.textContent = '8-20kg: $21.00';
+            else infoTarifa.textContent = '>20kg: $22.50';
+        }
+
+        return pesoTotal;
+    }
+
+    // Actualizar totales (como PHP: PaqueteEntrega_actualizarTotales)
+    function actualizarTotales() {
+        const pesoTotal = parseFloat(document.getElementById('fl_peso_original').value) || 0;
+        const tarifa = parseFloat(document.getElementById('fl_tarifa').value) || 22.50;
+
+        document.getElementById('fl_total_peso').textContent = pesoTotal.toFixed(4);
+
+        const totalUSD = pesoTotal * tarifa;
+        const totalGS_raw = totalUSD * tasaUSD;
+        // Redondear a miles (como PHP: round(x/1000)*1000)
+        const totalGS = Math.round(totalGS_raw / 1000) * 1000;
+
+        document.getElementById('fl_total_usd').textContent = '$ ' + totalUSD.toFixed(2);
+        document.getElementById('fl_total_gs').textContent = 'Gs. ' + UiN.formatNumberU(totalGS.toString());
+
+        // Habilitar/deshabilitar botón
+        const cantidadSeleccionados = document.querySelectorAll('.fl-paquete-check:checked').length;
+        document.getElementById('fl_btn_generar_ticket').disabled = cantidadSeleccionados === 0;
+    }
+
+    // Limpiar formulario (como PHP: PaqueteEntrega_limpiarFormulario)
+    function limpiarFormulario() {
+        clienteSeleccionado = null;
+        paquetesData = [];
+
+        document.getElementById('fl_clientecodigo').value = '';
+        document.getElementById('fl_persona_autorizada').value = '';
+        document.getElementById('fl_ci_autorizado').value = '';
+        document.getElementById('fl_estante').value = '';
+        document.getElementById('fl_tarifa_cliente').value = '';
+        document.getElementById('fl_tarifa').value = '22.50';
+        document.getElementById('fl_tarifa').dataset.manual = '';
+        document.getElementById('fl_se_puede_cambiar_tarifa').value = 'SI';
+
+        const sucursalInput = document.getElementById('fl_sucursal');
+        sucursalInput.value = '';
+        sucursalInput.style.backgroundColor = '';
+        sucursalInput.style.color = '';
+
+        document.getElementById('fl_datos_cliente').classList.add('d-none');
+        document.getElementById('fl_seccion_paquetes').classList.add('d-none');
+        document.getElementById('fl_sin_paquetes').classList.add('d-none');
+
+        document.querySelector('#fl_tabla_paquetes tbody').innerHTML = '';
+
+        document.getElementById('fl_total_cantidad').textContent = '0';
+        document.getElementById('fl_total_peso').textContent = '0.0000';
+        document.getElementById('fl_total_usd').textContent = '$ 0.00';
+        document.getElementById('fl_total_gs').textContent = 'Gs. 0';
+        document.getElementById('fl_cant_paquetes').textContent = '0 paquetes seleccionados';
+        document.getElementById('fl_btn_generar_ticket').disabled = true;
+    }
+
+    // Generar ticket (como PHP: PaqueteEntrega_generarTicket / Ticket_solicitarRegistro)
+    async function generarTicket() {
+        const checkboxes = document.querySelectorAll('.fl-paquete-check:checked');
+
+        if (checkboxes.length === 0) {
+            Swal.fire('Aviso', 'Debe seleccionar un Cliente y al menos 1 de sus Paquetes', 'warning');
+            return;
+        }
+
+        // Verificar diferencia de peso permitida (como PHP: Ticket_diferenciaPesosPermitida)
+        const pesoOriginal = parseFloat(document.getElementById('fl_peso_original').value);
+        const diferenciaLimite = 0.25;
+        // (En este caso no hay edición de peso, pero la lógica está preparada)
+
+        const paquetesCodigos = [];
+        checkboxes.forEach(cb => {
+            paquetesCodigos.push(parseInt(cb.dataset.id));
+        });
+
+        const clientecodigo = document.getElementById('fl_clientecodigo').value;
+        const tarifa = parseFloat(document.getElementById('fl_tarifa').value) || 22.50;
+        const pesoTotal = pesoOriginal;
+        const totalUSD = pesoTotal * tarifa;
+        const totalGS = Math.round((totalUSD * tasaUSD) / 1000) * 1000;
+
+        // Confirmación
+        const result = await Swal.fire({
+            title: 'Generar Ticket',
+            html: `
+                <div class="text-start">
+                    <p><strong>Paquetes:</strong> ${paquetesCodigos.length}</p>
+                    <p><strong>Peso Total:</strong> ${pesoTotal.toFixed(4)} Kg</p>
+                    <p><strong>Tarifa:</strong> $ ${tarifa.toFixed(2)}/Kg</p>
+                    <p><strong>Total USD:</strong> $ ${totalUSD.toFixed(2)}</p>
+                    <p><strong>Total Gs:</strong> ${UiN.formatNumberU(totalGS.toString())}</p>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Generar Ticket',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (!result.isConfirmed) return;
+
+        // Deshabilitar botón
+        const btnGenerar = document.getElementById('fl_btn_generar_ticket');
+        btnGenerar.disabled = true;
+        btnGenerar.innerHTML = '<i class="mdi mdi-loading mdi-spin me-2"></i>Procesando...';
+
+        try {
+            const fdata = new FormData();
+            fdata.append('module', MODULE);
+            fdata.append('package', PACKAGE);
+            fdata.append('attr', ATTR);
+            fdata.append('mname', 'generar_ticket');
+            fdata.append('clientecodigo', clientecodigo);
+            fdata.append('paquetes_codigos', JSON.stringify(paquetesCodigos));
+            fdata.append('tarifa', tarifa);
+            fdata.append('tasa_usd', tasaUSD);
+            fdata.append('peso_total', pesoTotal);
+
+            const response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            if (response.data.error) {
+                Swal.fire('Error', response.data.error, 'error');
+                return;
+            }
+
+            // Mostrar ticket generado (similar a PHP: Ticket_generarVista)
+            await Swal.fire({
+                title: 'Ticket Generado',
+                html: `
+                    <div class="text-center" style="font-family: monospace;">
+                        <h6>FRONTLINER CARGO & E-BUSINESS S.R.L.</h6>
+                        <p>José Asunción Flores 3989<br>Tel.: +595 21 200 988</p>
+                        <hr>
+                        <h6>ACUSE DE RETIRO DE PAQUETES</h6>
+                        <hr>
+                        <p><strong>Nro. ${response.data.acuse_id}</strong></p>
+                        <p>Fecha: ${response.data.fecha} ${response.data.hora}</p>
+                        <hr>
+                        <p>Paquetes: ${paquetesCodigos.length}</p>
+                        <p>Peso Total: ${pesoTotal.toFixed(4)} Kg</p>
+                        <p><strong>Total USD: $ ${totalUSD.toFixed(2)}</strong></p>
+                        <p><strong>Total Gs: ${UiN.formatNumberU(totalGS.toString())}</strong></p>
+                        <hr>
+                        <small>Revisar el contenido de los paquetes al retiro.<br>
+                        No se aceptarán reclamos posteriores a la entrega.</small>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
+
+            // Limpiar y recargar
+            $('#fl_select_cliente').val(null).trigger('change');
+            limpiarFormulario();
+
+        } catch (error) {
+            console.error('Error generando ticket:', error);
+            Swal.fire('Error', 'Error al generar ticket', 'error');
+        } finally {
+            btnGenerar.disabled = false;
+            btnGenerar.innerHTML = '<i class="mdi mdi-ticket-confirmation me-2"></i>Generar Ticket';
+        }
+    }
+})();
+</script>

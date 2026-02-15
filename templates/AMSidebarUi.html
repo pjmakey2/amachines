@@ -1,0 +1,1232 @@
+{% load static %}
+{% load io_tags %}
+<!--
+    AMSidebarUi.html - Vista Sidebar (SPA)
+    Sidebar colapsado por defecto, expande al hover
+    Navegación SPA: una app a la vez
+-->
+
+<style>
+/* ============================================
+   SIDEBAR VIEW STYLES
+   ============================================ */
+
+.sidebar-view-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f8f9fa;
+}
+
+/* Sidebar */
+.am-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+    color: white;
+    transition: width 0.3s ease;
+    z-index: 1000;
+    overflow: hidden;
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.am-sidebar.collapsed {
+    width: 70px;
+}
+
+.am-sidebar.expanded {
+    width: 280px;
+}
+
+/* Sidebar Header */
+.am-sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 70px;
+    flex-shrink: 0;
+}
+
+.am-sidebar.collapsed .am-sidebar-header {
+    justify-content: center;
+    padding: 16px 8px;
+}
+
+.am-sidebar-logo {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.am-sidebar-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.am-sidebar.collapsed .am-sidebar-title {
+    opacity: 0;
+    width: 0;
+    overflow: hidden;
+}
+
+/* Sidebar Nav */
+.am-sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px 0;
+}
+
+.am-sidebar-nav::-webkit-scrollbar {
+    width: 4px;
+}
+
+.am-sidebar-nav::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.am-sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+/* Section Title */
+.am-sidebar-section {
+    margin-bottom: 8px;
+}
+
+.am-sidebar-section-title {
+    padding: 8px 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+    white-space: nowrap;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.am-sidebar.collapsed .am-sidebar-section-title {
+    opacity: 0;
+    height: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+/* Menu Items */
+.am-sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.am-sidebar-menu-item {
+    position: relative;
+}
+
+.am-sidebar-menu-link {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+    white-space: nowrap;
+    border-left: 3px solid transparent;
+}
+
+.am-sidebar.collapsed .am-sidebar-menu-link {
+    justify-content: center;
+    padding: 12px;
+}
+
+.am-sidebar-menu-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.am-sidebar-menu-link.active {
+    background: rgba(102, 126, 234, 0.2);
+    border-left-color: #667eea;
+    color: white;
+}
+
+.am-sidebar-menu-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.am-sidebar-menu-text {
+    margin-left: 12px;
+    font-size: 0.9rem;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.am-sidebar.collapsed .am-sidebar-menu-text {
+    opacity: 0;
+    width: 0;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Sidebar Footer */
+.am-sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.am-sidebar-footer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+    gap: 10px;
+}
+
+.am-sidebar-footer-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.am-sidebar.collapsed .am-sidebar-footer-btn span {
+    display: none;
+}
+
+/* Tooltip */
+.am-sidebar-tooltip {
+    position: fixed;
+    left: 80px;
+    background: #1a202c;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    z-index: 10001;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.am-sidebar-tooltip::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent #1a202c transparent transparent;
+}
+
+.am-sidebar-tooltip.show {
+    opacity: 1;
+}
+
+/* Main Content Area */
+.am-main-area {
+    flex: 1;
+    margin-left: 70px;
+    transition: margin-left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.am-sidebar.expanded ~ .am-main-area {
+    margin-left: 280px;
+}
+
+/* Header in Main Area */
+.am-main-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 16px;
+}
+
+/* Back Button */
+.am-back-btn {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.am-back-btn:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.am-back-btn i {
+    font-size: 20px;
+}
+
+/* Current App Title */
+.am-current-app {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2d3748;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.am-current-app i {
+    font-size: 1.2rem;
+    color: #667eea;
+}
+
+.am-main-header .user-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.am-main-header .business-info {
+    text-align: right;
+}
+
+.am-main-header .business-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2d3748;
+}
+
+.am-main-header .business-ruc {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+.am-main-header .user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.am-main-header .user-avatar:hover {
+    transform: scale(1.05);
+}
+
+/* User Dropdown */
+.user-dropdown {
+    position: relative;
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s;
+    z-index: 200;
+}
+
+.user-dropdown.open .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-dropdown-header {
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.user-dropdown-header .user-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.user-dropdown-header .user-email {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #4a5568;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.user-dropdown-item:hover {
+    background: #f7fafc;
+    color: #667eea;
+}
+
+.user-dropdown-item i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 4px 0;
+}
+
+/* Task Bell Styles */
+.task-bell-container {
+    position: relative;
+    margin-right: 12px;
+}
+
+.task-bell-btn {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    font-size: 1.2rem;
+    padding: 8px;
+    cursor: pointer;
+    position: relative;
+    border-radius: 8px;
+    transition: all 0.2s;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.task-bell-btn:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.task-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 10px;
+    font-weight: bold;
+    min-width: 14px;
+    text-align: center;
+}
+
+.task-badge.animate {
+    animation: badgePulse 0.3s ease-in-out;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+.task-dropdown {
+    width: 350px;
+    max-height: 450px;
+    padding: 0;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.task-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #334155;
+}
+
+.task-list-container {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.no-tasks-message {
+    text-align: center;
+    padding: 30px 20px;
+    color: #94a3b8;
+}
+
+.no-tasks-message i {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.no-tasks-message p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.task-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+}
+
+.task-item:hover {
+    background: #f8fafc;
+}
+
+.task-item:last-child {
+    border-bottom: none;
+}
+
+.task-item .task-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.task-item .task-message {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.task-item .progress {
+    height: 4px;
+    border-radius: 2px;
+    background: #e2e8f0;
+}
+
+.task-item .task-time {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.task-item.completed .task-name {
+    color: #10b981;
+}
+
+.task-item.error .task-name {
+    color: #ef4444;
+}
+
+.task-item .task-status-icon {
+    font-size: 1.2rem;
+}
+
+.task-item .task-status-icon.processing {
+    color: #3b82f6;
+}
+
+.task-item .task-status-icon.completed {
+    color: #10b981;
+}
+
+.task-item .task-status-icon.error {
+    color: #ef4444;
+}
+
+.task-dropdown-footer {
+    padding: 10px 16px;
+    text-align: center;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.task-dropdown-footer a {
+    color: #3b82f6;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.task-dropdown-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Main Content */
+.am-main-content {
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Welcome Section */
+.am-welcome {
+    background: white;
+    border-radius: 12px;
+    padding: 60px 40px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin: 24px;
+}
+
+.am-welcome h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.am-welcome p {
+    color: #718096;
+    font-size: 0.95rem;
+}
+
+/* App Content */
+.am-app-content {
+    padding: 24px;
+    min-height: calc(100vh - 65px);
+}
+
+.am-app-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+    color: #4a5568;
+}
+
+.am-app-loading p {
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+/* Overlay for Mobile */
+.am-sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.am-sidebar-overlay.show {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .am-sidebar {
+        transform: translateX(-100%);
+        width: 280px !important;
+    }
+
+    .am-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .am-sidebar.mobile-open .am-sidebar-title,
+    .am-sidebar.mobile-open .am-sidebar-section-title,
+    .am-sidebar.mobile-open .am-sidebar-menu-text {
+        opacity: 1 !important;
+        width: auto !important;
+        margin-left: 12px !important;
+    }
+
+    .am-sidebar.mobile-open .am-sidebar-menu-link {
+        justify-content: flex-start !important;
+        padding: 10px 20px !important;
+    }
+
+    .am-main-area {
+        margin-left: 0 !important;
+    }
+}
+</style>
+
+<div class="sidebar-view-container" id="sidebarViewContainer">
+    <!-- Sidebar -->
+    <aside class="am-sidebar collapsed" id="amSidebar">
+        <!-- Header -->
+        <div class="am-sidebar-header">
+            <img class="am-sidebar-logo" src="{% business_logo %}" alt="{% business_name %}">
+            <span class="am-sidebar-title">{% business_name %}</span>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="am-sidebar-nav">
+            <div id="sidebarMenusContainer">
+                <!-- Los menús se cargarán aquí -->
+            </div>
+        </nav>
+
+        <!-- Footer -->
+        <div class="am-sidebar-footer">
+            <button class="am-sidebar-footer-btn" id="sidebarViewToggle">
+                <i class="mdi mdi-view-grid"></i>
+                <span>Vista Launcher</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Tooltip -->
+    <div class="am-sidebar-tooltip" id="sidebarTooltip"></div>
+
+    <!-- Overlay for Mobile -->
+    <div class="am-sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Area -->
+    <div class="am-main-area" id="amMainArea">
+        <!-- Header -->
+        <header class="am-main-header">
+            <!-- Mobile Menu Toggle -->
+            <button class="btn btn-link d-md-none" id="sidebarMobileToggle">
+                <i class="mdi mdi-menu" style="font-size: 1.5rem; color: #2d3748;"></i>
+            </button>
+
+            <!-- Back Button (hidden by default) -->
+            <button class="am-back-btn" id="sidebarBackBtn" style="display: none;" title="Volver">
+                <i class="mdi mdi-arrow-left"></i>
+            </button>
+
+            <!-- Current App Title (hidden by default) -->
+            <div class="am-current-app" id="sidebarCurrentApp" style="display: none;">
+                <i class="mdi mdi-application"></i>
+                <span id="sidebarCurrentAppName"></span>
+            </div>
+
+            <!-- User Section -->
+            <div class="user-section">
+                <div class="business-info">
+                    <div class="business-name" id="sidebarBusinessName">{% business_name %}</div>
+                    <div class="business-ruc" id="sidebarBusinessRuc">Cargando...</div>
+                </div>
+
+                <!-- Task Notifications Bell -->
+                <div class="task-bell-container" id="taskNotificationBell">
+                    <div class="dropdown">
+                        <button class="task-bell-btn" type="button" id="taskBellDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="mdi mdi-bell-outline"></i>
+                            <span class="task-badge d-none" id="taskBadge">0</span>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end task-dropdown" aria-labelledby="taskBellDropdown">
+                            <div class="task-dropdown-header">
+                                <span>Tareas en Progreso</span>
+                                <span class="badge bg-primary" id="taskCountHeader">0</span>
+                            </div>
+                            <div class="task-list-container" id="taskListContainer">
+                                <div class="no-tasks-message" id="noTasksMessage">
+                                    <i class="mdi mdi-checkbox-marked-circle-outline"></i>
+                                    <p>No hay tareas en progreso</p>
+                                </div>
+                            </div>
+                            <div class="task-dropdown-footer d-none" id="taskFooter">
+                                <a href="#" id="clearCompletedTasks">Limpiar completadas</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="user-dropdown" id="sidebarUserDropdown">
+                    <div class="user-avatar" id="sidebarUserAvatar">
+                        {{ request.user.username|slice:":1"|upper }}
+                    </div>
+                    <div class="user-dropdown-menu">
+                        <div class="user-dropdown-header">
+                            <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                            <div class="user-email">{{ request.user.email|default:"" }}</div>
+                        </div>
+                        <a class="user-dropdown-item" href="#" id="sidebarOpenProfile">
+                            <i class="mdi mdi-account-circle"></i>
+                            <span>Mi Perfil</span>
+                        </a>
+                        <a class="user-dropdown-item" href="#" id="sidebarOpenBusinessSelector">
+                            <i class="mdi mdi-domain"></i>
+                            <span>Cambiar Negocio</span>
+                        </a>
+                        <div class="user-dropdown-divider"></div>
+                        <a class="user-dropdown-item" href="#" id="sidebarLogout">
+                            <i class="mdi mdi-logout"></i>
+                            <span>Cerrar Sesión</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="am-main-content" id="sidebarMainContent">
+            <!-- Home View -->
+            <div id="sidebarHomeView">
+                <div class="am-welcome">
+                    <i class="mdi mdi-view-dashboard" style="font-size: 48px; color: #667eea;"></i>
+                    <h2>Bienvenido al Sistema</h2>
+                    <p>Selecciona una aplicación del menú lateral para comenzar</p>
+                </div>
+            </div>
+
+            <!-- App View (hidden by default) -->
+            <div id="sidebarAppView" class="am-app-content" style="display: none;">
+                <!-- El contenido de la app se carga aquí -->
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    var sidebarAppsData = [];
+    var sidebarMenusData = [];
+    var currentApp = null;
+    var isSidebarPinned = false;
+    var hoverTimeout = null;
+
+    // Elementos del DOM
+    var sidebar = null;
+    var tooltip = null;
+    var overlay = null;
+
+    // Inicialización
+    function initSidebar() {
+        sidebar = document.getElementById('amSidebar');
+        tooltip = document.getElementById('sidebarTooltip');
+        overlay = document.getElementById('sidebarOverlay');
+
+        loadSidebarApps();
+        initSidebarHover();
+        initSidebarUserDropdown();
+        initSidebarViewToggle();
+        initSidebarUserActions();
+        initMobileMenu();
+        initBackButton();
+        loadBusinessInfo();
+        initTaskBell();
+    }
+
+    // Inicializar Task Bell
+    function initTaskBell() {
+        if (typeof TaskBellManager !== 'undefined') {
+            window.taskBell = new TaskBellManager();
+            console.log('TaskBell initialized (Sidebar)');
+        } else {
+            console.warn('TaskBellManager not available, retrying in 500ms...');
+            setTimeout(initTaskBell, 500);
+        }
+    }
+
+    // Ejecutar inmediatamente si el DOM ya está listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSidebar);
+    } else {
+        initSidebar();
+    }
+
+    // Botón volver
+    function initBackButton() {
+        document.getElementById('sidebarBackBtn').addEventListener('click', goHome);
+    }
+
+    // Volver al home
+    function goHome() {
+        currentApp = null;
+
+        // Mostrar home, ocultar app
+        document.getElementById('sidebarHomeView').style.display = 'block';
+        document.getElementById('sidebarAppView').style.display = 'none';
+        document.getElementById('sidebarAppView').innerHTML = '';
+
+        // Ocultar botón volver y título
+        document.getElementById('sidebarBackBtn').style.display = 'none';
+        document.getElementById('sidebarCurrentApp').style.display = 'none';
+
+        // Quitar clase active de todos los links
+        document.querySelectorAll('.am-sidebar-menu-link').forEach(function(link) {
+            link.classList.remove('active');
+        });
+
+        history.pushState({view: 'home'}, '', window.location.pathname);
+    }
+
+    // Cargar apps
+    async function loadSidebarApps() {
+        try {
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'get_apps');
+
+            var response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            sidebarAppsData = response.data || [];
+
+            // Agrupar por menú (manteniendo el orden del backend)
+            var menuOrder = [];
+            var menuMap = {};
+            sidebarAppsData.forEach(function(app) {
+                if (!app.active) return;
+
+                var menuName = app.menu || 'Otros';
+                if (!menuMap[menuName]) {
+                    menuMap[menuName] = {
+                        name: menuName,
+                        icon: app.menu_icon || 'mdi mdi-folder-outline',
+                        prioridad: app.menu_prioridad || 999,
+                        apps: []
+                    };
+                    menuOrder.push(menuName);
+                }
+                menuMap[menuName].apps.push(app);
+            });
+
+            // Mantener el orden del backend
+            sidebarMenusData = menuOrder.map(function(name) {
+                return menuMap[name];
+            });
+            renderSidebarMenus();
+
+        } catch (error) {
+            console.error('Error loading sidebar apps:', error);
+        }
+    }
+
+    // Renderizar menús
+    function renderSidebarMenus() {
+        var container = document.getElementById('sidebarMenusContainer');
+        var html = '';
+
+        sidebarMenusData.forEach(function(menu) {
+            html += '<div class="am-sidebar-section">';
+            html += '<div class="am-sidebar-section-title">' + escapeHtml(menu.name) + '</div>';
+            html += '<ul class="am-sidebar-menu">';
+
+            menu.apps.forEach(function(app) {
+                html += '<li class="am-sidebar-menu-item">';
+                html += '<a class="am-sidebar-menu-link" data-app-name="' + escapeHtml(app.app_name) + '">';
+                html += '<span class="am-sidebar-menu-icon"><i class="' + (app.icon || 'mdi mdi-file-outline') + '"></i></span>';
+                html += '<span class="am-sidebar-menu-text">' + escapeHtml(app.friendly_name) + '</span>';
+                html += '</a>';
+                html += '</li>';
+            });
+
+            html += '</ul>';
+            html += '</div>';
+        });
+
+        container.innerHTML = html;
+
+        // Eventos
+        var menuLinks = container.querySelectorAll('.am-sidebar-menu-link');
+        menuLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                var appName = this.dataset.appName;
+                var app = sidebarAppsData.find(function(a) {
+                    return a.app_name === appName;
+                });
+
+                if (app) {
+                    openApp(app);
+
+                    // Marcar como activo
+                    menuLinks.forEach(function(l) { l.classList.remove('active'); });
+                    this.classList.add('active');
+
+                    // Cerrar en móvil
+                    if (window.innerWidth <= 768) {
+                        closeMobileSidebar();
+                    }
+                }
+            });
+
+            // Tooltip
+            link.addEventListener('mouseenter', function() {
+                if (!sidebar.classList.contains('expanded') && !isSidebarPinned) {
+                    showTooltip(this.querySelector('.am-sidebar-menu-text').textContent, this);
+                }
+            });
+
+            link.addEventListener('mouseleave', hideTooltip);
+        });
+    }
+
+    // Abrir app (SPA)
+    async function openApp(app) {
+        currentApp = app;
+
+        var appView = document.getElementById('sidebarAppView');
+        appView.style.display = 'block';
+        appView.innerHTML = `
+            <div class="am-app-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p>Cargando ${escapeHtml(app.friendly_name)}...</p>
+            </div>
+        `;
+
+        // Ocultar home
+        document.getElementById('sidebarHomeView').style.display = 'none';
+
+        // Mostrar botón volver y título
+        document.getElementById('sidebarBackBtn').style.display = 'flex';
+        document.getElementById('sidebarCurrentApp').style.display = 'flex';
+        document.getElementById('sidebarCurrentAppName').textContent = app.friendly_name;
+
+        history.pushState({view: 'app', app: app.app_name}, '', window.location.pathname + '?app=' + app.app_name);
+
+        try {
+            var params = new URLSearchParams();
+            params.append('tmpl', app.url);
+
+            var response = await axios.get('/io/dtmpl/?' + params.toString());
+
+            appView.innerHTML = response.data;
+            executeScripts(appView);
+
+        } catch (error) {
+            console.error('Error loading app:', error);
+            appView.innerHTML = `
+                <div class="am-app-loading">
+                    <i class="mdi mdi-alert-circle text-danger" style="font-size: 48px;"></i>
+                    <h4 class="mt-3">Error al cargar ${escapeHtml(app.friendly_name)}</h4>
+                    <p class="text-muted">${error.message || 'No se pudo cargar el contenido'}</p>
+                    <button class="btn btn-primary mt-3" onclick="window.sidebarGoHome()">
+                        <i class="mdi mdi-arrow-left"></i> Volver
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Ejecutar scripts
+    function executeScripts(container) {
+        var scripts = container.querySelectorAll('script');
+        scripts.forEach(function(oldScript) {
+            var newScript = document.createElement('script');
+            Array.from(oldScript.attributes).forEach(function(attr) {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    // Exponer globalmente
+    window.sidebarGoHome = goHome;
+
+    // Popstate
+    window.addEventListener('popstate', function(e) {
+        if (e.state && e.state.view === 'app' && e.state.app) {
+            var app = sidebarAppsData.find(function(a) { return a.app_name === e.state.app; });
+            if (app) openApp(app);
+        } else {
+            goHome();
+        }
+    });
+
+    // Hover del sidebar
+    function initSidebarHover() {
+        sidebar.addEventListener('mouseenter', function() {
+            if (window.innerWidth <= 768) return;
+            if (hoverTimeout) { clearTimeout(hoverTimeout); hoverTimeout = null; }
+            if (!isSidebarPinned) {
+                sidebar.classList.remove('collapsed');
+                sidebar.classList.add('expanded');
+            }
+        });
+
+        sidebar.addEventListener('mouseleave', function() {
+            if (window.innerWidth <= 768) return;
+            if (!isSidebarPinned) {
+                hoverTimeout = setTimeout(function() {
+                    sidebar.classList.remove('expanded');
+                    sidebar.classList.add('collapsed');
+                    hideTooltip();
+                }, 300);
+            }
+        });
+    }
+
+    function showTooltip(text, element) {
+        var rect = element.getBoundingClientRect();
+        tooltip.textContent = text;
+        tooltip.style.top = rect.top + (rect.height / 2) - 16 + 'px';
+        tooltip.classList.add('show');
+    }
+
+    function hideTooltip() {
+        tooltip.classList.remove('show');
+    }
+
+    // User dropdown
+    function initSidebarUserDropdown() {
+        var dropdown = document.getElementById('sidebarUserDropdown');
+        var avatar = dropdown.querySelector('.user-avatar');
+
+        avatar.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+    }
+
+    // View toggle
+    function initSidebarViewToggle() {
+        document.getElementById('sidebarViewToggle').addEventListener('click', function() {
+            localStorage.setItem('amachine_view_mode', 'launcher');
+            window.location.reload();
+        });
+    }
+
+    // User actions
+    function initSidebarUserActions() {
+        document.getElementById('sidebarOpenProfile').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('sidebarUserDropdown').classList.remove('open');
+
+            var tps = {
+                url: '/io/dtmpl/',
+                dattrs: { title: 'Mi Perfil', sui_rr: OptsIO.s4generate(), offcanvasglobal: true },
+                template: 'OptsIO/UserProfileUi.html',
+                raw: true
+            };
+
+            OptsIO.getTmpl(tps).then(function(rsp) {
+                $('#offcanvasGlobalUiBody').html(rsp.data);
+                new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            });
+        });
+
+        document.getElementById('sidebarOpenBusinessSelector').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('sidebarUserDropdown').classList.remove('open');
+            if (typeof window.openBusinessSelector === 'function') {
+                window.openBusinessSelector();
+            }
+        });
+
+        document.getElementById('sidebarLogout').addEventListener('click', function(e) {
+            e.preventDefault();
+            axios.post('/io/glogout/', new FormData()).then(function() {
+                window.location.href = '/io/glogin/';
+            }).catch(function() {
+                window.location.href = '/io/glogin/';
+            });
+        });
+    }
+
+    // Mobile menu
+    function initMobileMenu() {
+        var mobileToggle = document.getElementById('sidebarMobileToggle');
+
+        mobileToggle.addEventListener('click', function() {
+            if (sidebar.classList.contains('mobile-open')) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+        });
+
+        overlay.addEventListener('click', closeMobileSidebar);
+    }
+
+    function openMobileSidebar() {
+        sidebar.classList.add('mobile-open');
+        overlay.classList.add('show');
+    }
+
+    function closeMobileSidebar() {
+        sidebar.classList.remove('mobile-open');
+        overlay.classList.remove('show');
+    }
+
+    // Load business info
+    function loadBusinessInfo() {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'mng_registration');
+        fdata.append('attr', 'MRegistration');
+        fdata.append('mname', 'get_active_business');
+        fdata.append('dbcon', 'default');
+
+        axios.post('/io/iom/', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then(function(rsp) {
+            if (rsp.data.business_id) {
+                document.getElementById('sidebarBusinessName').textContent = rsp.data.business_name || 'Sin nombre';
+                document.getElementById('sidebarBusinessRuc').textContent = 'RUC: ' + (rsp.data.business_ruc || '-');
+            } else {
+                document.getElementById('sidebarBusinessRuc').textContent = 'Sin negocio activo';
+            }
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+})();
+</script>

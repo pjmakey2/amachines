@@ -1,0 +1,377 @@
+<div class="shopifypayment_ui_container container-fluid">
+    <div class="shopifypayment_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_sync_pagos" class="btn btn-primary me-2">
+                <i class="mdi mdi-sync"></i> Sincronizar
+            </button>
+            <button id="btn_migrar_pagos" class="btn btn-success me-2">
+                <i class="mdi mdi-database-export"></i> Convertir a Facturas
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_pagos" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_shopifypayment_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    shopifypayment_home_be = function (data, settings) {
+        tt = qelem(`#table_shopifypayment_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`shopifypayment_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_shopifypayment = `dtable_${OptsIO.s4generate()}`;
+    dt_shopifypayment_pc = Grid.datatables_wrapper({
+          t_guid: t_shopifypayment,
+          url_exec: '{% url "iom" %}',
+          title: 'Pagos de Shopify',
+          tselector: 'table_shopifypayment_ui',
+          app_name: 'am_shopify',
+          model_name: 'ShopifyPayment',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: shopifypayment_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_shopifypayment_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-shopifypayment-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'shopify_order_id',
+                 tit: 'Shopify ID',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'order_number',
+                 tit: 'N° Orden',
+                 cls: 'align-right',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'order_name',
+                 tit: 'Nombre',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'customer_name',
+                 tit: 'Cliente',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'customer_tags',
+                 tit: 'Tags (RUC)',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     if (data && data.toLowerCase().includes('ruc:')) {
+                         return `<span class="badge bg-success">${data}</span>`;
+                     }
+                     return data || '';
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'total_price',
+                 tit: 'Total',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `${UiN.formatNumberU(parseFloat(data || 0).toFixed(0))}`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'total_discounts',
+                 tit: 'Descuento',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     let val = parseFloat(data || 0);
+                     if (val > 0) {
+                         return `<span class="text-danger">${UiN.formatNumberU(val.toFixed(0))}</span>`;
+                     }
+                     return '-';
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'total_shipping',
+                 tit: 'Envío',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     let val = parseFloat(data || 0);
+                     if (val > 0) {
+                         return `<span class="text-info">${UiN.formatNumberU(val.toFixed(0))}</span>`;
+                     }
+                     return '-';
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'financial_status',
+                 tit: 'Pago',
+                 cls: 'align-center',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     let badgeClass = {
+                         'paid': 'bg-success',
+                         'pending': 'bg-warning',
+                         'refunded': 'bg-info',
+                         'partially_refunded': 'bg-info',
+                         'voided': 'bg-secondary',
+                         'authorized': 'bg-primary'
+                     }[data] || 'bg-secondary';
+                     let label = {
+                         'paid': 'Pagado',
+                         'pending': 'Pendiente',
+                         'refunded': 'Reembolsado',
+                         'partially_refunded': 'Reemb. Parcial',
+                         'voided': 'Anulado',
+                         'authorized': 'Autorizado'
+                     }[data] || data;
+                     return `<span class="badge ${badgeClass}">${label}</span>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'conversion_status',
+                 tit: 'Conversión',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     let badgeClass = {
+                         'pending': 'bg-warning',
+                         'converted': 'bg-success',
+                         'error': 'bg-danger',
+                         'skipped': 'bg-secondary'
+                     }[data] || 'bg-secondary';
+                     return `<span class="badge ${badgeClass}">${data}</span>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'document_header__doc_numero',
+                 tit: 'Factura',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? `<span class="text-info">Factura #${data}</span>` : 'N/A';
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'order_created_at',
+                 tit: 'Fecha',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? moment(data).format('DD/MM/YYYY HH:mm') : '';
+                 }
+              },
+          ]
+      })
+
+    $(`#${t_shopifypayment} tbody`).on('click', '.tr-shopifypayment-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_shopifypayment}`).DataTable().row( elerow ).data()
+        shopifypayment_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_sync_pagos').addEventListener('click', function() {
+        UiB.MsgSwall({
+            msg: '¿Desea sincronizar los pagos desde Shopify?',
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'sync_payments_from_ui');
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs || [rsp.data],
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifypayment}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al sincronizar: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al sincronizar. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    qelem('#btn_migrar_pagos').addEventListener('click', function() {
+        let table = $(`#${t_shopifypayment}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un pago para convertir.');
+            return;
+        }
+        let idsToMigrate = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Desea convertir ${idsToMigrate.length} pago(s) a facturas SIFEN?`,
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'migrate_payments_to_invoices');
+                fdata.append('ids', jfy(idsToMigrate));
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs,
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifypayment}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al convertir: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al convertir. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    shopifypayment_form_crud = (pk) => {
+        dattrs = {
+            title: 'Ver Pago',
+            t_guid: t_shopifypayment,
+            sui_rr: '{{ rr }}',
+            from_ShopifyPaymentUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'am_shopify',
+            model_name: 'ShopifyPayment',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'am_shopify/ShopifyPaymentCreateUi.html',
+            raw: true,
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Detalle del Pago';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_pagos').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_pagos').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_order_name__icontains', 'value': qelem('input#input_buscar_pagos').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_name__icontains', 'value': qelem('input#input_buscar_pagos').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_email__icontains', 'value': qelem('input#input_buscar_pagos').value
+                })
+                gmquery.push({
+                    'field': 'or_customer_tags__icontains', 'value': qelem('input#input_buscar_pagos').value
+                })
+            }
+            $(`#${t_shopifypayment}`).DataTable().ajax.reload();
+        }
+    }
+
+$(`#${t_shopifypayment}`).on('draw.dt', function() {
+  tt = qelem(`#table_shopifypayment_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

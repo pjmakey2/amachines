@@ -1,0 +1,130 @@
+<div id="d_{{rr}}"></div>
+<script type="text/javascript">
+    dform = {
+        'form_id': 'dform_{{ rr }}',
+        'hidden_fields': [
+            {'name': 'model_app_name', 'value': 'auth'},
+            {'name': 'model_name', 'value': 'Permissions'},
+        ],
+        'rows-1': [
+            { 'label': 'Codigo', 
+              'name': 'id', 
+              'cls': 'col-md-4', 
+              'type': 'input', 
+              'kind': 'text', 
+              'readonly': true,
+              'hlp': 'Este dato se genera automaticamente' },
+        ],
+        'rows-2': [
+            { 'title_row': 'Definicion del permiso'},
+            { 'label': 'Permiso', 'name': 'codename', 'cls': 'col-md-4', 'type': 'input', 'kind': 'text', 'required': true},
+            { 'label': 'Modulo', 'name': 'name', 'cls': 'col-md-4', 'type': 'input', 'kind': 'text', 'required': true},
+        ],
+        'submit_btn': { 'cls': 'mt-2 btn btn-success', 'label': 'Crear' }
+    }
+    bfo = form_ui.generate_bs5(dform);
+    qelem('#d_{{rr}}').appendChild(bfo.form);
+
+
+    qelem('#dform_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'auth');
+        fdata.append('model_name', 'Permissions');
+        fdata.append('dbcon', 'default');
+        const formData = new FormData(event.target);
+        const edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]))
+        fdata.append('a_vals', jfy([]))
+        fdata.append('c_a', jfy([
+            { 'module': 'OptsIO',
+              'package': 'io_users',
+              'attr': 'IOUser',
+              'mname': 'add_permission',
+              'cont': false 
+            },
+        ]))
+        axios.post(
+            '{% url "iom" %}', 
+            fdata, 
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            if (Array.isArray(msgs)) {
+                UiB.BeMsgHandle({
+                  rsps: msgs,
+                  timer: 7000,
+                  {% if modal_selector %}
+                    n_modal: '{{ modal_selector }}'
+                  {% endif %}
+                })
+            } else {
+                if (rsp.data.success) {
+                    UiB.BeMsgHandle({
+                        rsps: [rsp.data],
+                        {% if modal_selector %}
+                            n_modal: '{{ modal_selector }}'
+                        {% endif %}
+                    })
+                    
+                }
+                if (rsp.data.error) {
+                    UiB.BeMsgHandle({
+                        rsps: [rsp.data],
+                        timer: 7000
+                    })
+                }
+            }
+            if (rsp.data.hasOwnProperty('qdict')) {
+                uc_fields = jpar(rsp.data.qdict.uc_fields);
+                console.log(uc_fields);
+            }
+        }).catch((err)=>{
+            UiB.MsgError(err);
+            
+        }).then(()=>{
+            $('#{{t_guid}}').DataTable().ajax.reload();
+        });
+    })
+
+
+    {% if mobj %}
+        var fudata = new FormData();
+        fudata.append('module', 'OptsIO');
+        fudata.append('package', 'io_serial');
+        fudata.append('attr', 'IoS');
+        fudata.append('mname', 'seModelForm');
+        fudata.append('model_app_name', 'auth');
+        fudata.append('model_name', 'Permissions');
+        fudata.append('dbcon', 'default')
+        fudata.append('mquery', jfy([{field: '{{ field_pk }}', value: '{{ mobj.pk }}'}]))
+        frepr = []
+        fudata.append('fields', jfy(bfo.fields));
+        fudata.append('frepr', jfy(frepr));
+        axios.post(
+            '{% url "iom" %}', 
+            fudata, 
+            { 
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            }
+        ).then((rsp)=>{
+            fsem = rsp.data;
+            form_serials.form_from_json('dform_{{ rr }}', fsem);
+        })
+    {% endif %}
+</script>

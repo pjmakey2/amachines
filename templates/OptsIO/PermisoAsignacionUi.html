@@ -1,0 +1,236 @@
+<style>
+  table.permission-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: sans-serif;
+  }
+  .permission-table th, .permission-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: center;
+  }
+  .permission-table thead {
+    background-color: #f4f4f4;
+  }
+  .perm-label {
+    text-align: left;
+  }
+</style>
+<h2 class="text text-left">Asignación de permisos</h2>
+<div class="row">
+    <div class="col-md-2">
+        <label for="appFilter" class="form-label">App filtrar:</label>
+        <select id="appFilter" class="form-select" class="fl_select form-select form-select-lg">
+            <option value="">-- Filtrar por App --</option>
+            {% for app in app_names %}
+                <option value="{{ app }}">{{ app }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label for="uiFilter" class="form-label">Interfaz filtrar:</label>
+        <select id="uiFilter" class="form-select" class="fl_select form-select form-select-lg">
+            <option value="">-- Filtrar por Interfaz --</option>
+            {% for ui in ui_names %}
+                <option value="{{ ui }}">{{ ui }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-5 d-none">
+        <label for="groupSelector" class="form-label">Selecciona grupo(s) para mostrar sus permisos:</label>
+        <select name="perm_grupo" id="groupSelector" multiple="multiple" style="width: 300px;"
+                class="fl_select form-select form-select-lg"
+            >
+                {% for group in permisos.0.grupos %}
+                    <option value="{{ group.name }}">{{ group.name }}</option>
+                {% endfor %}
+        </select>
+    </div>
+</div>
+
+
+<table id="permisosTable" class="table table-bordered mt-3 table-sm" style="font-size: 12px; width: 100%;">
+    <thead>
+        <tr>
+            <th>App</th>
+            <th>Interfaz</th>
+            <th>Permiso</th>
+            {% for group in permisos.0.grupos %}
+                <th data-group-name="{{ group.name }}">{{ group.name }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+    {% for m in permisos %}
+        <tr data-app="{{ m.app_name }}" data-ui="{{ m.ui_name }}">
+            <td style="width: 100px;"><input type="text"
+                class="form-control form-control-sm"
+                onchange="this.dataset.originalValue = this.value;" 
+                onkeydown="actualizar_permisos(event, this);" 
+                data-field="app_name"
+                data-pk="{{ m.pk }}"
+                value="{{ m.app_name }}">
+            </td>
+            <td style="width: 177px;"><input type="text"
+                class="form-control form-control-sm"
+                onchange="this.dataset.originalValue = this.value;" 
+                onkeydown="actualizar_permisos(event, this);" 
+                data-field="ui_name"
+                data-pk="{{ m.pk }}"
+                value="{{ m.ui_name }}"></td>
+            <td><input type="text"
+                class="form-control form-control-sm"
+                onchange="this.dataset.originalValue = this.value;" 
+                onkeydown="actualizar_permisos(event, this);"
+                data-field="perm_name"
+                data-pk="{{ m.pk }}"
+                value="{{ m.perm_name }}"></td>
+            {% for group in m.grupos %}
+                <td data-group-name="{{ group.name }}">
+                    {% comment %} <div class="fl_focus_highlight form-check form-switch form-check-custom form-check-solid"> {% endcomment %}
+                    <div class="fl_focus_highlight form-check form-check-solid">
+                        <input 
+                            class="fl_input form-check-input" 
+                            type="checkbox" 
+                            data-permpk="{{ m.pk }}"
+                            data-pk="{{ group.pk }}"
+                            name="{{ group.name }}" 
+                            onchange="set_permiso(event, this);"
+                            {% if group.has_perm %}checked{% endif %}
+                        />
+                    </div>
+                </td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<script type="text/javascript">
+    var permiso_container_load  = UiB.BlockLoaderSpecifyAjax(
+        {
+            dele: '#permisosTable',
+            msg_block: '...'
+        }
+    )    
+
+     $('#appFilter, #uiFilter').select2({
+        placeholder: 'Seleccione...',
+        allowClear: true,
+        width: 'resolve'
+    });
+
+    $('select[name=perm_grupo]').select2({
+        placeholder: 'Selecciona grupo(s)',
+        allowClear: true,
+    });
+
+    //hideAllGroupColumns();
+
+    $('#appFilter, #uiFilter').on('change', function() {
+        applyTableFilters();
+    });
+
+    $('#groupSelector').on('change', function() {
+        const selectedGroups = $(this).val() || [];
+        updateGroupColumnVisibility(selectedGroups);
+    });
+
+    function hideAllGroupColumns() {
+        document.querySelectorAll('[data-group-name]').forEach(el => {
+            el.style.display = 'none';
+        });
+    }
+
+    function updateGroupColumnVisibility(visibleGroups) {
+        document.querySelectorAll('[data-group-name]').forEach(el => {
+            const name = el.dataset.groupName;
+            el.style.display = visibleGroups.includes(name) ? '' : 'none';
+        });
+    }
+
+    function applyTableFilters() {
+        const selectedApp = $('#appFilter').val();
+        const selectedUI = $('#uiFilter').val();
+
+        document.querySelectorAll("tbody tr").forEach(row => {
+            const rowApp = row.dataset.app;
+            const rowUI = row.dataset.ui;
+
+            const matchApp = !selectedApp || selectedApp === rowApp;
+            const matchUI = !selectedUI || selectedUI === rowUI;
+
+            row.style.display = (matchApp && matchUI) ? '' : 'none';
+        });
+    }    
+
+    function actualizar_permisos(event, inpt) {
+        if (event.key !== 'Enter') return;
+
+        const pk = inpt.dataset.pk;
+        const field = inpt.dataset.field;
+        const data = inpt.value;
+        const originalValue = inpt.dataset.originalValue;
+
+        if (data === originalValue) return;
+
+        const gbe = new FormData();
+        gbe.append('module', 'FL_Users');
+        gbe.append('package', 'mng_access');
+        gbe.append('attr', 'MAcess');
+        gbe.append('mname', 'actualizar_permisos');
+        gbe.append('pk', pk);
+        gbe.append('field', field);
+        gbe.append('data', data);
+        permiso_container_load.block();
+        axios.post('{% url "iom" %}', gbe, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            UiB.BeMsgHandle({
+                rsps: rsp.data,
+                timer: 3000,
+            });
+            inpt.dataset.originalValue = data; // Update original value after success
+        }).finally(() => {
+            permiso_container_load.release();
+        });
+    }
+
+    function set_permiso(event, inpt) {
+        const pk = inpt.dataset.pk;
+        const permpk = inpt.dataset.permpk;
+        const data = inpt.checked;
+
+        const gbe = new FormData();
+        gbe.append('module', 'FL_Users');
+        gbe.append('package', 'mng_access');
+        gbe.append('attr', 'MAcess');
+        gbe.append('mname', 'set_permiso');
+        gbe.append('pk', pk);
+        gbe.append('permpk', permpk);
+        gbe.append('data', data);
+        permiso_container_load.block();
+        axios.post('{% url "iom" %}', gbe, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            UiB.BeMsgHandle({
+                rsps: rsp.data,
+                timer: 3000,
+            });
+        }).finally(() => {
+            
+            permiso_container_load.release();
+        });
+    }
+
+    function populate_permiso () {
+
+        
+        permiso_container_load.block();
+        permiso_container_load.release();
+    }
+
+</script>

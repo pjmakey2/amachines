@@ -1,0 +1,207 @@
+<div class="ui_menu">
+    <form id="form_menu_{{ rr }}" class="form_menu">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>Prioridad</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="prioridad"
+                        class="form-control"
+                        placeholder="Prioridad"
+                        {% if mobj %} value="{{ mobj.prioridad }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Menú</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="menu"
+                        class="form-control"
+                        placeholder="Menú"
+                        {% if mobj %} value="{{ mobj.menu }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Nombre</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="friendly_name"
+                        class="form-control"
+                        placeholder="Nombre amigable"
+                        {% if mobj %} value="{{ mobj.friendly_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Icono</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="icon"
+                        class="form-control"
+                        placeholder="mdi mdi-icon-name"
+                        {% if mobj %} value="{{ mobj.icon }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>URL</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="url"
+                        class="form-control"
+                        placeholder="URL"
+                        {% if mobj %} value="{{ mobj.url }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Background</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="color"
+                        name="background"
+                        class="form-control"
+                        {% if mobj %} value="{{ mobj.background }}" {% else %} value="#000000" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Activo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="active" class="form-control">
+                        <option value="true" {% if mobj and mobj.active %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.active %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+
+
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Menú {{ mobj.pk }}{% else %}Crear Menú{% endif %}`;
+
+    save_menu = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'OptsIO');
+        fdata.append('model_name', 'Menu');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_menu_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+        seldis = []
+        seldis.forEach((idx) => {
+            vv = $(`#form_menu_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_menu_{{ rr }}edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_menu_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_menu_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'OptsIO',
+                'package': 'io_apps',
+                'attr': 'IOApps',
+                'mname': 'create_menu',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_menu_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_menu_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_menu_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_menu_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_menu_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_menu_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_menu_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_menu_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_menu_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_menu_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_menu_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_menu_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_menu_{{ rr }} Submitting form`);
+        save_menu(event.target);
+    })
+
+
+</script>

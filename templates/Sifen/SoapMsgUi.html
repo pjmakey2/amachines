@@ -1,0 +1,275 @@
+<div class="soapmsg_ui_container container-fluid">
+    <div class="soapmsg_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <h4>Track Lotes SIFEN</h4>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_soapmsg" class="form-control" placeholder="Buscar por lote...">
+        </div>
+    </div>
+
+    <div id="table_soapmsg_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    soapmsg_home_be = function (data, settings) {
+        tt = qelem(`#table_soapmsg_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+
+        // Filter for method_name='SiRecepLoteDE'
+        mquery.push({field: 'method_name', value: 'SiRecepLoteDE'});
+
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`soapmsg_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_soapmsg = `dtable_${OptsIO.s4generate()}`;
+    dt_soapmsg_pc = Grid.datatables_wrapper({
+          t_guid: t_soapmsg,
+          url_exec: '{% url "iom" %}',
+          tselector: 'table_soapmsg_ui',
+          app_name: 'Sifen',
+          model_name: 'SoapMsg',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 50,
+          builder_be: soapmsg_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_soapmsg_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'Acciones',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Consultar lote en SIFEN" class="btn-trace-lote text fs-5 mdi mdi-cloud-search"></i>
+                    <i title="Ver trazabilidad del lote" class="btn-view-tracklote text fs-5 mdi mdi-file-document-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'id',
+                 tit: 'ID',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: true
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'method_name',
+                 tit: 'Metodo',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'fproc',
+                 tit: 'Fecha Proceso',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return moment(data).format('DD/MM/YY HH:mm:ss')
+                 }
+              },
+              
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'json_rsp',
+                 tit: 'Lote',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data.dprotconslote || 'ND'
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'mdb',
+                 idx: 'get_last_state_lote',
+                 tit: 'Estado Lote',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     if (data === 'ND') return 'ND';
+                     let estado = data.lote || 'ND';
+                     let color = '';
+                     if (estado === 'RECIBIDO') color = 'badge-info';
+                     else if (estado === 'PROCESANDO') color = 'badge-warning';
+                     else if (estado === 'CONCLUIDO') color = 'badge-success';
+                     else color = 'badge-secondary';
+                     return `<span class="badge ${color}">${estado}</span>`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'msgres',
+                 tit: 'Mensaje',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'elapsed',
+                 tit: 'Tiempo (s)',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return parseFloat(data).toFixed(2)
+                 }
+              },
+          ]
+      })
+
+    $(`#${t_soapmsg} tbody`).on('click', '.btn-trace-lote', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_soapmsg}`).DataTable().row(elerow).data();
+        soapmsg_trace_lote(rowobj.id);
+    })
+
+    $(`#${t_soapmsg} tbody`).on('click', '.btn-view-tracklote', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_soapmsg}`).DataTable().row(elerow).data();
+        soapmsg_view_tracklote(rowobj);
+    })
+
+    soapmsg_trace_lote = (soapmsg_id) => {
+        UiB.MsgSwall({
+            msg: `¿Desea consultar el lote en SIFEN?`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_sifen');
+            gbe.append('attr', 'MSifen');
+            gbe.append('mname', 'trace_lote');
+            gbe.append('dbcon', 'default');
+            gbe.append('soapmsg_id', soapmsg_id);
+
+            axios.post('{% url "iom" %}', gbe, {
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    UiB.MsgSuccess(rsp.data.success);
+                    if (rsp.data.response) {
+                        log.info(`Response: ${rsp.data.response}`);
+                    }
+                    $(`#${t_soapmsg}`).DataTable().ajax.reload();
+                } else if (rsp.data.error) {
+                    UiB.MsgError(rsp.data.error);
+                }
+            }).catch((err) => {
+                log.error(`Error al consultar lote: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al consultar el lote.');
+            });
+        });
+    }
+
+    soapmsg_view_tracklote = (rowobj) => {
+        let lotedata = rowobj.get_last_state_lote;
+
+        if (lotedata === 'ND' || !lotedata.pk_lote) {
+            UiB.MsgWarning('No hay información de trazabilidad para este lote');
+            return;
+        }
+
+        let lote = rowobj.json_rsp.dprotconslote;
+        let pk = lotedata.pk_lote;
+
+        dattrs = {
+            title: `Lote ${lote}`,
+            t_guid: t_soapmsg,
+            sui_rr: '{{ rr }}',
+            from_SoapMsgUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'TrackLote',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/TrackLoteRecordUi.html',
+            raw: true,
+        }
+
+        tps['pk'] = pk;
+        dattrs['title'] = `Trazabilidad Lote ${lote}`;
+
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_soapmsg').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('input#input_buscar_soapmsg').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_json_rsp__dprotconslote__icontains', 'value': qelem('input#input_buscar_soapmsg').value
+                })
+                gmquery.push({
+                    'field': 'or_msgres__icontains', 'value': qelem('input#input_buscar_soapmsg').value
+                })
+            }
+            $(`#${t_soapmsg}`).DataTable().ajax.reload();
+
+        }
+    }
+
+    $(`#${t_soapmsg}`).on('draw.dt', function() {
+      tt = qelem(`#table_soapmsg_ui`);
+      tt.classList.remove('overlay-container');
+      tt.classList.remove('overlay');
+    })
+
+</script>

@@ -1,0 +1,194 @@
+<div class="ui_enumbers">
+    <form id="form_enumbers_{{ rr }}" class="form_enumbers">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-12">
+                <label>Expedición</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select
+                        name="expobj_id"
+                        class="form-control"
+                    >
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Tipo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="tipo"
+                        class="form-control"
+                        placeholder="Tipo"
+                        {% if mobj %} value="{{ mobj.tipo }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Serie</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="serie"
+                        class="form-control"
+                        placeholder="Serie"
+                        {% if mobj %} value="{{ mobj.serie }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Número</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="numero"
+                        class="form-control"
+                        placeholder="Número"
+                        {% if mobj %} value="{{ mobj.numero }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Estado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="estado"
+                        class="form-control"
+                        placeholder="Estado"
+                        {% if mobj %} value="{{ mobj.estado }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Número {{ mobj.pk }}{% else %}Crear Número{% endif %}`;
+
+    // Populate Eestablecimiento select using se_populate
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_enumbers_{{ rr }} select[name=expobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Eestablecimiento',
+        field_display: ['establecimiento'],
+        field_id: ['id'],
+        db_fields: ['id', 'establecimiento'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: true,
+        placeholder: 'Seleccione establecimiento',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        sort: [
+            {'dataIndx': 'establecimiento', 'dir': 'up'},
+        ]
+    }).then(() => {
+        {% if mobj and mobj.expobj %}
+        $('#form_enumbers_{{ rr }} select[name=expobj_id]').val('{{ mobj.expobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_enumbers = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Enumbers');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_enumbers_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        seldis = ['expobj_id']
+        seldis.forEach((idx) => {
+            vv = $(`#form_enumbers_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_enumbers_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_enumbers_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_enumbers_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([]))
+        log.info(`#form_enumbers_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_enumbers_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_enumbers_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_enumbers_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_enumbers_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_enumbers_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_enumbers_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_enumbers_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_enumbers_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_enumbers_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_enumbers_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_enumbers_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_enumbers_{{ rr }} Submitting form`);
+        save_enumbers(event.target);
+    })
+
+</script>

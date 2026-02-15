@@ -1,0 +1,507 @@
+<div class="business_setup_ui">
+    <h5 class="mb-4">Configuración Inicial de Negocio</h5>
+    <p class="text-muted mb-4">Para continuar, debe asignarse un negocio existente o crear uno nuevo.</p>
+
+    <!-- Tabs para elegir entre asignar o crear -->
+    <ul class="nav nav-tabs mb-4" id="businessSetupTabs_{{ rr }}" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="assign-tab_{{ rr }}" data-bs-toggle="tab" data-bs-target="#assign_{{ rr }}" type="button" role="tab">
+                <i class="mdi mdi-account-check"></i> Asignarme un Negocio Existente
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="create-tab_{{ rr }}" data-bs-toggle="tab" data-bs-target="#create_{{ rr }}" type="button" role="tab">
+                <i class="mdi mdi-plus-circle"></i> Crear Nuevo Negocio
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="businessSetupTabContent_{{ rr }}">
+        <!-- Tab: Asignar Negocio Existente -->
+        <div class="tab-pane fade show active" id="assign_{{ rr }}" role="tabpanel">
+            <div class="row">
+                <div class="col-md-12">
+                    <label>Seleccionar Negocio</label>
+                    <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                        <select name="business_assign" class="form-control">
+                            <option value="">-- Seleccione un negocio --</option>
+                        </select>
+                    </div>
+                    <div id="business_preview_{{ rr }}" class="business-preview mb-3" style="display: none;">
+                        <!-- Preview del negocio seleccionado -->
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btn_assign_business_{{ rr }}">
+                        <i class="mdi mdi-check"></i> Asignarme este Negocio
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Crear Nuevo Negocio -->
+        <div class="tab-pane fade" id="create_{{ rr }}" role="tabpanel">
+            <form id="form_create_business_{{ rr }}" enctype="multipart/form-data">
+                <h6 class="mb-3">Información del Negocio</h6>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <label>Nombre del Negocio</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="name" class="form-control" placeholder="Nombre del negocio" required />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Abreviación</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="abbr" class="form-control" placeholder="Abreviación" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-8">
+                        <label>RUC</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="ruc" class="form-control" placeholder="RUC" required />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>DV</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="number" name="ruc_dv" class="form-control" placeholder="Dígito Verificador" readonly />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Nombre para Factura</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="nombrefactura" class="form-control" placeholder="Nombre para factura" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Nombre de Fantasía</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="nombrefantasia" class="form-control" placeholder="Nombre de fantasía" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Tipo de Contribuyente</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="contribuyenteobj_id" class="form-control">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h6 class="mb-3">Dirección y Contacto</h6>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <label>Dirección</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="direccion" class="form-control" placeholder="Dirección principal" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Número de Casa</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="number" name="numero_casa" class="form-control" placeholder="Nro." />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Complemento Dirección 1</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="dir_comp_uno" class="form-control" placeholder="Ej: Barrio, Referencias" />
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label>Complemento Dirección 2</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="dir_comp_dos" class="form-control" placeholder="Complemento adicional" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Ciudad</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="ciudadobj_id" class="form-control">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-4">
+                        <label>Teléfono</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="telefono" class="form-control" placeholder="Teléfono" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Celular</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="celular" class="form-control" placeholder="Celular" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Correo Electrónico</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="email" name="correo" class="form-control" placeholder="Email" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label>Sitio Web</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="url" name="web" class="form-control" placeholder="https://www.ejemplo.com" />
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+                <h6 class="mb-3">Información Adicional</h6>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <label>Denominación</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input type="text" name="denominacion" class="form-control" placeholder="Denominación" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Actividad Económica</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="actividadecoobj_id" class="form-control">
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Logo del Negocio <small class="text-muted">(Opcional)</small></label>
+                        <div class="input-group">
+                            <input type="file" name="logo" class="form-control" accept="image/*" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12 text-start">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="mdi mdi-content-save"></i> Crear Negocio y Asignármelo
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = 'Configuración Inicial de Negocio';
+
+    // Load existing businesses for assignment
+    function loadExistingBusinesses() {
+        var tdata = new FormData();
+        tdata.append('module', 'OptsIO');
+        tdata.append('package', 'io_serial');
+        tdata.append('attr', 'IoS');
+        tdata.append('mname', 'seModel');
+        tdata.append('model_app_name', 'Sifen');
+        tdata.append('model_name', 'Business');
+        tdata.append('fields', jfy(['id', 'name', 'ruc', 'abbr', 'nombrefantasia', 'logo']));
+        tdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', tdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            var businesses = rsp.data.qs;
+            var selector = qelem('#assign_{{ rr }} select[name=business_assign]');
+
+            if (businesses && businesses.length > 0) {
+                businesses.forEach(function(business) {
+                    var option = document.createElement('option');
+                    option.value = business.id;
+                    option.text = business.name + ' (RUC: ' + business.ruc + ')';
+                    option.dataset.business = jfy(business);
+                    selector.appendChild(option);
+                });
+            } else {
+                // Si no hay negocios, activar automáticamente el tab de crear
+                qelem('#create-tab_{{ rr }}').click();
+            }
+        }).catch((err) => {
+            log.error('Error loading businesses: ' + jfy(err));
+        });
+    }
+
+    // Preview business on selection
+    qelem('#assign_{{ rr }} select[name=business_assign]').addEventListener('change', function() {
+        var previewDiv = qelem('#business_preview_{{ rr }}');
+
+        if (!this.value) {
+            previewDiv.style.display = 'none';
+            return;
+        }
+
+        var business = JSON.parse(this.options[this.selectedIndex].dataset.business);
+        var html = '<div class="card"><div class="card-body">';
+        html += '<h6>' + business.name + '</h6>';
+        html += '<p class="mb-1"><strong>RUC:</strong> ' + business.ruc + '</p>';
+        if (business.abbr) html += '<p class="mb-1"><strong>Abreviación:</strong> ' + business.abbr + '</p>';
+        if (business.nombrefantasia) html += '<p class="mb-1"><strong>Nombre Fantasía:</strong> ' + business.nombrefantasia + '</p>';
+        html += '</div></div>';
+
+        previewDiv.innerHTML = html;
+        previewDiv.style.display = 'block';
+    });
+
+    // Assign existing business to user
+    qelem('#btn_assign_business_{{ rr }}').addEventListener('click', function() {
+        var businessId = qelem('#assign_{{ rr }} select[name=business_assign]').value;
+
+        if (!businessId) {
+            UiB.MsgError('Por favor seleccione un negocio');
+            return;
+        }
+
+        var edata = {
+            businessobj_id: businessId
+        };
+
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'OptsIO');
+        fdata.append('model_name', 'UserBusiness');
+        fdata.append('dbcon', 'default');
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{
+            'module': 'OptsIO',
+            'package': 'mng_user_profile',
+            'attr': 'MUserProfile',
+            'mname': 'assign_business_to_user',
+            'cont': false,
+            'show_success': true
+        }]));
+        fdata.append('a_vals', jfy([]));
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            var msgs = rsp.data.msgs;
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            var got_error = false;
+            msgs.forEach((ee) => {
+                if (ee.error) {
+                    got_error = true;
+                }
+            });
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            });
+            if (!got_error) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        }).catch((err) => {
+            log.error('Error assigning business: ' + jfy(err));
+            UiB.MsgError('Error al asignar el negocio');
+        });
+    });
+
+    // Calculate RUC DV on blur
+    qelem('#form_create_business_{{ rr }} input[name=ruc]').addEventListener('blur', function() {
+        if (this.value) {
+            form_input.calculate_dv('#form_create_business_{{ rr }} input[name=ruc]', '#form_create_business_{{ rr }} input[name=ruc_dv]');
+        }
+    });
+
+    // Populate selects for create form
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_create_business_{{ rr }} select[name=contribuyenteobj_id]',
+        app_name: 'Sifen',
+        model_name: 'TipoContribuyente',
+        field_display: ['tipo'],
+        field_id: ['id'],
+        db_fields: ['id', 'tipo'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        theme: 'bootstrap-5',
+        dropdownParent: $('#offcanvasGlobalUi')
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_create_business_{{ rr }} select[name=ciudadobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Ciudades',
+        field_display: ['nombre_ciudad'],
+        field_id: ['id'],
+        db_fields: ['id', 'nombre_ciudad'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        startRow: 0,
+        endRow: 500,
+        theme: 'bootstrap-5',
+        dropdownParent: $('#offcanvasGlobalUi')
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_create_business_{{ rr }} select[name=actividadecoobj_id]',
+        app_name: 'Sifen',
+        model_name: 'ActividadEconomica',
+        field_display: ['nombre_actividad'],
+        field_id: ['id'],
+        db_fields: ['id', 'nombre_actividad', 'codigo_actividad'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        startRow: 0,
+        endRow: 500,
+        theme: 'bootstrap-5',
+        dropdownParent: $('#offcanvasGlobalUi')
+    });
+
+    // Handle create business form submission
+    qelem('#form_create_business_{{ rr }}').addEventListener('submit', function(evt) {
+        evt.preventDefault();
+
+        var formData = new FormData(evt.target);
+        var edata = form_serials.form_to_json(formData);
+
+        var seldis = ['contribuyenteobj_id', 'ciudadobj_id', 'actividadecoobj_id'];
+        seldis.forEach((idx) => {
+            var vv = qelem('#form_create_business_{{ rr }} select[name=' + idx + ']').value;
+            if (vv !== undefined && vv !== '') {
+                edata[idx] = vv;
+            }
+        });
+
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Business');
+        fdata.append('dbcon', 'default');
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{
+            'module': 'OptsIO',
+            'package': 'mng_user_profile',
+            'attr': 'MUserProfile',
+            'mname': 'create_business_and_assign',
+            'cont': false,
+            'show_success': true
+        }]));
+        fdata.append('a_vals', jfy([]));
+
+        // Handle logo file upload
+        var efiles = form_serials.form_files(formData);
+        efiles.forEach((idx) => {
+            var ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name);
+        });
+
+        qelem('#form_create_business_{{ rr }}').classList.add('overlay-container');
+        qelem('#form_create_business_{{ rr }}').classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            var msgs = rsp.data.msgs;
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            var got_error = false;
+            msgs.forEach((ee) => {
+                if (ee.error) {
+                    got_error = true;
+                }
+            });
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            });
+            if (!got_error) {
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        }).catch((err) => {
+            log.error('Error creating business: ' + jfy(err));
+            UiB.MsgError('Error al crear el negocio');
+        }).finally(() => {
+            var ft = qelem('#form_create_business_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    });
+
+    // Load businesses on init
+    loadExistingBusinesses();
+</script>
+
+<style>
+.business_setup_ui {
+    padding: 20px;
+}
+
+.business_setup_ui h5, .business_setup_ui h6 {
+    color: #333;
+    font-weight: 600;
+}
+
+.business_setup_ui .nav-tabs .nav-link {
+    color: #666;
+}
+
+.business_setup_ui .nav-tabs .nav-link.active {
+    color: #0d6efd;
+    font-weight: 600;
+}
+
+.business_setup_ui .am_focus_highlight input:focus,
+.business_setup_ui .am_focus_highlight select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.business-preview .card {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+}
+</style>

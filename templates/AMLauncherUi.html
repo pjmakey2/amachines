@@ -1,0 +1,1183 @@
+{% load static %}
+{% load io_tags %}
+<!--
+    AMLauncherUi.html - Vista Launcher tipo ERPNext (SPA)
+    Grid de apps agrupadas por secciones
+    Navegación SPA: una app a la vez, botón volver al home
+-->
+
+<!-- CSS del Launcher -->
+<link rel="stylesheet" href="{% static 'amui/launcher.css' %}">
+
+<!-- Task Bell Styles -->
+<style>
+.task-bell-container {
+    position: relative;
+    margin-right: 12px;
+}
+
+.task-bell-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 1.4rem;
+    padding: 8px;
+    cursor: pointer;
+    position: relative;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.task-bell-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.task-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 5px;
+    border-radius: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+}
+
+.task-badge.animate {
+    animation: badgePulse 0.3s ease-in-out;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+}
+
+.task-dropdown {
+    width: 350px;
+    max-height: 450px;
+    padding: 0;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.task-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+    color: #334155;
+}
+
+.task-list-container {
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.no-tasks-message {
+    text-align: center;
+    padding: 30px 20px;
+    color: #94a3b8;
+}
+
+.no-tasks-message i {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.no-tasks-message p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.task-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background 0.2s;
+}
+
+.task-item:hover {
+    background: #f8fafc;
+}
+
+.task-item:last-child {
+    border-bottom: none;
+}
+
+.task-item .task-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #1e293b;
+    margin-bottom: 4px;
+}
+
+.task-item .task-message {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 6px;
+}
+
+.task-item .progress {
+    height: 4px;
+    border-radius: 2px;
+    background: #e2e8f0;
+}
+
+.task-item .task-time {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.task-item.completed .task-name {
+    color: #10b981;
+}
+
+.task-item.error .task-name {
+    color: #ef4444;
+}
+
+.task-item .task-status-icon {
+    font-size: 1.2rem;
+}
+
+.task-item .task-status-icon.processing {
+    color: #3b82f6;
+}
+
+.task-item .task-status-icon.completed {
+    color: #10b981;
+}
+
+.task-item .task-status-icon.error {
+    color: #ef4444;
+}
+
+.task-dropdown-footer {
+    padding: 10px 16px;
+    text-align: center;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.task-dropdown-footer a {
+    color: #3b82f6;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.task-dropdown-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Bookmarks Section Styles */
+.bookmarks-section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border: 2px dashed transparent;
+    transition: all 0.3s ease;
+}
+
+.bookmarks-section.drag-over {
+    border-color: #F59E0B;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.bookmarks-grid {
+    min-height: 60px;
+}
+
+/* Draggable App Cards */
+.app-card {
+    cursor: grab;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.app-card:active {
+    cursor: grabbing;
+}
+
+.app-card.dragging {
+    opacity: 0.5;
+    transform: scale(0.95);
+}
+
+.app-card.drag-over {
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+}
+
+/* Bookmark Card con botón eliminar */
+.app-card.bookmark-card {
+    position: relative;
+}
+
+.app-card.bookmark-card .remove-bookmark {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: #ef4444;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: transform 0.2s;
+}
+
+.app-card.bookmark-card:hover .remove-bookmark {
+    display: flex;
+}
+
+.app-card.bookmark-card .remove-bookmark:hover {
+    transform: scale(1.1);
+    background: #dc2626;
+}
+
+/* Empty bookmarks message */
+.bookmarks-empty-msg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 24px;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.bookmarks-empty-msg i {
+    font-size: 1.5rem;
+}
+
+.bookmarks-section.drag-over .bookmarks-empty-msg {
+    border-color: #F59E0B;
+    color: #F59E0B;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.bookmarks-empty-msg.hidden {
+    display: none;
+}
+</style>
+
+<div class="launcher-container" id="launcherContainer">
+    <!-- ========== HEADER ========== -->
+    <header class="launcher-header">
+        <!-- Back Button (hidden by default, shown when app is open) -->
+        <button class="back-btn" id="backToHomeBtn" style="display: none;" title="Volver a aplicaciones">
+            <i class="mdi mdi-arrow-left"></i>
+        </button>
+
+        <!-- Logo -->
+        <div class="logo">
+            <img src="{% business_logo %}" alt="{% business_name %}">
+            <span class="logo-text">{% business_name %}</span>
+        </div>
+
+        <!-- Current App Title (hidden by default) -->
+        <div class="current-app-title" id="currentAppTitle" style="display: none;">
+            <i class="mdi mdi-application"></i>
+            <span id="currentAppName"></span>
+        </div>
+
+        <!-- Search Bar (hidden when app is open) -->
+        <div class="launcher-search" id="launcherSearchContainer">
+            <div class="launcher-search-wrapper">
+                <i class="mdi mdi-magnify search-icon"></i>
+                <input type="text"
+                       id="launcherSearchInput"
+                       placeholder="Buscar app... (Ctrl+K)"
+                       autocomplete="off">
+                <button class="search-clear" id="searchClear" style="display: none;" title="Limpiar">
+                    <i class="mdi mdi-close"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- User Section -->
+        <div class="launcher-user">
+            <!-- Business Badge -->
+            <div class="business-badge" id="launcherBusinessBadge">
+                <i class="mdi mdi-domain"></i>
+                <span id="launcherBusinessName">{% business_name %}</span>
+            </div>
+
+            <!-- View Toggle Button -->
+            <button class="view-toggle-btn" id="viewToggleBtn" title="Cambiar a vista Sidebar">
+                <i class="mdi mdi-view-list"></i>
+            </button>
+
+            <!-- Task Notifications Bell -->
+            <div class="task-bell-container" id="taskNotificationBell">
+                <div class="dropdown">
+                    <button class="task-bell-btn" type="button" id="taskBellDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="mdi mdi-bell-outline"></i>
+                        <span class="task-badge d-none" id="taskBadge">0</span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end task-dropdown" aria-labelledby="taskBellDropdown">
+                        <div class="task-dropdown-header">
+                            <span>Tareas en Progreso</span>
+                            <span class="badge bg-primary" id="taskCountHeader">0</span>
+                        </div>
+                        <div class="task-list-container" id="taskListContainer">
+                            <div class="no-tasks-message" id="noTasksMessage">
+                                <i class="mdi mdi-checkbox-marked-circle-outline"></i>
+                                <p>No hay tareas en progreso</p>
+                            </div>
+                        </div>
+                        <div class="task-dropdown-footer d-none" id="taskFooter">
+                            <a href="#" id="clearCompletedTasks">Limpiar completadas</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Dropdown -->
+            <div class="user-dropdown" id="userDropdown">
+                <div class="user-avatar" id="launcherUserAvatar">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <div class="user-dropdown-menu">
+                    <div class="user-dropdown-header">
+                        <div class="user-name">{{ request.user.get_full_name|default:request.user.username }}</div>
+                        <div class="user-email">{{ request.user.email|default:"" }}</div>
+                    </div>
+                    <a class="user-dropdown-item" href="#" id="launcherOpenProfile">
+                        <i class="mdi mdi-account-circle"></i>
+                        <span>Mi Perfil</span>
+                    </a>
+                    <a class="user-dropdown-item" href="#" id="launcherOpenBusinessSelector">
+                        <i class="mdi mdi-domain"></i>
+                        <span>Cambiar Negocio</span>
+                    </a>
+                    <a class="user-dropdown-item" href="#" id="launcherOpenBusinessConfig">
+                        <i class="mdi mdi-cog"></i>
+                        <span>Configurar Negocio</span>
+                    </a>
+                    <div class="user-dropdown-divider"></div>
+                    <a class="user-dropdown-item" href="#" id="launcherLogout">
+                        <i class="mdi mdi-logout"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="launcher-main" id="launcherMain">
+        <!-- Home: Grid de Apps -->
+        <div class="launcher-home" id="launcherHome">
+            <!-- Sección de Favoritos/Bookmarks -->
+            <section class="app-section bookmarks-section" id="bookmarksSection">
+                <div class="apps-grid bookmarks-grid" id="bookmarksGrid">
+                    <!-- Los bookmarks se cargan dinámicamente -->
+                </div>
+                <div class="bookmarks-empty-msg" id="bookmarksEmptyMsg">
+                    <i class="mdi mdi-drag"></i>
+                    <span>Arrastra apps aquí para acceso rápido</span>
+                </div>
+            </section>
+
+            <!-- Las secciones de apps se generan dinámicamente -->
+            <div class="text-center py-5" id="launcherLoading">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-white mt-3">Cargando aplicaciones...</p>
+            </div>
+        </div>
+
+        <!-- App Content (hidden by default) -->
+        <div class="app-content" id="appContent" style="display: none;">
+            <!-- El contenido de la app se carga aquí -->
+        </div>
+    </main>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // Variables globales del launcher
+    var launcherAppsData = [];
+    var launcherMenusData = [];
+    var launcherBookmarksData = [];
+    var currentApp = null;
+    var draggedApp = null;
+    var draggedBookmarkId = null;
+
+    // Colores predefinidos para apps sin color
+    var defaultColors = [
+        '#F59E0B', '#3B82F6', '#10B981', '#8B5CF6',
+        '#EC4899', '#EF4444', '#14B8A6', '#6366F1',
+        '#F97316', '#06B6D4', '#6B7280', '#EAB308'
+    ];
+
+    // Inicialización
+    function initLauncher() {
+        loadApps();
+        loadBookmarks();
+        initUserDropdown();
+        initSearch();
+        initViewToggle();
+        initUserActions();
+        initKeyboardShortcuts();
+        initBackButton();
+        initTaskBell();
+        initBookmarksDragDrop();
+    }
+
+    // Inicializar Task Bell
+    function initTaskBell() {
+        if (typeof TaskBellManager !== 'undefined') {
+            window.taskBell = new TaskBellManager();
+            console.log('TaskBell initialized');
+        } else {
+            console.warn('TaskBellManager not available, retrying in 500ms...');
+            setTimeout(initTaskBell, 500);
+        }
+    }
+
+    // Ejecutar inmediatamente si el DOM ya está listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLauncher);
+    } else {
+        initLauncher();
+    }
+
+    // Inicializar botón volver
+    function initBackButton() {
+        document.getElementById('backToHomeBtn').addEventListener('click', function() {
+            goHome();
+        });
+    }
+
+    // Volver al home (grid de apps)
+    function goHome() {
+        currentApp = null;
+
+        // Mostrar home, ocultar app content
+        document.getElementById('launcherHome').style.display = 'block';
+        document.getElementById('appContent').style.display = 'none';
+        document.getElementById('appContent').innerHTML = '';
+
+        // Ocultar botón volver y título de app
+        document.getElementById('backToHomeBtn').style.display = 'none';
+        document.getElementById('currentAppTitle').style.display = 'none';
+
+        // Mostrar búsqueda
+        document.getElementById('launcherSearchContainer').style.display = 'block';
+
+        // Actualizar URL sin recargar
+        history.pushState({view: 'home'}, '', window.location.pathname);
+    }
+
+    // Cargar apps desde el backend
+    async function loadApps() {
+        try {
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'get_apps');
+
+            var response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            launcherAppsData = response.data || [];
+
+            // Agrupar apps por menú (manteniendo el orden del backend)
+            var menuOrder = [];
+            var menuMap = {};
+            launcherAppsData.forEach(function(app) {
+                if (!app.active) return;
+
+                var menuName = app.menu || 'Otros';
+                if (!menuMap[menuName]) {
+                    menuMap[menuName] = {
+                        name: menuName,
+                        icon: app.menu_icon || 'mdi mdi-folder-outline',
+                        prioridad: app.menu_prioridad || 999,
+                        apps: []
+                    };
+                    menuOrder.push(menuName);
+                }
+                menuMap[menuName].apps.push(app);
+            });
+
+            // Convertir a array manteniendo el orden
+            launcherMenusData = menuOrder.map(function(name) {
+                return menuMap[name];
+            });
+
+            // Renderizar grid de apps
+            renderAppsGrid();
+
+        } catch (error) {
+            console.error('Error loading apps:', error);
+            document.getElementById('launcherLoading').innerHTML = `
+                <div class="text-center py-5">
+                    <i class="mdi mdi-alert-circle text-danger" style="font-size: 48px;"></i>
+                    <h5 class="text-white mt-3">Error al cargar aplicaciones</h5>
+                    <p class="text-white-50">${error.message || 'Por favor, recargue la página'}</p>
+                    <button class="btn btn-light mt-2" onclick="window.location.reload()">
+                        <i class="mdi mdi-refresh"></i> Recargar
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Renderizar grid de apps agrupadas por sección
+    function renderAppsGrid() {
+        var launcherHome = document.getElementById('launcherHome');
+
+        // Remover secciones de apps existentes (no bookmarks)
+        var existingSections = launcherHome.querySelectorAll('.app-section:not(.bookmarks-section)');
+        existingSections.forEach(function(section) {
+            section.remove();
+        });
+
+        // Remover loading si existe
+        var loading = document.getElementById('launcherLoading');
+        if (loading) loading.remove();
+
+        launcherMenusData.forEach(function(menu, menuIndex) {
+            var section = document.createElement('section');
+            section.className = 'app-section';
+
+            var html = '<h3 class="section-title">' + escapeHtml(menu.name) + '</h3>';
+            html += '<div class="apps-grid">';
+
+            menu.apps.forEach(function(app, appIndex) {
+                var bgColor = app.background || defaultColors[(menuIndex + appIndex) % defaultColors.length];
+                var icon = app.icon || 'mdi mdi-application';
+
+                html += '<div class="app-card" data-app-id="' + app.id + '" data-app-name="' + escapeHtml(app.app_name) + '" draggable="true">';
+                html += '<div class="app-icon" style="background: ' + bgColor + ';">';
+                html += '<i class="' + icon + '"></i>';
+                html += '</div>';
+                html += '<span class="app-name">' + escapeHtml(app.friendly_name) + '</span>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            section.innerHTML = html;
+            launcherHome.appendChild(section);
+        });
+
+        // Agregar event listeners a las cards
+        var appCards = launcherHome.querySelectorAll('.app-card:not(.bookmark-card)');
+        appCards.forEach(function(card) {
+            // Click para abrir app
+            card.addEventListener('click', function(e) {
+                // No abrir si estamos arrastrando
+                if (draggedApp) return;
+                var appName = this.dataset.appName;
+                var app = findAppByName(appName);
+                if (app) {
+                    openApp(app);
+                }
+            });
+
+            // Drag events
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+        });
+    }
+
+    // ==================== BOOKMARKS ====================
+
+    // Cargar bookmarks del usuario
+    async function loadBookmarks() {
+        try {
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'get_bookmarks');
+
+            var response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            launcherBookmarksData = response.data || [];
+            renderBookmarks();
+
+        } catch (error) {
+            console.error('Error loading bookmarks:', error);
+        }
+    }
+
+    // Renderizar bookmarks
+    function renderBookmarks() {
+        var section = document.getElementById('bookmarksSection');
+        var grid = document.getElementById('bookmarksGrid');
+        var emptyMsg = document.getElementById('bookmarksEmptyMsg');
+
+        if (launcherBookmarksData.length === 0) {
+            grid.innerHTML = '';
+            emptyMsg.classList.remove('hidden');
+            return;
+        }
+
+        emptyMsg.classList.add('hidden');
+        var html = '';
+
+        launcherBookmarksData.forEach(function(bookmark, index) {
+            var app = bookmark.app;
+            var bgColor = app.background || defaultColors[index % defaultColors.length];
+            var icon = app.icon || 'mdi mdi-application';
+
+            html += '<div class="app-card bookmark-card" data-bookmark-id="' + bookmark.id + '" data-app-id="' + app.id + '" data-app-name="' + escapeHtml(app.app_name) + '" draggable="true">';
+            html += '<button class="remove-bookmark" title="Quitar de favoritos"><i class="mdi mdi-close"></i></button>';
+            html += '<div class="app-icon" style="background: ' + bgColor + ';">';
+            html += '<i class="' + icon + '"></i>';
+            html += '</div>';
+            html += '<span class="app-name">' + escapeHtml(app.friendly_name) + '</span>';
+            html += '</div>';
+        });
+
+        grid.innerHTML = html;
+
+        // Event listeners para bookmark cards
+        var bookmarkCards = grid.querySelectorAll('.bookmark-card');
+        bookmarkCards.forEach(function(card) {
+            // Click para abrir app
+            card.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-bookmark')) return;
+                if (draggedApp) return;
+                var appName = this.dataset.appName;
+                var app = findAppByName(appName);
+                if (app) {
+                    openApp(app);
+                }
+            });
+
+            // Botón eliminar
+            var removeBtn = card.querySelector('.remove-bookmark');
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var bookmarkId = card.dataset.bookmarkId;
+                removeBookmark(bookmarkId);
+            });
+
+            // Drag para reordenar
+            card.addEventListener('dragstart', handleBookmarkDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('dragover', handleBookmarkDragOver);
+            card.addEventListener('drop', handleBookmarkDrop);
+        });
+    }
+
+    // Agregar bookmark
+    async function addBookmark(appId) {
+        console.log('addBookmark called with appId:', appId);
+        try {
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'add_bookmark');
+            fdata.append('app_id', appId);
+
+            var response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            console.log('addBookmark response:', response.data);
+            if (response.data.success) {
+                loadBookmarks(); // Recargar bookmarks
+            }
+
+        } catch (error) {
+            console.error('Error adding bookmark:', error);
+        }
+    }
+
+    // Eliminar bookmark
+    async function removeBookmark(bookmarkId) {
+        try {
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'remove_bookmark');
+            fdata.append('bookmark_id', bookmarkId);
+
+            var response = await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+            if (response.data.success) {
+                loadBookmarks(); // Recargar bookmarks
+            }
+
+        } catch (error) {
+            console.error('Error removing bookmark:', error);
+        }
+    }
+
+    // Actualizar orden de bookmarks
+    async function updateBookmarkOrder() {
+        var bookmarkCards = document.querySelectorAll('.bookmark-card');
+        var bookmarkIds = Array.from(bookmarkCards).map(function(card) {
+            return card.dataset.bookmarkId;
+        });
+
+        try {
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'apps_ui');
+            fdata.append('attr', 'Menu');
+            fdata.append('mname', 'update_bookmark_order');
+            fdata.append('bookmark_ids', JSON.stringify(bookmarkIds));
+
+            await axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+
+        } catch (error) {
+            console.error('Error updating bookmark order:', error);
+        }
+    }
+
+    // ==================== DRAG & DROP ====================
+
+    function initBookmarksDragDrop() {
+        var bookmarksSection = document.getElementById('bookmarksSection');
+
+        // Eventos en la sección de bookmarks
+        bookmarksSection.addEventListener('dragover', function(e) {
+            if (draggedApp && !draggedBookmarkId) {
+                e.preventDefault();
+                bookmarksSection.classList.add('drag-over');
+            }
+        });
+
+        bookmarksSection.addEventListener('dragleave', function(e) {
+            if (!bookmarksSection.contains(e.relatedTarget)) {
+                bookmarksSection.classList.remove('drag-over');
+            }
+        });
+
+        bookmarksSection.addEventListener('drop', function(e) {
+            e.preventDefault();
+            bookmarksSection.classList.remove('drag-over');
+            console.log('Drop event - draggedApp:', draggedApp, 'draggedBookmarkId:', draggedBookmarkId);
+
+            if (draggedApp && !draggedBookmarkId) {
+                console.log('Adding bookmark for app:', draggedApp);
+                addBookmark(draggedApp);
+            }
+        });
+    }
+
+    function handleDragStart(e) {
+        draggedApp = this.dataset.appId;
+        draggedBookmarkId = null;
+        this.classList.add('dragging');
+        console.log('Drag start - app id:', draggedApp);
+
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('text/plain', draggedApp);
+    }
+
+    function handleBookmarkDragStart(e) {
+        draggedApp = this.dataset.appId;
+        draggedBookmarkId = this.dataset.bookmarkId;
+        this.classList.add('dragging');
+
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', draggedBookmarkId);
+    }
+
+    function handleDragEnd(e) {
+        this.classList.remove('dragging');
+        draggedApp = null;
+        draggedBookmarkId = null;
+        document.getElementById('bookmarksSection').classList.remove('drag-over');
+    }
+
+    function handleBookmarkDragOver(e) {
+        if (draggedBookmarkId && draggedBookmarkId !== this.dataset.bookmarkId) {
+            e.preventDefault();
+            this.classList.add('drag-over');
+        }
+    }
+
+    function handleBookmarkDrop(e) {
+        e.preventDefault();
+        this.classList.remove('drag-over');
+
+        if (draggedBookmarkId && draggedBookmarkId !== this.dataset.bookmarkId) {
+            // Reordenar en el DOM
+            var grid = document.getElementById('bookmarksGrid');
+            var draggedCard = grid.querySelector('[data-bookmark-id="' + draggedBookmarkId + '"]');
+            var targetCard = this;
+
+            // Insertar antes del target
+            grid.insertBefore(draggedCard, targetCard);
+
+            // Actualizar orden en backend
+            updateBookmarkOrder();
+        }
+    }
+
+    // Buscar app por nombre
+    function findAppByName(appName) {
+        return launcherAppsData.find(function(a) {
+            return a.app_name === appName;
+        });
+    }
+
+    // Abrir una app (SPA style)
+    async function openApp(app) {
+        currentApp = app;
+
+        // Mostrar loading en el área de contenido
+        var appContent = document.getElementById('appContent');
+        appContent.style.display = 'block';
+        appContent.innerHTML = `
+            <div class="app-loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p>Cargando ${escapeHtml(app.friendly_name)}...</p>
+            </div>
+        `;
+
+        // Ocultar home
+        document.getElementById('launcherHome').style.display = 'none';
+
+        // Mostrar botón volver y título de app
+        document.getElementById('backToHomeBtn').style.display = 'flex';
+        document.getElementById('currentAppTitle').style.display = 'flex';
+        document.getElementById('currentAppName').textContent = app.friendly_name;
+
+        // Ocultar búsqueda
+        document.getElementById('launcherSearchContainer').style.display = 'none';
+
+        // Actualizar URL
+        history.pushState({view: 'app', app: app.app_name}, '', window.location.pathname + '?app=' + app.app_name);
+
+        try {
+            // Cargar contenido de la app
+            var params = new URLSearchParams();
+            params.append('tmpl', app.url);
+
+            var response = await axios.get('/io/dtmpl/?' + params.toString());
+
+            appContent.innerHTML = response.data;
+
+            // Ejecutar scripts del contenido
+            executeScripts(appContent);
+
+        } catch (error) {
+            console.error('Error loading app:', error);
+            appContent.innerHTML = `
+                <div class="app-error">
+                    <i class="mdi mdi-alert-circle text-danger" style="font-size: 48px;"></i>
+                    <h4>Error al cargar ${escapeHtml(app.friendly_name)}</h4>
+                    <p>${error.message || 'No se pudo cargar el contenido'}</p>
+                    <button class="btn btn-primary" onclick="window.launcherGoHome()">
+                        <i class="mdi mdi-arrow-left"></i> Volver
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // Ejecutar scripts del contenido cargado
+    function executeScripts(container) {
+        var scripts = container.querySelectorAll('script');
+        scripts.forEach(function(oldScript) {
+            var newScript = document.createElement('script');
+
+            Array.from(oldScript.attributes).forEach(function(attr) {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+
+            newScript.textContent = oldScript.textContent;
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+    }
+
+    // Exponer funciones globalmente
+    window.launcherOpenApp = openApp;
+    window.launcherGoHome = goHome;
+
+    // Manejar navegación del browser (back/forward)
+    window.addEventListener('popstate', function(e) {
+        if (e.state && e.state.view === 'app' && e.state.app) {
+            var app = findAppByName(e.state.app);
+            if (app) {
+                openApp(app);
+            }
+        } else {
+            goHome();
+        }
+    });
+
+    // Inicializar dropdown de usuario
+    function initUserDropdown() {
+        var dropdown = document.getElementById('userDropdown');
+        var avatar = dropdown.querySelector('.user-avatar');
+
+        avatar.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+    }
+
+    // Inicializar búsqueda (filtra el grid directamente)
+    function initSearch() {
+        var searchInput = document.getElementById('launcherSearchInput');
+        var clearBtn = document.getElementById('searchClear');
+
+        searchInput.addEventListener('input', function() {
+            var query = this.value.trim().toLowerCase();
+
+            // Mostrar/ocultar botón limpiar
+            clearBtn.style.display = query.length > 0 ? 'flex' : 'none';
+
+            // Filtrar el grid
+            filterAppsGrid(query);
+        });
+
+        // Botón limpiar
+        clearBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            filterAppsGrid('');
+            searchInput.focus();
+        });
+
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (this.value) {
+                    this.value = '';
+                    clearBtn.style.display = 'none';
+                    filterAppsGrid('');
+                } else {
+                    this.blur();
+                }
+            }
+        });
+    }
+
+    // Filtrar el grid de apps (excluyendo bookmarks)
+    function filterAppsGrid(query) {
+        var launcherHome = document.getElementById('launcherHome');
+        // Excluir la sección de bookmarks del filtrado
+        var sections = launcherHome.querySelectorAll('.app-section:not(.bookmarks-section)');
+        var appCards = launcherHome.querySelectorAll('.app-card:not(.bookmark-card)');
+
+        // Si no hay query, mostrar todo
+        if (!query) {
+            appCards.forEach(function(card) {
+                card.style.display = '';
+            });
+            sections.forEach(function(section) {
+                section.style.display = '';
+            });
+            return;
+        }
+
+        // Filtrar apps (no bookmarks)
+        appCards.forEach(function(card) {
+            var appName = card.dataset.appName || '';
+            var app = findAppByName(appName);
+
+            if (app) {
+                var name = (app.friendly_name || '').toLowerCase();
+                var appNameLower = (app.app_name || '').toLowerCase();
+                var menu = (app.menu || '').toLowerCase();
+
+                var matches = name.includes(query) || appNameLower.includes(query) || menu.includes(query);
+                card.style.display = matches ? '' : 'none';
+            }
+        });
+
+        // Ocultar secciones vacías (no bookmarks)
+        sections.forEach(function(section) {
+            var visibleCards = section.querySelectorAll('.app-card:not([style*="display: none"])');
+            section.style.display = visibleCards.length > 0 ? '' : 'none';
+        });
+    }
+
+    // Inicializar toggle de vista
+    function initViewToggle() {
+        var toggleBtn = document.getElementById('viewToggleBtn');
+
+        toggleBtn.addEventListener('click', function() {
+            var currentView = localStorage.getItem('amachine_view_mode') || 'launcher';
+            var newView = currentView === 'launcher' ? 'sidebar' : 'launcher';
+            localStorage.setItem('amachine_view_mode', newView);
+            window.location.reload();
+        });
+
+        var viewMode = localStorage.getItem('amachine_view_mode') || 'launcher';
+        if (viewMode === 'launcher') {
+            toggleBtn.innerHTML = '<i class="mdi mdi-view-list"></i>';
+            toggleBtn.title = 'Cambiar a vista Sidebar';
+        } else {
+            toggleBtn.innerHTML = '<i class="mdi mdi-view-grid"></i>';
+            toggleBtn.title = 'Cambiar a vista Launcher';
+        }
+    }
+
+    // Inicializar acciones de usuario
+    function initUserActions() {
+        // Perfil
+        document.getElementById('launcherOpenProfile').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('userDropdown').classList.remove('open');
+
+            var dattrs = {
+                title: 'Mi Perfil',
+                sui_rr: OptsIO.s4generate(),
+                offcanvasglobal: true
+            };
+
+            var tps = {
+                url: '/io/dtmpl/',
+                dattrs: dattrs,
+                template: 'OptsIO/UserProfileUi.html',
+                raw: true
+            };
+
+            OptsIO.getTmpl(tps).then(function(rsp) {
+                $('#offcanvasGlobalUiBody').html(rsp.data);
+                var bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+                bsOffcanvas.show();
+            });
+        });
+
+        // Selector de negocios
+        document.getElementById('launcherOpenBusinessSelector').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('userDropdown').classList.remove('open');
+
+            if (typeof window.openBusinessSelector === 'function') {
+                window.openBusinessSelector();
+            }
+        });
+
+        // Configurar negocio
+        document.getElementById('launcherOpenBusinessConfig').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('userDropdown').classList.remove('open');
+
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'mng_registration');
+            fdata.append('attr', 'MRegistration');
+            fdata.append('mname', 'get_active_business');
+            fdata.append('dbcon', 'default');
+
+            axios.post('/io/iom/', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then(function(rsp) {
+                if (rsp.data.business_id) {
+                    var dattrs = {
+                        title: 'Configuración del Negocio',
+                        sui_rr: OptsIO.s4generate(),
+                        offcanvasglobal: true
+                    };
+
+                    var tps = {
+                        model_app_name: 'Sifen',
+                        model_name: 'Business',
+                        pk: rsp.data.business_id,
+                        dbcon: 'default',
+                        url: '/io/dtmpl/',
+                        dattrs: dattrs,
+                        template: 'OptsIO/BusinessUi.html',
+                        raw: true
+                    };
+
+                    OptsIO.getTmpl(tps).then(function(rsp) {
+                        $('#offcanvasGlobalUiBody').html(rsp.data);
+                        var bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+                        bsOffcanvas.show();
+                    });
+                } else {
+                    UiB.MsgError('No hay negocio activo');
+                }
+            });
+        });
+
+        // Logout
+        document.getElementById('launcherLogout').addEventListener('click', function(e) {
+            e.preventDefault();
+
+            axios.post('/io/glogout/', new FormData()).then(function() {
+                window.location.href = '/io/glogin/';
+            }).catch(function() {
+                window.location.href = '/io/glogin/';
+            });
+        });
+    }
+
+    // Atajos de teclado
+    function initKeyboardShortcuts() {
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+K para búsqueda
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                if (!currentApp) {
+                    document.getElementById('launcherSearchInput').focus();
+                }
+            }
+
+            // Backspace para volver al home (si no hay input activo)
+            if (e.key === 'Backspace' && currentApp) {
+                var activeElement = document.activeElement;
+                var isInput = activeElement.tagName === 'INPUT' ||
+                              activeElement.tagName === 'TEXTAREA' ||
+                              activeElement.isContentEditable;
+                if (!isInput) {
+                    e.preventDefault();
+                    goHome();
+                }
+            }
+        });
+    }
+
+    // Utilidad: escapar HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+})();
+</script>

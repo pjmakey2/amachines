@@ -1,0 +1,351 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte</title>
+    <style>
+        /* Reset y estilos base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+            font-size: 13px;
+            color: #000;
+            background: #fff;
+        }
+
+        /* Bootstrap utilities mínimos necesarios */
+        .d-flex { display: flex !important; }
+        .justify-content-between { justify-content: space-between !important; }
+        .align-items-center { align-items: center !important; }
+        .mt-1 { margin-top: 0.25rem !important; }
+        .mt-2 { margin-top: 0.5rem !important; }
+        .mt-3 { margin-top: 1rem !important; }
+        .mx-3 { margin-left: 1rem !important; margin-right: 1rem !important; }
+        .fs-5 { font-size: 1.25rem !important; }
+
+        /* Material Design Icons básicos para los iconos usados */
+        .mdi:before {
+            font-family: "Material Design Icons";
+            font-style: normal;
+            font-weight: normal;
+            speak: none;
+            display: inline-block;
+            text-decoration: inherit;
+            width: 1em;
+            margin-right: .2em;
+            text-align: center;
+            font-variant: normal;
+            text-transform: none;
+            line-height: 1em;
+        }
+
+        @media print {
+            .page-break {
+                page-break-before: always;
+            }
+        }
+
+        /* Estilos de amrpt.css inline */
+        .am-i-header {
+            background-color: #ffffff;
+            color: #000000;
+            padding: 20px;
+            position: relative;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            margin:0 20px 0 20px;
+            border: 1px solid #ccc;
+        }
+        .am-i-header .logo {
+            max-width: 200px;
+        }
+        .am-i-header .title {
+            vertical-align: top;
+            text-align: center;
+        }
+        .am-i-header .t-title {
+            font-weight: bold;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+        .am-i-header .m-title {
+            font-size: 13px;
+            vertical-align: middle;
+            text-align: center;
+        }
+        .am-i-header .company-details {
+            text-align: right;
+        }
+        .am-i-header .company-details p {
+            margin: 0;
+            line-height: 1.5;
+            font-size: 13px;
+        }
+
+        .am-contact-info {
+            display: flex;
+            justify-content: space-between !important;
+            align-items: center;
+            font-size: 13px;
+            padding: 10px 0;
+            border-top: 0px solid #ddd;
+            border-bottom: 0px solid #ddd;
+            margin-left: 32px !important;
+            margin-right: 32px !important;
+        }
+        .am-contact-info div {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+        .am-contact-info div img {
+            margin-right: 5px;
+            height: 16px;
+        }
+        .am-contact-info div:not(:last-child)::after {
+            content: "|";
+            margin-left: 10px;
+            color: #000000;
+        }
+
+        .am-header-transac {
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            border-top: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+            padding: 15px;
+            margin:0 30px 0 30px;
+        }
+        .am-header-transac-left {
+            width: 45%;
+            padding-right: 10px;
+        }
+        .am-header-transac-right {
+            width: 55%;
+            padding-left: 10px;
+        }
+        .am-header-transac-left p, .am-header-transac-right p {
+            margin: 3px 0;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .am-header-transac-left b, .am-header-transac-right b {
+            font-weight: bold;
+        }
+
+        .am-transac-tlabel {
+            margin-left: 80%;
+            font-weight: bold;
+        }
+
+        .am-transac-table {
+            font-size: 13px;
+            border-collapse: collapse;
+            margin:0 30px 0 30px;
+        }
+        .am-transac-thead th{
+            border: 1px solid #7e7d7d;
+            padding: 2px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .am-transac-body tr {
+            border-left: 1px solid #7e7d7d;
+            border-right: 1px solid #7e7d7d;
+        }
+        .am-transac-body td {
+            border-left: 1px solid #7e7d7d;
+            border-right: 1px solid #7e7d7d;
+            padding: 4px 8px;
+        }
+        .am-transac-body th {
+            border-left: 1px solid #7e7d7d;
+            border-right: 1px solid #7e7d7d;
+        }
+        .am-transac-thead th {
+            font-weight: bold;
+        }
+        .am-transac-tfoot tr:first-child {
+            border-top: 1px solid #7e7d7d;
+        }
+        .am-transac-tfoot tr {
+            padding:5px
+        }
+        .tfoot-border td {
+            border: 1px solid #7e7d7d;
+        }
+        .am-transac-total-row td {
+            border: none;
+            text-align: right;
+            padding-top: 10px;
+        }
+        .am-transac-total-row td:last-child {
+            font-weight: bold;
+        }
+        .am-transac-invoice-summary {
+            border-collapse: collapse;
+            margin: 20px auto;
+            margin:0 30px 0 30px;
+        }
+        .am-transac-invoice-summary td, .am-transac-invoice-summary th {
+            border: 1px solid #fff;
+            padding: 8px;
+            text-align: right;
+        }
+        .am-transac-invoice-summary tr:nth-child(even) {
+            background-color: #fff;
+        }
+        .am-transac-invoice-summary th {
+            background-color: #fff;
+            font-weight: bold;
+            text-align: left;
+        }
+        .am-transac-total-text {
+            text-align: right;
+            font-weight: bold;
+        }
+        .am-transac-total-op {
+            font-size: 13px;
+        }
+        .am-transac-qr-sifen {
+            margin:0 80px 0 80px;
+        }
+        .am-foot-transac {
+            display: flex;
+            justify-content: space-between;
+            border-top: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+            padding: 20px;
+            margin:0 30px 0 30px;
+            align-items: flex-start;
+        }
+        .am-foot-transac-left {
+            width: 20%;
+            flex-shrink: 0;
+        }
+        .am-foot-transac-right {
+            margin-left: 20px;
+            width: 75%;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        .am-foot-transac-right p {
+            margin: 5px 0;
+        }
+        .am-foot-receive {
+            display: flex;
+            justify-content: space-between;
+            padding: 0px;
+            margin:0 30px 0 30px;
+        }
+        .am-foot-receive-left {
+            width: 70%;
+            height: 80px;
+        }
+        .am-foot-receive-right {
+            margin-top: 30px;
+            margin-left: 20px;
+            width: 30%;
+            font-size: 13px;
+            line-height: 0.5;
+        }
+        .am-receive-tables {
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            margin:0 9px 0 9px;
+        }
+        .am-receive-table-left {
+            width: 100%;
+        }
+        .am-receive-table-right {
+            width: 50%;
+        }
+        .am-row-border {
+            border: 1px solid;
+        }
+        .bg-primary {
+            --bs-bg-opacity: 1;
+            background-color: #ffffff !important
+        }
+        .bg-primary-light {
+            --bs-bg-opacity: 1;
+            background-color: #f5f5f5 !important
+        }
+        .table-primary {
+            --bs-table-color: #000;
+            --bs-table-bg: #ffffff;
+            --bs-table-border-color: #ccc;
+            --bs-table-striped-bg: #f5f5f5;
+            --bs-table-striped-color: #000;
+            --bs-table-active-bg: #e0e0e0;
+            --bs-table-active-color: #000;
+            --bs-table-hover-bg: #f0f0f0;
+            --bs-table-hover-color: #000;
+            color: var(--bs-table-color);
+            border-color: var(--bs-table-border-color);
+        }
+        .table-primary-light {
+            --bs-table-color: #000;
+            --bs-table-bg: #f5f5f5;
+            --bs-table-border-color: #ccc;
+            --bs-table-striped-bg: #e8e8e8;
+            --bs-table-striped-color: #000;
+            --bs-table-active-bg: #e0e0e0;
+            --bs-table-active-color: #000;
+            --bs-table-hover-bg: #f0f0f0;
+            --bs-table-hover-color: #000;
+            color: var(--bs-table-color);
+            border-color: var(--bs-table-border-color);
+        }
+        .th_rpt_light {
+            border: 2px solid !important;
+            text-transform: uppercase !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+            padding: 8px 6px !important;
+            font-size: 0.75em !important;
+            text-align: center !important;
+        }
+        .th_rpt_dark {
+            border: 2px solid #fff !important;
+            text-transform: uppercase !important;
+            color: #000000 !important;
+            padding: 8px 6px !important;
+            text-align: center !important;
+        }
+        .table_rpt_cell_border_gray {
+            border: 2px solid #e1dfdf !important;
+        }
+        .tbody_rpt:before {
+            content:"@";
+            display:block;
+            line-height:12px;
+            text-indent:-99999px;
+        }
+        .watermark {
+            position: absolute;
+            color: lightgray;
+            opacity: 0.30;
+            font-size: 7em;
+            width: 100%;
+            text-align: center;
+            z-index: 0;
+        }
+    </style>
+    {% block custom_css %}{% endblock %}
+</head>
+<body>
+    {% block content %}
+    {% endblock %}
+</body>
+</html>

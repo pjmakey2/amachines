@@ -1,0 +1,234 @@
+<div class="ui_shopifyorder">
+    <form id="form_shopifyorder_{{ rr }}" class="form_shopifyorder">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>ID Shopify</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="shopify_id"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.shopify_id }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>N° Orden</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="order_number"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.order_number }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Nombre</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="name"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.name }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <label>Total</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_price"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_price }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Subtotal</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="subtotal_price"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.subtotal_price }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Impuestos</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_tax"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_tax }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Descuentos</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="total_discounts"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.currency }} {{ mobj.total_discounts }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Estado Financiero</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="financial_status"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.financial_status }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Estado Envío</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="fulfillment_status"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.fulfillment_status|default:'N/A' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Fecha Creación</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="created_at_shopify"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.created_at_shopify|date:'d/m/Y H:i' }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Cliente Email</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_email"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_email|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Cliente Teléfono</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_phone"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_phone|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Cliente</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_name"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.customer_first_name }} {{ mobj.customer_last_name }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        {% if mobj.customer_tags %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Tags del Cliente (RUC)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="customer_tags"
+                        class="form-control"
+                        readonly
+                        value="{{ mobj.customer_tags }}"
+                    />
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.note %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Nota</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea
+                        name="note"
+                        class="form-control"
+                        readonly
+                        rows="2"
+                    >{{ mobj.note }}</textarea>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.tags %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Tags de la Orden</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="tags"
+                        class="form-control"
+                        readonly
+                        value="{{ mobj.tags }}"
+                    />
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.cancelled_at %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="alert alert-danger mb-0">
+                    <strong>Orden Cancelada:</strong> {{ mobj.cancelled_at|date:"d/m/Y H:i" }}
+                    {% if mobj.cancel_reason %}
+                    <br><strong>Razón:</strong> {{ mobj.cancel_reason }}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Orden: {{ mobj.name }}{% else %}Orden{% endif %}`;
+</script>

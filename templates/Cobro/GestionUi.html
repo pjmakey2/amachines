@@ -1,0 +1,296 @@
+<style>
+    .factura-vencida {
+        background-color: #F709FFB2 !important;
+    }
+    .factura-pendiente {
+        background-color: #FCFF648A !important;
+    }
+    .factura-pagada {
+        background-color: #90EE9066 !important;
+    }
+</style>
+
+<div class="scroll pe-5 mt-2"
+    data-kt-scroll="true"
+    data-kt-scroll-height="auto"
+    data-kt-scroll-wrappers="#CobroGestion"
+    data-kt-scroll-offset="100px">
+    <div id="CobroGestion">
+        <div class="t_modal_cobro"></div>
+        <h2 class="text text-left">Gestion de Cobros</h2>
+
+        <!-- Resumen -->
+        <div class="row mb-3" id="resumen_cobros">
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Pendiente</h6>
+                        <h4 id="total_pendiente">Gs 0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Facturas Pendientes</h6>
+                        <h4 id="cantidad_facturas">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Vencido</h6>
+                        <h4 id="total_vencido">Gs 0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Facturas Vencidas</h6>
+                        <h4 id="cantidad_vencidas">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros y Buscador -->
+        <div class="d-flex mb-3">
+            <div class="p-2">
+                <select id="filtro_estado_cobro" class="form-select">
+                    <option value="pendientes" selected>Pendientes</option>
+                    <option value="pagadas">Pagadas</option>
+                    <option value="todas">Todas</option>
+                </select>
+            </div>
+            <div class="p-2 flex-grow-1">
+                <input type="text" id="search_cobro" class="form-control" placeholder="Buscar por numero, razon social o RUC...">
+            </div>
+            <div class="p-2">
+                <button id="btn-buscar-cobro" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Buscar</button>
+                <button id="btn-refresh-cobro" class="btn btn-secondary"><i class="mdi mdi-refresh"></i></button>
+            </div>
+        </div>
+
+        <!-- Tabla de facturas pendientes -->
+        <div id="table_container_Cobro"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+// Variables globales
+var t_ofh_cobro = `dtable_${OptsIO.s4generate()}`;
+
+// Exponer para el template del offcanvas
+window.cobroTableGuid = t_ofh_cobro;
+
+// Inicializar
+$(document).ready(function() {
+    cargarResumenCobros();
+    inicializarTablaCobros();
+});
+
+// Exponer funcion para refrescar desde offcanvas
+window.cargarResumenCobros = cargarResumenCobros;
+
+// Cargar resumen de cobros
+function cargarResumenCobros() {
+    let gbe = new FormData();
+    gbe.append('module', 'Cobro');
+    gbe.append('package', 'mng_cobro');
+    gbe.append('attr', 'MCobro');
+    gbe.append('mname', 'get_resumen_cobros');
+    gbe.append('dbcon', 'default');
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.success) {
+            let r = rsp.data.resumen;
+            $('#total_pendiente').text('Gs ' + UiN.formatNumberU(r.total_pendiente.toFixed(0)));
+            $('#cantidad_facturas').text(r.cantidad_facturas);
+            $('#total_vencido').text('Gs ' + UiN.formatNumberU(r.total_vencido.toFixed(0)));
+            $('#cantidad_vencidas').text(r.cantidad_vencidas);
+        }
+    });
+}
+
+// Builder para filtros de busqueda
+function cobro_builder_be(data, settings) {
+    var tt = qelem(`#table_container_Cobro`);
+    tt.classList.add('overlay-container');
+    tt.classList.add('overlay');
+
+    var crdata = Object.assign({}, settings.ajax.initquery);
+    var search = $('#search_cobro').val();
+    var filtroEstado = $('#filtro_estado_cobro').val();
+
+    if (search) {
+        crdata.search = search;
+    }
+
+    crdata.filtro_estado = filtroEstado;
+
+    return Object.assign(data, crdata);
+}
+
+// Inicializar tabla de cobros
+function inicializarTablaCobros() {
+    Grid.datatables_wrapper({
+        t_guid: t_ofh_cobro,
+        url_exec: '{% url "iom" %}',
+        url_tmpl: '{% url "dtmpl" %}',
+        with_crud: false,
+        with_gsearch: false,
+        title: '',
+        tselector: 'table_container_Cobro',
+        app_name: 'Cobro',
+        model_name: 'Factura',
+        model_pk: 'id',
+        cls_table: 'cell-border row-border table table-sm',
+        cls_thead: 'border-gray-900',
+        dbcon: 'default',
+        plength: 100,
+        custom_module: 'Cobro',
+        custom_package: 'mng_cobro',
+        custom_attr: 'MCobro',
+        custom_mname: 'get_facturas_credito',
+        t_opts: {
+            select: { style: 'os' },
+            dom: 'it',
+            fixedHeader: false,
+            responsive: null,
+            scrollCollapse: true,
+            scrollX: true,
+            scrollY: 500,
+            paging: true,
+            order: [[2, 'desc']],
+            createdRow: function(row, data, dataIndex) {
+                if (data.doc_saldo <= 0) {
+                    row.classList.add('factura-pagada');
+                } else if (data.dias_vencido > 0) {
+                    row.classList.add('factura-vencida');
+                } else {
+                    row.classList.add('factura-pendiente');
+                }
+            },
+            rowId: function(row) {
+                return `tr_cobro_${row.id}`;
+            }
+        },
+        builder_be: cobro_builder_be,
+        columns: [
+            {
+                fdis: true, gre: false, btyp: 'loc', idx: 'doc_saldo', tit: 'Acc', dtyp: 'str', dfl: '', nord: false,
+                render: (data, type, row) => {
+                    if (data > 0) {
+                        return `<i title="Registrar pago" class="tr-cobro-pago fs-extra-lg text text-success mdi mdi-cash-plus cursor-pointer"></i>`;
+                    }
+                    return `<i title="Pagado" class="fs-extra-lg text text-secondary mdi mdi-check-circle"></i>`;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'id', tit: 'ID', cls: 'align-left', dtyp: 'str', hide: true },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_numero', tit: 'Numero', cls: 'align-left', dtyp: 'str', hide: false },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'doc_fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data) => moment(data).format('DD/MM/YY')
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_razon_social', tit: 'Cliente', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_ruc', tit: 'RUC', cls: 'align-left', dtyp: 'str', hide: false },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'total_factura', tit: 'Total', cls: 'align-right', dtyp: 'str', hide: false,
+                render: (data) => `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'total_pagado', tit: 'Pagado', cls: 'align-right', dtyp: 'str', hide: false,
+                render: (data) => `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'doc_saldo', tit: 'Saldo', cls: 'align-right text-danger fw-bold', dtyp: 'str', hide: false,
+                render: (data) => `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_cre_plazo', tit: 'Plazo', cls: 'align-left', dtyp: 'str', hide: false },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'dias_vencido', tit: 'Dias Venc.', cls: 'align-center', dtyp: 'int', hide: false,
+                render: (data) => data > 0 ? `<span class="badge bg-danger">${data}</span>` : '<span class="badge bg-success">Al dia</span>'
+            },
+        ]
+    });
+
+    // Event listener para abrir offcanvas de pago (solo si tiene saldo pendiente)
+    $(`#${t_ofh_cobro} tbody`).on('click', '.tr-cobro-pago', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_cobro}`).DataTable().row(row).data();
+        if (rowData.doc_saldo > 0) {
+            abrirOffcanvasPago(rowData);
+        }
+    });
+
+    // Quitar overlay cuando se dibuja la tabla
+    $(`#${t_ofh_cobro}`).on('draw.dt', function() {
+        var tt = qelem(`#table_container_Cobro`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    });
+}
+
+// Abrir offcanvas para registrar pago
+function abrirOffcanvasPago(factura) {
+    // Pasar datos al template del offcanvas
+    window.cobroPagoData = factura;
+
+    let tps = {
+        model_app_name: 'Cobro',
+        model_name: 'Pago',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: {
+            title: 'Registrar Pago',
+            t_guid: t_ofh_cobro,
+            offcanvasglobal: true
+        },
+        template: 'Cobro/CobroPagoCreateUi.html',
+        raw: true,
+    };
+
+    OptsIO.getTmpl(tps).then((rsp) => {
+        let data = rsp.data;
+        $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+        bsOffcanvas.show();
+
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+            // Limpiar datos
+            delete window.cobroPagoData;
+        }, { once: true });
+
+        UiB.kILLLoaderAjax();
+    });
+}
+
+// Busqueda
+$('#btn-buscar-cobro').on('click', function() {
+    $(`#${t_ofh_cobro}`).DataTable().ajax.reload();
+});
+
+$('#search_cobro').on('keypress', function(e) {
+    if (e.which === 13) {
+        $(`#${t_ofh_cobro}`).DataTable().ajax.reload();
+    }
+});
+
+// Refrescar
+$('#btn-refresh-cobro').on('click', function() {
+    $('#search_cobro').val('');
+    cargarResumenCobros();
+    $(`#${t_ofh_cobro}`).DataTable().ajax.reload();
+});
+
+// Cambio de filtro de estado
+$('#filtro_estado_cobro').on('change', function() {
+    $(`#${t_ofh_cobro}`).DataTable().ajax.reload();
+});
+</script>

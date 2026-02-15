@@ -1,0 +1,195 @@
+<div class="ui_eestablecimiento">
+    <form id="form_eestablecimiento_{{ rr }}" class="form_eestablecimiento">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-12">
+                <label>Timbrado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select
+                        name="timbradoobj_id"
+                        class="form-control"
+                    >
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Establecimiento</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="establecimiento"
+                        class="form-control"
+                        placeholder="Establecimiento"
+                        {% if mobj %} value="{{ mobj.establecimiento }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Expedición</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea
+                        name="expedicion"
+                        class="form-control"
+                        placeholder="Expedición"
+                        rows="3"
+                    >{% if mobj %}{{ mobj.expedicion }}{% endif %}</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-8">
+                <label>Dirección</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="direccion"
+                        class="form-control"
+                        placeholder="Dirección"
+                        {% if mobj %} value="{{ mobj.direccion }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Número Casa</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="numero_casa"
+                        class="form-control"
+                        placeholder="Número Casa"
+                        {% if mobj %} value="{{ mobj.numero_casa }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Establecimiento {{ mobj.pk }}{% else %}Crear Establecimiento{% endif %}`;
+
+    // Populate Etimbrado select using se_populate
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_eestablecimiento_{{ rr }} select[name=timbradoobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Etimbrado',
+        field_display: ['timbrado'],
+        field_id: ['id'],
+        db_fields: ['id', 'timbrado'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: true,
+        placeholder: 'Seleccione timbrado',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        sort: [
+            {'dataIndx': 'timbrado', 'dir': 'up'},
+        ]
+    }).then(() => {
+        {% if mobj and mobj.timbradoobj %}
+        $('#form_eestablecimiento_{{ rr }} select[name=timbradoobj_id]').val('{{ mobj.timbradoobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_eestablecimiento = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Eestablecimiento');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_eestablecimiento_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        seldis = ['timbradoobj_id']
+        seldis.forEach((idx) => {
+            vv = $(`#form_eestablecimiento_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_eestablecimiento_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_eestablecimiento_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_eestablecimiento_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([]))
+        log.info(`#form_eestablecimiento_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_eestablecimiento_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_eestablecimiento_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_eestablecimiento_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_eestablecimiento_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_eestablecimiento_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_eestablecimiento_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_eestablecimiento_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_eestablecimiento_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_eestablecimiento_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_eestablecimiento_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_eestablecimiento_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_eestablecimiento_{{ rr }} Submitting form`);
+        save_eestablecimiento(event.target);
+    })
+
+</script>

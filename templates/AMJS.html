@@ -1,0 +1,114 @@
+{% load static %}
+<!-- jQuery (required for DataTables) -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+<!-- Bootstrap 5 Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+<!-- Axios -->
+<script src="https://cdn.jsdelivr.net/npm/axios@1.6.5/dist/axios.min.js"></script>
+
+<!-- DataTables -->
+
+<script src="https://cdn.datatables.net/v/bs5/dt-2.3.5/fh-4.0.5/kt-2.12.2/r-3.0.7/rg-1.6.0/sl-3.1.3/datatables.min.js" integrity="sha384-e73fXgHR1AXZ2OH3pN7GNiMU6Rof+7CKCTS66DBOszLBAVRk0OorfuJWC6gNZqnN" crossorigin="anonymous"></script>
+
+<!-- AOS Animation -->
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<!-- Sweet Alert 2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Chart.js (for charts if needed) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<!-- Toastify (for toast notifications) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css">
+<script src="https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js"></script>
+
+<!-- Select2 (for advanced select boxes) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.full.min.js"></script>
+{% comment %} <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script> {% endcomment %}
+
+<!-- Moment.js (for date handling) -->
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/locale/es.js"></script>
+
+<!-- DateRangePicker (for date range selection) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css" />
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.min.js"></script>
+
+<!-- Inputmask (for input formatting) -->
+<script src="https://cdn.jsdelivr.net/npm/inputmask@5.0.9/dist/inputmask.min.js"></script>
+
+<!-- LZ-String (for localStorage compression) -->
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+
+<!-- Custom JavaScript -->
+<script>
+    // Initialize AOS
+    AOS.init({
+        duration: 800,
+        easing: 'ease-in-out',
+        once: true
+    });
+
+    // Auto-hide loader on page load
+    window.addEventListener('load', function() {
+        const loader = document.getElementById('loading');
+        if (loader) {
+            loader.style.display = 'none';
+        }
+    });
+
+    // Global axios configuration
+    axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+
+    // Add CSRF token to axios requests
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        axios.defaults.headers.common['X-CSRFToken'] = csrfToken.value;
+    }
+
+    // Bootstrap tooltips initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+
+    // Bootstrap popovers initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+        popoverTriggerList.map(function (popoverTriggerEl) {
+            return new bootstrap.Popover(popoverTriggerEl);
+        });
+    });
+</script>
+
+<!-- ========================================== -->
+<!-- Amachine Custom JavaScript Files -->
+<!-- ========================================== -->
+<!-- Core UI utilities (must be loaded first) -->
+<script src="{% static 'amui/a_ui.js' %}"></script>
+
+<!-- Form utilities (depends on a_ui.js) -->
+<script src="{% static 'amui/form_ui.js' %}"></script>
+
+<!-- Table/Grid utilities (depends on a_ui.js) -->
+<script src="{% static 'amui/table_ui.js' %}"></script>
+
+<!-- WebSocket utilities -->
+<script src="{% static 'amui/a_ws.js' %}"></script>
+
+<!-- Clock utilities -->
+<script src="{% static 'amui/clock_ui.js' %}"></script>
+
+<!-- Calculator utilities -->
+<script src="{% static 'amui/f_calc.js' %}"></script>
+
+<script src="{% static 'js/task_notifications.js' %}"></script>
+<script src="{% static 'js/task_bell.js' %}"></script>

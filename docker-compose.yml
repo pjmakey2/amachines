@@ -1,0 +1,99 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: amachine_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    networks:
+      - amachine_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: amachine_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - amachine_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Django App (Daphne for WebSockets + HTTP)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amachine_web
+    command: daphne -b 0.0.0.0 -p 8002 Amachine.asgi:application
+    volumes:
+      - ./:/app
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+    ports:
+      - "8002:8002"
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - amachine_network
+    restart: unless-stopped
+
+  # Celery Worker
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: amachine_celery_worker
+    entrypoint: []
+    command: ["celery", "-A", "Amachine", "worker", "-l", "info", "--concurrency=4"]
+    volumes:
+      - ./:/app
+      - ./media:/app/media
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - amachine_network
+    restart: unless-stopped
+
+networks:
+  amachine_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

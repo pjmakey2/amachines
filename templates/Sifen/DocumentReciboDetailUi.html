@@ -1,0 +1,60 @@
+{% load static humanize %}
+<table>
+    <thead class="am-transac-thead">
+        <tr>
+            <th style="width: 220px;">Fac. Pagadas</th>
+            <th style="width: 220px">Importe</th>
+            <th style="width: 220px;">Retencion</th>
+            <th style="width: 220px">Importe</th>
+            <th style="width: 220px">Nota de credito</th>
+            <th style="width: 220px">Importe</th>
+            {% comment %} <th style="width: 220px; text-align: left;">TOTAL FACTURAS</th>
+            <th style="width: 220px; text-align: left;">{{ mobj.get_total_fe|floatformat:0|intcomma }}</th> {% endcomment %}
+        </tr>
+    </thead>
+    <tbody class="am-transac-body">
+        {% for feobj, ncobj in mobj.get_fe_ncs %}
+            <tr>
+                <td style="text-align: center;">{{ feobj.get_number_full }}</td>
+                <td style="text-align: center;">{{ feobj.total|floatformat:0|intcomma }}</td>
+                <td style="text-align: center;">{{ feobj.retencion_numero }}</td>
+                <td style="text-align: center;">{{ feobj.retencion|floatformat:0|intcomma }}</td>
+                {% if ncobj %}
+                    <td style="text-align: center;">{{ ncobj.establecimiento }}-{{ ncobj.expedicion }}-{{ ncobj.numero }}</td>
+                    <td style="text-align: center;">{{ ncobj.total|floatformat:0|intcomma }}</td>
+                {% else %}
+                    <td style="text-align: center;"></td>
+                    <td style="text-align: center;"></td>
+                {% endif %}
+            </tr>
+        {% endfor %}
+        <tr>
+            <td style="text-align: center;"><br></td>
+            <td style="text-align: center;"><br></td>
+            <td style="text-align: center;"><br></td>
+            <td style="text-align: center;"><br></td>
+        </tr>
+    </tbody>
+    <tfoot class="am-transac-tfoot tfoot-border">
+        <tr>
+            <td class="am-transac-total-text" style="text-align: center;">TOTAL FACTURAS:</td>
+            {% if mobj.doc_moneda == "USD" %}
+                <td  style="text-align: center;">{{ mobj.get_total_fe|floatformat:"2"|intcomma }}</td>
+            {% else %}
+                <td  style="text-align: center;">{{ mobj.get_total_fe|floatformat:"0"|intcomma }}</td>
+            {% endif %}
+            <td class="am-transac-total-text" style="text-align: center;">TOTAL RETENCION:</td>
+            {% if mobj.doc_moneda == "USD" %}
+                <td  style="text-align: center;">{{ mobj.get_total_rt|floatformat:"2"|intcomma }}</td>
+            {% else %}
+                <td  style="text-align: center;">{{ mobj.get_total_rt|floatformat:"0"|intcomma }}</td>
+            {% endif %}            
+            <td class="am-transac-total-text" style="text-align: center;">TOTAL NC:</td>
+            {% if mobj.doc_moneda == "USD" %}
+                <td  style="text-align: center;">{{ mobj.get_total_nc|floatformat:"2"|intcomma }}</td>
+            {% else %}
+                <td  style="text-align: center;">{{ mobj.get_total_nc|floatformat:"0"|intcomma }}</td>
+            {% endif %}
+        </tr>
+    </tfoot>
+</table>

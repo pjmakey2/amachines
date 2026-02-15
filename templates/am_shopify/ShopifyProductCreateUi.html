@@ -1,0 +1,197 @@
+<div class="ui_shopifyproduct">
+    <form id="form_shopifyproduct_{{ rr }}" class="form_shopifyproduct">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>ID Shopify</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="shopify_id"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.shopify_id }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-8">
+                <label>Título</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="title"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.title }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>SKU</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="sku"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.sku|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Código de Barras</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="barcode"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.barcode|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Handle</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="handle"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.handle }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <label>Precio</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="price"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="PYG {{ mobj.price }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Precio Comparativo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="compare_at_price"
+                        class="form-control"
+                        readonly
+                        {% if mobj and mobj.compare_at_price %} value="PYG {{ mobj.compare_at_price }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Inventario</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="inventory_quantity"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.inventory_quantity }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label>Estado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="status"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.status }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Proveedor</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="vendor"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.vendor|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Tipo de Producto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="product_type"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.product_type|default:'' }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        {% if mobj.description %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Descripción</label>
+                <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                    {{ mobj.description|safe }}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if mobj.image_url %}
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label>Imagen</label>
+                <div>
+                    <img src="{{ mobj.image_url }}" alt="{{ mobj.title }}" class="img-fluid" style="max-width: 200px; border-radius: 8px;">
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <label>Creado en Shopify</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="created_at_shopify"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.created_at_shopify }}" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Última sincronización</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="synced_at"
+                        class="form-control"
+                        readonly
+                        {% if mobj %} value="{{ mobj.synced_at }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Producto: {{ mobj.title }}{% else %}Producto{% endif %}`;
+</script>

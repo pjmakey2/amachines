@@ -1,0 +1,182 @@
+<div class="ui_appsbookmakrs">
+    <form id="form_appsbookmakrs_{{ rr }}" class="form_appsbookmakrs">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+        <div class="row">
+            <div class="col-md-4">
+                <label>Prioridad</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="number"
+                        name="prioridad"
+                        class="form-control"
+                        placeholder="Prioridad"
+                        {% if mobj %} value="{{ mobj.prioridad }}" {% else %} value="0" {% endif %}
+                    />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>App</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select
+                        name="app_id"
+                        id="select_app_{{ rr }}"
+                        class="form-control"
+                    >
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Usuario</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input
+                        type="text"
+                        name="username"
+                        class="form-control"
+                        placeholder="Usuario"
+                        {% if mobj %} value="{{ mobj.username }}" {% endif %}
+                    />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-md-12 text-start">
+                <button
+                    class="btn btn-primary"
+                    type="submit"
+                >
+                    Guardar
+                </button>
+            </div>
+        </div>
+
+
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar App Bookmark {{ mobj.pk }}{% else %}Crear App Bookmark{% endif %}`;
+
+    // Initialize App select using se_select
+    form_search.se_select({
+        surl: '{% url "iom" %}',
+        dele: '#form_appsbookmakrs_{{ rr }} select[name=app_id]',
+        app_name: 'OptsIO',
+        model_name: 'Apps',
+        field_display: ['app_name', 'friendly_name'],
+        field_id: ['id'],
+        db_fields: ['id', 'app_name', 'friendly_name'],
+        dbcon: 'default',
+        sterm: ['app_name__icontains', 'friendly_name__icontains'],
+        theme: 'bootstrap-5',
+        ml: 2,
+        width: '100%',
+        allowClear: true,
+        placeholder: 'Buscar app...',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        dejoin: ' - ',
+    });
+
+    {% if mobj %}
+    // Set the selected value if editing
+    nopt = new Option('{{ mobj.app.app_name }}', '{{ mobj.app.id }}', false, false);
+    $('#form_appsbookmakrs_{{ rr }} select[name=app_id]').append(nopt).trigger('change');
+    {% endif %}
+
+    save_appsbookmakrs = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'OptsIO');
+        fdata.append('model_name', 'AppsBookMakrs');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_appsbookmakrs_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        seldis = ['app_id']
+        seldis.forEach((idx) => {
+            vv = $(`#form_appsbookmakrs_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_appsbookmakrs_{{ rr }}edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_appsbookmakrs_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_appsbookmakrs_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'OptsIO',
+                'package': 'io_apps',
+                'attr': 'IOApps',
+                'mname': 'create_appsbookmakrs',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_appsbookmakrs_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_appsbookmakrs_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_appsbookmakrs_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_appsbookmakrs_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_appsbookmakrs_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_appsbookmakrs_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_appsbookmakrs_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_appsbookmakrs_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_appsbookmakrs_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_appsbookmakrs_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_appsbookmakrs_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_appsbookmakrs_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_appsbookmakrs_{{ rr }} Submitting form`);
+        save_appsbookmakrs(event.target);
+    })
+
+
+</script>

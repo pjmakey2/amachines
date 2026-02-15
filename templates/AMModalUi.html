@@ -1,0 +1,76 @@
+{% load static %}
+<!-- Modal Container - Para modales genéricos del sistema -->
+<div class="modal fade" id="globalModal" tabindex="-1" aria-labelledby="globalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="globalModalLabel">Modal title</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="globalModalBody">
+                <!-- El contenido del modal se cargará aquí -->
+            </div>
+            <div class="modal-footer" id="globalModalFooter">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalLabel">Confirmar acción</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">
+                ¿Está seguro que desea realizar esta acción?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmModalBtn">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para mostrar modal global
+function showGlobalModal(title, content, footerButtons = null) {
+    document.getElementById('globalModalLabel').textContent = title;
+    document.getElementById('globalModalBody').innerHTML = content;
+
+    if (footerButtons) {
+        document.getElementById('globalModalFooter').innerHTML = footerButtons;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('globalModal'));
+    modal.show();
+}
+
+// Función para mostrar modal de confirmación
+function showConfirmModal(message, onConfirm, title = 'Confirmar acción') {
+    document.getElementById('confirmModalLabel').textContent = title;
+    document.getElementById('confirmModalBody').textContent = message;
+
+    const confirmBtn = document.getElementById('confirmModalBtn');
+
+    // Remover eventos anteriores
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+    // Agregar nuevo evento
+    newConfirmBtn.addEventListener('click', function() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        modal.hide();
+        if (typeof onConfirm === 'function') {
+            onConfirm();
+        }
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+</script>

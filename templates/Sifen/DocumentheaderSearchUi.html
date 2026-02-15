@@ -1,0 +1,286 @@
+<style>
+.daterangepicker .ranges ul {
+    max-height: 282px !important;
+}
+</style>
+<form id="formconsultar_documentheader" class="row g-3">
+    {% if perms.OptsIO.formconsultar_documentheader_qs_doc_fecha__year_ver  %}
+    <div class="col-xs-1 col-sm-3">
+        <label>Fecha</label>
+        <div id="documentheadersearch_filter_date" 
+            style="background: #fff; cursor: pointer; padding: 14px 10px; border: 1px solid #ccc; width: 100%">
+            <i class="fa fa-calendar"></i>
+            <span></span> <i class="fa fa-caret-down"></i>
+        </div>
+    </div>
+    {% comment %}
+        <div class="col-xs-1 col-sm-1">
+            <label><i onclick="form_select.clear_select2('select[name=qs_doc_fecha__year]')" class="text-danger ri-home-3-line"></i>Ejercicio</label>
+            <div class="input-group flex-nowrap fl_focus_highlight">
+                <select 
+                {% if not perms.OptsIO.formconsultar_documentheader_qs_doc_fecha__year_edita  %}
+                readonly
+                disabled
+                {% endif %}
+                name="qs_doc_fecha__year" class="fl_select form-select">
+                <option value=""></option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+            </select>
+            </div>
+        </div>
+    {% endcomment %}
+    {% endif %}
+    {% if perms.OptsIO.formconsultar_documentheader_qs_doc_fecha__month_ver  %}
+{% comment %}         <div class="col-xs-1 col-sm-1">
+            <label><i onclick="form_select.clear_select2('select[name=qs_doc_fecha__month]')" class="text-danger ri-home-3-line"></i>Periodo</label>
+            <div class="input-group flex-nowrap fl_focus_highlight">
+                <select 
+                {% if not perms.OptsIO.formconsultar_documentheader_qs_doc_fecha__month_edita  %}
+                readonly
+                disabled
+                {% endif %}
+                name="qs_doc_fecha__month" class="fl_select form-select">
+                <option value=""></option>
+                <option value="1">Enero</option>
+                <option value="2">Febrero</option>
+                <option value="3">Marzo</option>
+                <option value="4">Abril</option>
+                <option value="5">Mayo</option>
+                <option value="6">Junio</option>
+                <option value="7">Julio</option>
+                <option value="8">Agosto</option>
+                <option value="9">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
+            </div>
+        </div> {% endcomment %}
+    {% endif %}
+    {% if perms.OptsIO.formconsultar_documentheader_qs_doc_tipo_ver  %}
+        <div class="col-xs-2 col-sm-2">
+            <label><i onclick="form_select.clear_select2('select[name=qs_doc_tipo]')" class="text-danger ri-home-3-line"></i>Tipo</label>
+            <div class="input-group flex-nowrap fl_focus_highlight">
+                <select 
+                {% if not perms.OptsIO.formconsultar_documentheader_qs_doc_tipo_edita  %}
+                readonly
+                disabled
+                {% endif %}
+                name="qs_doc_tipo" class="fl_select form-select">
+                <option value=""></option>
+                <option value="FE">Factura</option>
+                <option value="NC">Nota de Credito</option>
+                <option value="ND">Nota de Debito</option>
+                <option value="AF">Ajuste</option>
+            </select>
+            </div>
+        </div>
+    {% endif %}
+    {% if perms.OptsIO.formconsultar_documentheader_qs_cobranza_ver  %}
+        <div class="col-xs-2 col-sm-2">
+            <label><i onclick="form_select.clear_select2('select[name=qs_cobranza]')" class="text-danger mdi mdi-origin"></i>Estado</label>
+            <div class="input-group flex-nowrap fl_focus_highlight">
+                <select 
+                {% if not perms.OptsIO.formconsultar_documentheader_qs_cobranza_edita  %}
+                readonly
+                disabled
+                {% endif %}
+                name="qs_cobranza" class="fl_select form-select">
+                <option value=""></option>
+                <option value="pendiente_cobro">PENDIENTE</option>
+                <option value="cobrado">COBRADO</option>
+            </select>
+            </div>
+        </div>
+    {% endif %}
+    {% if perms.OptsIO.formconsultar_documentheader_qs_clientecodigo_id_ver  %}
+        <div class="col-xs-5 col-sm-3">
+            <label><i onclick="form_select.clear_select2('select[name=qs_clientecodigo_id]'); $('#info_cliente_state').html('')" class="text-danger ri-user-line"></i>Cliente</label>
+            <div class="input-group flex-nowrap fl_focus_highlight">
+                <select 
+                {% if not perms.OptsIO.formconsultar_documentheader_qs_clientecodigo_id_edita  %}
+                readonly
+                disabled
+                {% endif %}
+                name="qs_clientecodigo_id" class="fl_select form-select"></select>
+            </div>
+        </div>
+    {% endif %}
+    {% if perms.OptsIO.formconsultar_documentheader_qs_producto_ver  %}
+        <div class="col-xs-5 col-sm-3">
+            <label><i onclick="form_select.clear_select2('select[name=qs_producto_id]');" class="text-danger ri-user-line"></i>Producto</label>
+            <div class="input-group flex-nowrap fl_focus_highlight">
+                <select 
+                {% if not perms.OptsIO.formconsultar_documentheader_qs_producto_id_edita  %}
+                    readonly
+                    disabled
+                {% endif %}
+                name="qs_producto_id" class="fl_select form-select"></select>
+            </div>
+        </div>
+    {% endif %}
+    {% if perms.OptsIO.formconsultar_documentheader_btn_buscar  %}
+        <div class="col-auto">
+            <button id="btn-consultar-paquete-{{ rr }}" 
+            {% comment %} onclick="DrawConsultarPaquete();" {% endcomment %}
+            class="mt-4 btn btn-primary btn-lg fl_focus_highlight">
+            <i class="mdi mdi-table-search"></i>
+            Buscar</button>
+        </div>
+    {% endif %}
+    {% if perms.OptsIO.table_documentheader_eje_reportevta  %}
+        <div class="col-auto">
+              <button title="Descargar reporte de facturacion" id="btn-rpt_libro_vta-{{rr}}-create"  class="mt-4 btn btn-lg btn-info"><i class="mdi mdi-google-spreadsheet"></i></button>
+        </div>
+    {% endif %}
+</form>
+
+<script type="text/javascript">
+    
+    form_search.se_select({
+      surl: '{% url "iom" %}',
+      dele: 'select[name=qs_clientecodigo_id]',
+      app_name: 'FL_Structure',
+      model_name: 'Clientes',
+      field_display: ['clientecodigo', 'normalize_name' ],
+      field_id: ['clientecodigo'],
+      db_fields: ['clientecodigo', 'tarifa'],
+      db_methods: ['normalize_name'],
+      dejoin: ' ',
+      qs_be: [],
+      sterm: [
+          'or_clientenombre__icontains', 
+          'or_clienteapellido__icontains',
+          'or_clientecodigo__icontains',
+          'or_clienteci__icontains',
+          'or_ruc__icontains'
+      ],
+      dbcon: 'fl',
+      headers: {
+          'X-CSRFToken': OptsIO.getCookie('csrftoken')
+      },
+      specific_search: {
+          'module': 'apps.ReceptionPackages',
+          'package': 'mng_packages',
+          'attr': 'MPackages',
+          'mname': 'search_client',
+      },
+      init_select2: true,
+      theme: 'bootstrap-5',
+      width: '100%',
+    {% if modal_selector %}
+        dropdownParent: $('{{ modal_selector }}'),
+    {% else %}
+        dropdownParent: $('#paquetes_select2_dropdown_{{ rr }}')
+    {% endif %}
+  })
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: 'select[name=qs_producto_id]',
+        app_name: 'FL_Masters',
+        model_name: 'Producto',
+        field_display: ['descripcion'],
+        field_id: ['descripcion'],
+        db_fields: ['descripcion'],
+        qs_be: [
+            {'field': 'segmento', 'value': 'RETIRO'}
+        ],
+        dejoin: ' ',
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '100%',
+        tags: true,
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        clean: true,
+        init_select2: true,
+        on_focusopen: true,
+        {% if modal_selector %}
+            dropdownParent: $('{{ modal_selector }}'),
+        {% else %}
+            dropdownParent: $('#paquetes_select2_dropdown_{{ rr }}')
+        {% endif %}
+    })
+
+    qelem('#formconsultar_documentheader').addEventListener('submit', (evt)=>{
+      evt.preventDefault();
+      DrawDocumentHeaderHome();
+
+    });
+
+
+{% if perms.OptsIO.table_documentheader_eje_reportevta  %}
+    qelem(`#btn-rpt_libro_vta-{{rr}}-create`).addEventListener('click', (evt)=>{
+    //qs_doc_fecha__year = $('select[name=qs_doc_fecha__year]').val();
+    //qs_doc_fecha__month = $('select[name=qs_doc_fecha__month]').val();
+    qs_doc_tipo = $('select[name=qs_doc_tipo]').val();
+    qs_cobranza = $('select[name=qs_cobranza]').val();
+    qs_clientecodigo_id = $('select[name=qs_clientecodigo_id]').val();
+
+
+
+    //if ((qs_doc_fecha__year === '') || (qs_doc_fecha__year === null) || (qs_doc_fecha__year === undefined)) {
+    //    UiB.BeMsgHandle({rsps: {'error': "Debe seleccionar el ejercicio" }});
+    //    return false
+    //}
+//
+    //if ((qs_doc_fecha__month === '') || (qs_doc_fecha__month === null) || (qs_doc_fecha__month === undefined)) {
+    //    UiB.BeMsgHandle({rsps: {'error': "Debe seleccionar el periodo" }});
+    //    return false
+    //}
+
+    let gbe = new FormData();
+    gbe.append('module','apps.Sifen');
+    gbe.append('package','mng_sifen');
+    gbe.append('attr', 'MSifen');
+    gbe.append('mname', 'rpt_libro_vta')
+    gbe.append('qs_doc_fecha_0', doc_filter_date_0);
+    gbe.append('qs_doc_fecha_1', doc_filter_date_1);
+
+    if ((qs_doc_tipo != '') && (qs_doc_tipo != null) && (qs_doc_tipo != undefined)) {
+        gbe.append('qs_doc_tipo', qs_doc_tipo);
+    }
+    if ((qs_cobranza != '') && (qs_cobranza != null) && (qs_cobranza != undefined)) {
+        gbe.append('qs_cobranza', qs_cobranza);
+    }
+    if ((qs_clientecodigo_id != '') && (qs_clientecodigo_id != null) && (qs_clientecodigo_id != undefined)) {
+        gbe.append('qs_clientecodigo_id', qs_clientecodigo_id);
+    }
+
+    gbe.append('dbcon', 'default');
+    tt = qelem(`#table_container_DocumentHeader`);
+    tt.classList.add('overlay-container');
+    tt.classList.add('overlay');
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp)=>{
+        data = rsp.data;
+        if (data.hasOwnProperty('error')) {
+            UiB.BeMsgHandle({rsps: {'error': data.error }});
+        } else {
+            const a = document.createElement('a');
+            a.href = data.furl;
+            a.download = data.file_name; // You can specify a filename here if the URL doesn't include one
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            Swal.close();
+        }
+    }).finally(()=>{
+        OverlayDocumentHeaderHome();
+    })
+    })
+    form_controls.filter_date_range(
+        '#documentheadersearch_filter_date',
+        function (start, end) {
+            console.log('kjlkj');
+            $(`#documentheadersearch_filter_date span`).html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'));
+            doc_filter_date_0 = start.format('YYYY-MM-DD');
+            doc_filter_date_1 = end.format('YYYY-MM-DD');
+        }
+    )
+{% endif %}
+</script>

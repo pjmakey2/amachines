@@ -1,0 +1,313 @@
+{% load static %}
+<title>Task Notifications Example</title>
+<style>
+    .task-item {
+        border: 1px solid #ddd;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+    }
+    .status-processing { color: blue; }
+    .status-completed { color: green; }
+    .status-error { color: red; }
+    .progress-bar-container {
+        width: 100%;
+        height: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+    }
+    .task-progress-bar {
+        height: 100%;
+        background-color: #4CAF50;
+        transition: width 0.3s ease;
+    }
+    .demo-section {
+        background: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    .demo-section h2 {
+        margin-top: 0;
+        color: #333;
+    }
+    .btn-demo {
+        padding: 10px 20px;
+        margin: 5px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-warning { background: #ffc107; color: #333; }
+    .btn-demo:hover { opacity: 0.9; }
+    .task-log {
+        background: #333;
+        color: #0f0;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: monospace;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 15px;
+    }
+    .task-log p {
+        margin: 2px 0;
+    }
+</style>
+
+<h1>Task Notifications Demo</h1>
+
+<!-- Demo Tasks Section -->
+<div class="demo-section">
+    <h2>🔔 Test Bell Notifications</h2>
+    <p>Click these buttons to start demo tasks. They will appear in the bell notification in the header.</p>
+
+    <button class="btn-demo btn-primary" onclick="startDemoTask(10, 1, 'Demo Task')">
+        ▶ Start Demo Task (10s)
+    </button>
+    <button class="btn-demo btn-success" onclick="startDemoTask(3, 1, 'Quick Task')">
+        ⚡ Quick Task (3s)
+    </button>
+    <button class="btn-demo btn-danger" onclick="startErrorTask(5)">
+        ❌ Error Task (fails at 50%)
+    </button>
+    <button class="btn-demo btn-warning" onclick="startMultipleTasks(3)">
+        📋 Start 3 Tasks
+    </button>
+
+    <div class="task-log" id="taskLog">
+        <p>Task log will appear here...</p>
+    </div>
+</div>
+
+<!-- Original RUC Sync Section -->
+<div class="demo-section">
+    <h2>RUC Sync</h2>
+    <button class="btn-demo btn-primary" onclick="startRucSync()">Start RUC Sync</button>
+</div>
+
+<div id="tasks-container"></div>
+
+<script><
+    // Task log helper
+    function logTask(message) {
+        const log = document.getElementById('taskLog');
+        const time = new Date().toLocaleTimeString();
+        const p = document.createElement('p');
+        p.textContent = `[${time}] ${message}`;
+        log.appendChild(p);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    // Clear initial message
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('taskLog').innerHTML = '';
+        logTask('Ready to start demo tasks...');
+    });
+
+    // Listen for all task updates
+    taskNotifications.on('*', (data) => {
+        console.log('Task event:', data);
+    });
+
+    // Listen for task completions
+    taskNotifications.on('task_complete', (data) => {
+        logTask(`✅ Task completed: ${data.message}`);
+    });
+
+    // Listen for task errors
+    taskNotifications.on('task_error', (data) => {
+        logTask(`❌ Task failed: ${data.message}`);
+    });
+
+    // Start a demo task with progress
+    function startDemoTask(steps = 10, delay = 1, name = 'Demo Task') {
+        logTask(`Starting ${name}...`);
+
+        const formData = new FormData();
+        formData.append('module', 'OptsIO');
+        formData.append('package', 'mng_demo_tasks');
+        formData.append('attr', 'DemoTasks');
+        formData.append('mname', 'start_demo_task');
+        formData.append('steps', steps);
+        formData.append('delay', delay);
+        formData.append('name', name);
+
+        axios.post('{% url "iom" %}', formData, {
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            const taskId = response.data.task_id;
+            if (taskId) {
+                logTask(`Task started: ${taskId.substring(0, 8)}...`);
+
+                // Add to bell notification and subscribe
+                if (typeof taskBell !== 'undefined') {
+                    taskBell.addTask(taskId, name, 'Starting...');
+                } else {
+                    taskNotifications.subscribe(taskId);
+                }
+
+                // Also add to page UI
+                addTaskToUI(taskId);
+            } else {
+                logTask('⚠️ No task ID returned');
+                console.log('Response:', response.data);
+            }
+        })
+        .catch(error => {
+            logTask(`❌ Error: ${error.message}`);
+            console.error('Error starting task:', error);
+        });
+    }
+
+    // Start a task that will fail
+    function startErrorTask(failAt = 5) {
+        logTask(`Starting error task (will fail at step ${failAt})...`);
+
+        const formData = new FormData();
+        formData.append('module', 'OptsIO');
+        formData.append('package', 'mng_demo_tasks');
+        formData.append('attr', 'DemoTasks');
+        formData.append('mname', 'start_error_task');
+        formData.append('fail_at', failAt);
+        formData.append('steps', 10);
+        formData.append('delay', 1);
+
+        axios.post('{% url "iom" %}', formData, {
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            const taskId = response.data.task_id;
+            if (taskId) {
+                logTask(`Error task started: ${taskId.substring(0, 8)}...`);
+
+                if (typeof taskBell !== 'undefined') {
+                    taskBell.addTask(taskId, 'Error Test', 'Starting...');
+                } else {
+                    taskNotifications.subscribe(taskId);
+                }
+
+                addTaskToUI(taskId);
+            }
+        })
+        .catch(error => {
+            logTask(`❌ Error: ${error.message}`);
+        });
+    }
+
+    // Start multiple tasks
+    function startMultipleTasks(count = 3) {
+        logTask(`Starting ${count} concurrent tasks...`);
+
+        const formData = new FormData();
+        formData.append('module', 'OptsIO');
+        formData.append('package', 'mng_demo_tasks');
+        formData.append('attr', 'DemoTasks');
+        formData.append('mname', 'start_multiple_tasks');
+        formData.append('count', count);
+
+        axios.post('{% url "iom" %}', formData, {
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            const taskIds = response.data.task_ids;
+            if (taskIds && taskIds.length > 0) {
+                taskIds.forEach((taskId, index) => {
+                    const name = `Task ${index + 1}`;
+                    logTask(`Task ${index + 1} started: ${taskId.substring(0, 8)}...`);
+
+                    if (typeof taskBell !== 'undefined') {
+                        taskBell.addTask(taskId, name, 'Starting...');
+                    } else {
+                        taskNotifications.subscribe(taskId);
+                    }
+
+                    addTaskToUI(taskId);
+                });
+            }
+        })
+        .catch(error => {
+            logTask(`❌ Error: ${error.message}`);
+        });
+    }
+
+    // Function to start RUC sync
+    function startRucSync() {
+        logTask('Starting RUC Sync...');
+
+        const formData = new FormData();
+        formData.append('module', 'Sifen');
+        formData.append('package', 'mng_sifen_ruc_mapper');
+        formData.append('attr', 'RMap');
+        formData.append('mname', 'sync_rucs');
+
+        axios.post('{% url "iom" %}', formData, {
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            if (response.data.task_ids) {
+                response.data.task_ids.forEach(taskId => {
+                    logTask(`RUC task started: ${taskId.substring(0, 8)}...`);
+                    addTaskToUI(taskId);
+
+                    if (typeof taskBell !== 'undefined') {
+                        taskBell.addTask(taskId, 'RUC Sync', 'Starting...');
+                    } else {
+                        taskNotifications.subscribe(taskId);
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            logTask(`❌ Error: ${error.message}`);
+        });
+    }
+
+    function addTaskToUI(taskId) {
+        const container = document.getElementById('tasks-container');
+        const taskDiv = document.createElement('div');
+        taskDiv.id = `task-${taskId}`;
+        taskDiv.className = 'task-item';
+        taskDiv.innerHTML = `
+            <h3>Task: ${taskId.substring(0, 8)}...</h3>
+            <div class="task-status status-pending">Pending</div>
+            <div class="task-message">Waiting to start...</div>
+            <div class="progress-bar-container">
+                <div class="task-progress-bar" style="width: 0%" aria-valuenow="0"></div>
+            </div>
+        `;
+        container.appendChild(taskDiv);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+

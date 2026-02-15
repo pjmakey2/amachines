@@ -1,0 +1,487 @@
+<style>
+    .select2-selection {
+        height: 50px !important;
+    }
+
+</style>
+
+<div
+    class="scroll pe-5"
+    data-kt-scroll="true"
+    data-kt-scroll-height="auto"
+    data-kt-scroll-wrappers="#ReciboHome"
+    data-kt-scroll-offset="100px">
+    <div id="ReciboHome">
+        <div class="t_modal_documentrecibo"></div>
+        <h2 class="text text-left">Recibos</h2>
+        <div class="d-flex">
+          <div class="p-2 flex-grow-1">
+            {% if perms.OptsIO.formconsultar_documentrecibo_ver %}
+              <form id="formconsultar_documentrecibo" class="row g-3">
+                {% if perms.OptsIO.formconsultar_documentrecibo_qs_clientecodigo_id_ver  %}
+                    <div class="col-xs-5 col-sm-3">
+                        <label><i onclick="form_select.clear_select2('select[name=qs_clientecodigo_id]'); $('#info_cliente_state').html('')" class="text-danger ri-user-line"></i>Cliente</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                            {% if not perms.OptsIO.formconsultar_documentrecibo_qs_clientecodigo_id_edita  %}
+                              readonly
+                              disabled
+                            {% endif %}
+                            name="qs_clientecodigo_id" class="fl_select form-select"></select>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.formconsultar_documentrecibo_btn_buscar  %}
+                    <div class="col-auto">
+                        <button id="btn-consultar-recibo-{{ rr }}" style="margin-top: 22px;" 
+                        {% comment %} onclick="DrawConsultarPaquete();" {% endcomment %}
+                        class="btn btn-primary btn-lg fl_focus_highlight">
+                        <i class="mdi mdi-table-search"></i>
+                        Buscar</button>
+                    </div>
+                {% endif %}
+              </form>
+            {% endif %}
+          </div>
+        </div>
+        <div id="table_container_DocumentRecibo"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    form_search.se_select({
+      surl: '{% url "iom" %}',
+      dele: 'select[name=qs_clientecodigo_id]',
+      app_name: 'FL_Structure',
+      model_name: 'Clientes',
+      field_display: ['clientecodigo', 'normalize_name' ],
+      field_id: ['clientecodigo'],
+      db_fields: ['clientecodigo', 'tarifa'],
+      db_methods: ['normalize_name'],
+      dejoin: ' ',
+      qs_be: [],
+      sterm: [
+          'or_clientenombre__icontains', 
+          'or_clienteapellido__icontains',
+          'or_clientecodigo__icontains',
+          'or_clienteci__icontains',
+          'or_ruc__icontains'
+      ],
+      dbcon: 'fl',
+      headers: {
+          'X-CSRFToken': OptsIO.getCookie('csrftoken')
+      },
+      specific_search: {
+          'module': 'apps.ReceptionPackages',
+          'package': 'mng_packages',
+          'attr': 'MPackages',
+          'mname': 'search_client',
+      },
+      init_select2: true,
+      theme: 'bootstrap-5',
+      width: '100%',
+  })
+
+  $('select[name=qs_clientecodigo_id]').on('change', (evt) => {
+    DrawDocumentReciboHome();
+  })
+
+  $('select[name=qs_doc_tipo]').on('change', (evt) => {
+    DrawDocumentReciboHome();
+  })
+
+  $('select[name=qs_cobranza]').on('change', (evt) => {
+    DrawDocumentReciboHome();
+  })
+
+  documentrecibo_home_be = function (data, settings) {
+      tt = qelem(`#table_container_DocumentRecibo`);
+      tt.classList.add('overlay-container');
+      tt.classList.add('overlay');
+      crdata = Object.assign({}, settings.ajax.initquery);
+      mquery = [];
+      t_guid = settings.ajax.t_guid;
+      //clientecodigo = $('select[name=qs_clientecodigo]').val()
+      qs_clientecodigo_id = $('select[name=qs_clientecodigo_id]').val()
+
+      if ((qs_clientecodigo_id !== '') && (qs_clientecodigo_id !== null) && (qs_clientecodigo_id !== undefined)) {
+        mquery.push({field: 'pdv_codigo',  value: qs_clientecodigo_id});
+      }
+
+      if (mquery.length > 0) {
+          crdata.mquery = jfy(mquery);
+      }
+      adata = Object.assign(data, crdata);
+      return adata
+    }
+
+      t_ofh = `dtable_${OptsIO.s4generate()}`;
+      crud_tmpl =  'Sifen/DocumentReciboCreateUi.html'
+      dt_ofh_pc = Grid.datatables_wrapper({
+          t_guid: t_ofh,
+          url_exec: '{% url "iom" %}',
+          url_tmpl: '{% url "dtmpl" %}',
+          crud_tmpl: crud_tmpl,
+          with_crud: true,
+          with_gsearch: false,
+          title: '',
+          tselector: 'table_container_DocumentRecibo',
+          app_name: 'Sifen',
+          model_name: 'DocumentRecibo',
+          model_pk: 'id',
+          record_delete: true,
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          state_field: {},
+          dbcon: 'default',
+          mquery: [],
+          always_initquery: false,
+          plength: 300,
+          c_a: [{
+            'module': 'apps.Sifen',
+            'package': 'mng_sifen',
+            'attr': 'MSifen',
+            'mname': 'generando_documentrecibo',
+            'cont': false
+          }],
+          crud_btns: {
+            create: { btn: false, event: false },
+            update: { btn: false, event: false },
+            delete: { btn: false, event: false },
+          },
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              dom: 'it',
+              fixedHeader: false,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              createdRow: function( row, data, dataIndex){
+                if (data.ek_estado === 'Aprobado') {
+                  row.style.backgroundColor = '#8EF07A';
+                }
+                if (data.ek_estado === 'Rechazado') {
+                    row.style.backgroundColor = '#DA00128A';
+                }
+                if (data.ek_estado === 'Inutilizado') {
+                    row.style.backgroundColor = '#E99A238A';
+                }
+              },
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          builder_be: documentrecibo_home_be,
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false, 
+               //<i class="tr-recibos-query fs-extra-lg text text-info mdi mdi-archive-eye"></i>
+                dfcon: `
+                  {% if perms.OptsIO.table_documentrecibo_eje_mostrarrecibo  %}
+                    <i title="Ver recibo" class="tr-recibos-nota fs-extra-lg text text-info mdi mdi-file-document-outline"></i>
+                  {% endif %}
+                  {% if perms.OptsIO.table_documentrecibo_eje_imprimir  %}
+                    <i title="Imprimir recibo" class="tr-recibos-print fs-extra-lg text text-info mdi mdi-printer"></i>
+                  {% endif %}
+                  {% if perms.OptsIO.table_documentrecibo_eje_detalle  %}
+                    <i title="Ver detalles de recibo" class="tr-recibos-detail fs-extra-lg text text-info mdi mdi-details"></i>
+                  {% endif %}
+                `,
+               },
+              { fdis: true,
+                gre: true,
+                btyp: 'fdb',
+                idx: 'id',
+                tit: 'ID',
+                cls: 'align-left',
+                dtyp: 'str',
+                hide: true
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_tipo', 
+                tit: 'Tipo', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: true
+              },              
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_numero', 
+                tit: 'Numero', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false
+              },
+              { fdis: true,
+                gre: true,
+                btyp: 'fdb',
+                idx: 'doc_fecha', 
+                tit: 'Fecha', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+                render: (data, type, rowobj) => {
+                    return moment(data).format('DD/MM/YY')
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_establecimiento', 
+                tit: 'Sucursal', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_nombrefactura', 
+                tit: 'Cliente', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_ruc', 
+                tit: 'Ruc', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_moneda', 
+                tit: 'Moneda', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: true,
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_total_factura', 
+                tit: 'Facturas', 
+                cls: 'align-left', 
+                dtyp: 'str', 
+                hide: false,
+                render: (data, dtype, rowobj)=>{
+                  if (rowobj.moneda === 'USD') {
+                    return `<span>$ </span>${UiN.formatNumberU(data.toFixed(2))}`;
+                  }
+                  return `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`;
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'doc_cobrado', 
+                tit: 'Cobrado',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: false,
+                render: (data, dtype, rowobj)=> {
+                  if (rowobj.moneda === 'USD') {
+                    return `<span>$ </span>${UiN.formatNumberU(data.toFixed(2))}`;
+                  }
+                  return `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`;
+                }
+              },
+              { fdis: true, 
+                gre: true, 
+                btyp: 'fdb', 
+                idx: 'pdv_codigo', 
+                tit: 'Saldo',
+                cls: 'align-left',
+                dtyp: 'str', 
+                hide: true,
+              },
+          ]
+      })
+
+
+      $(`#${t_ofh} tbody`).on('click', '.tr-recibos-query', function () {
+        let row = $(this).closest('tr');
+        let data = $(`#${t_ofh}`).DataTable().row( row ).data().id;
+        let mid =  `modal_${OptsIO.s4generate()}`;
+        dattrs = {
+            modal_selector: `#${mid}`,
+            t_guid: t_ofh,
+            field_pk: 'id',
+            pk: data,
+            from_consultar_orders: true,
+            sui_rr: '{{ rr }}'
+        };
+        OptsIO.getTmpl({
+            model_app_name: 'Sifen',
+            model_name: 'DocumentRecibo',
+            pk: data,
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: crud_tmpl,
+            raw: true
+        }).then((rsp)=>{
+            let data = rsp.data;
+            UiB.drawModal({
+                title: ``,
+                content: data,
+                target: '#t_modal_global',
+                nid: mid
+            })
+            UiB.kILLLoaderAjax();
+        })
+    })
+
+    $(`#${t_ofh} tbody`).on('click', '.tr-recibos-nota', function () {
+      let row = $(this).closest('tr');
+      let data = $(`#${t_ofh}`).DataTable().row( row ).data().id;
+      let mid =  `modal_${OptsIO.s4generate()}`;
+      dattrs = {
+          modal_selector: `#${mid}`,
+          t_guid: t_ofh,
+          field_pk: 'id',
+          pk: data,
+          from_consultar_documentrecibo: true,
+          sui_rr: '{{ rr }}',
+      };
+      OptsIO.getTmpl({
+          model_app_name: 'Sifen',
+          model_name: 'DocumentRecibo',
+          pk: data,
+          dbcon: 'default',
+          url: '{% url "dtmpl" %}',
+          dattrs: dattrs,
+          template: 'Sifen/DocumentReciboRptUi.html',
+          raw: true
+      }).then((rsp)=>{
+          let data = rsp.data;
+          UiB.drawModal({
+              title: ``,
+              content: data,
+              target: '.t_modal_documentrecibo',
+              nid: mid
+          })
+          UiB.kILLLoaderAjax();
+      })
+  })
+
+  $(`#${t_ofh} tbody`).on('click', '.tr-recibos-print', function () {
+    let row = $(this).closest('tr');
+    let data = $(`#${t_ofh}`).DataTable().row( row ).data().id;
+    let timerInterval;
+    Swal.fire({
+        html: `<h2 id="t_gen_documentrecibo_imprimir">PDF del documento ${data} creado con exito</h2>`,
+        timerProgressBar: true,
+        showCancelButton: false,
+        showConfirmButton: false,
+        didOpen: async () => {
+            Swal.showLoading();
+            $('#t_gen_documentrecibo_imprimir').html(`
+                <button class="btn btn-primary" type="button" disabled>
+                    <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                    <span role="status">Generando impresion...</span>
+                </button>`);
+            let gbe = new FormData();
+            gbe.append('module',  'apps.Sifen');
+            gbe.append('package',  'mng_sifen');
+            gbe.append('attr',  'MSifen');
+            gbe.append('mname',  'generando_documentrecibo');
+            gbe.append('dbcon',  'default');
+            gbe.append('id', data);
+            axios.post(
+                '{% url "iom" %}',
+                gbe,
+                {
+                   headers: {
+                        'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                  }
+                }
+            ).then((rsp)=>{
+                if (rsp.data.success) {
+                    {% comment %} $('#t_gen_documentrecibo_imprimir').html(`<a class="link-underline-dark" href="${rsp.data.documentrecibo_urls.recibo_pdf_file}" target="_blank">Descargar PDF</a>`); {% endcomment %}
+                    let link = document.createElement('a');
+                    link.href = rsp.data.documentrecibo_urls.recibo_pdf_file;
+                    link.target = '_blank';
+                    link.click();
+                    Swal.close();
+                }
+            }).finally(Swal.hideLoading())
+        }
+    })
+  })
+
+  $(`#${t_ofh}`).on('click', 'tbody td i.tr-recibos-detail', function () {
+        let tr = event.target.closest('tr');
+        let row = $(`#${t_ofh}`).DataTable().row(tr);
+        if (row.child.isShown()) {
+            tr.classList.remove('details');
+            row.child.hide();
+        }
+        else {
+            tr.classList.add('details');
+            let rdata = row.data();
+            rdata.t_clh = t_ofh;
+            row.child(`<div id="row_detail_${rdata.id}"></div>`).show()
+            OptsIO.getTmpl({
+                url: '{% url "dtmpl" %}',
+                dattrs: rdata,
+                template: 'Sifen/DocumentReciboDetailUi.html',
+                model_app_name: 'Sifen',
+                model_name: 'DocumentRecibo',
+                pk: rdata.id,
+                raw: true,
+                loadertarget: {
+                    'msg_block': 'Cargando...',
+                    'dele': `#row_detail_${rdata.id}`
+                }
+            }).then((rsp)=>{
+                let data = rsp.data;
+                $(`#row_detail_${rdata.id}`).html(data);
+                //row.child(data).show();
+                UiB.kILLLoaderAjax()
+            }).catch((err)=>{
+            row.child(err).show();
+            })
+        }
+  });
+
+
+DrawDocumentReciboHome = ()=> {
+  $(`#${t_ofh}`).DataTable().ajax.reload(checkDocumentRecibo);
+}
+
+OverlayDocumentReciboHome = () => {
+  tt = qelem(`#table_container_DocumentRecibo`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+}
+
+checkDocumentRecibo = (rdata)  => {
+  if (rdata.data.length === 0) {
+    UiB.MsgInfo('Sin resultados');
+  }
+  OverlayDocumentReciboHome();
+}
+{% if perms.OptsIO.formconsultar_documentrecibo_ver %}
+  qelem('#formconsultar_documentrecibo').addEventListener('submit', (evt)=>{
+    evt.preventDefault();
+    DrawDocumentReciboHome();
+  });
+{% endif %}
+
+$(`#${t_ofh}`).on('draw.dt', function() {
+  OverlayDocumentReciboHome();
+})
+
+</script>

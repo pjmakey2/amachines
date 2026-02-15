@@ -1,0 +1,2121 @@
+<style>
+    .select2-selection {
+        height: 50px !important;
+    }
+</style>
+{% if mobj %}
+    <h3 class="text text-left" id="form_documentheader_title">Ver documento {{ mobj.doc_tipo }} {{ mobj.doc_numero }}</h3>
+{% else %}
+    <h3 class="text text-left" id="form_documentheader_title">Creacion de documento tipo {{ tipo }}</h3>
+{% endif %}
+
+<div id="form_documentheader_dropdown_{{ rr }}"></div>
+
+<div id="u_{{rr}}">
+    {% if perms.OptsIO.form_documentheader_ver %}
+        <form id="form_documentheader_{{ rr }}" class="form_documentheader">
+            <input type="hidden" 
+                name="id"
+                {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+            >
+            
+            <div class="row">
+                {% if perms.OptsIO.form_documentheader_pdv_codigo_ver %}
+                    <div class="col-md-3">
+                        <label><i class="text-danger ri-user-line"></i>Cliente</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_documentheader_pdv_codigo_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="pdv_codigo" class="fl_select form-select form-select-lg">
+                                {% if mobj %}
+                                    <option selected value="{{ mobj.pdv_codigo }}">{{ mobj.pdv_nombrefactura }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_pdv_ruc_ver %}
+                    <div class="col-md-3">
+                        <label>Ruc</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="2" type="text" 
+                                {% if not perms.OptsIO.form_documentheader_pdv_ruc_edita %} readonly disabled {% endif %} name="pdv_ruc"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_ruc }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <label>Dv</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="3" type="text" 
+                                name="pdv_ruc_dv"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_ruc_dv }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_pdv_email_ver %}
+                    <div class="col-md-3">
+                        <label>Correo</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="5" type="email" 
+                                {% if not perms.OptsIO.form_documentheader_pdv_email_edita %} readonly disabled {% endif %} name="pdv_email"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_email }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+                <input type="hidden" name="pdv_direccion_entrega">
+            </div>
+            <div class="row">                
+                {% if perms.OptsIO.form_documentheader_pdv_nombrefactura_ver %}
+                    <div class="col-md-6">
+                        <label>Razón social</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="4" type="text" 
+                                {% if not perms.OptsIO.form_documentheader_pdv_nombrefactura_edita %} readonly disabled {% endif %} name="pdv_nombrefactura"
+                                class="fl_input form-control form-control-lg" 
+                                oninput="form_validation.just_number(event)"
+                                {% if mobj %}
+                                    value="{{ mobj.pdv_nombrefactura }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_doc_cre_tipo_cod_ver %}
+                    <div class="col-md-2">
+                        <label>Condicion Pago</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                            {% if not perms.OptsIO.form_documentheader_doc_cre_tipo_cod_edita  %}
+                                readonly
+                                disabled
+                            {% endif %}
+                            required tabindex="6" name="doc_cre_tipo_cod" class="fl_select form-select form-select-lg" 
+                            >
+                            {% if mobj %}
+                                <option selected value="{{ mobj.doc_cre_tipo_cod }}">{{ mobj.doc_cre_tipo }}</option>
+                            {% endif %}
+                                <option value=""></option>
+                                <option value="1">Contado</option>
+                                <option value="2">Crédito</option>
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_doc_moneda_ver %}
+                    <div class="col-md-2">
+                        <label>Moneda</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                            {% if not perms.OptsIO.form_documentheader_doc_moneda_edita  %}
+                                readonly
+                                disabled
+                            {% endif %}
+                            required tabindex="7" name="doc_moneda" class="fl_select form-select form-select-lg" 
+                            >
+                            {% if mobj %}
+                                <option selected value="{{ mobj.doc_moneda }}">{{ mobj.doc_moneda }}</option>
+                            {% else %}
+                                <option value=""></option>
+                                <option value="USD">USD</option>
+                                <option selected value="GS">GS</option>
+                            {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                
+            </div>
+            <div class="row">
+                {% if perms.OptsIO.form_documentheader_doc_fecha_ver %}
+                    <div class="col-md-2">
+                        <label>Fecha</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="8" type="date" 
+                                {% if not perms.OptsIO.form_documentheader_doc_fecha_edita %} readonly disabled {% endif %} name="doc_fecha"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.doc_fecha }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_doc_tipo_ver %}
+                    <div class="col-md-1">
+                        <label>TIPO</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="9" type="text" 
+                                {% if not perms.OptsIO.form_documentheader_doc_tipo_edita %} readonly disabled {% endif %} name="doc_tipo"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.doc_tipo }}"
+                                {% else %}
+                                    value="{{ tipo }}"
+                                {% endif %}
+                            >
+                            
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_doc_numero_ver %}
+                    <div class="col-md-3">
+                        <label>Numero</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="9" type="text" 
+                                {% if not perms.OptsIO.form_documentheader_doc_numero_edita %} readonly disabled {% endif %} name="doc_numero"
+                                class="fl_input form-control form-control-lg" 
+                                oninput="form_validation.just_number(event)"
+                                {% if mobj %}
+                                    value="{{ mobj.doc_expedicion|stringformat:"03d" }}-{{ mobj.doc_establecimiento|stringformat:"03d" }}-{{ mobj.doc_numero|stringformat:"07d" }}"
+                                {% endif %}
+                            >
+                            
+                        </div>
+                        <div class="form-text">Se asigna automaticamente.</div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_doc_vencimiento_ver %}
+                    <div class="col-md-2">
+                        <label>Vencimiento</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                required tabindex="10" type="date" 
+                                {% if not perms.OptsIO.form_documentheader_doc_vencimiento_edita %} readonly disabled {% endif %} name="doc_vencimiento"
+                                class="fl_input form-control form-control-lg" 
+                                {% if mobj %}
+                                    value="{{ mobj.doc_fecha }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+                {% if perms.OptsIO.form_documentheader_tasa_cambio_ver %}
+                    <div class="col-md-2">
+                        <label>Tasa</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input readonly
+                                {% if not perms.OptsIO.form_documentheader_tasa_cambio_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="11" type="text" name="tasa_cambio" class="fl_input form-control form-control-lg" 
+                                oninput="form_validation.just_number(event)"
+                                onchange="calc_documentheader_totals();"
+                                {% if mobj %}
+                                    value="{{ mobj.tasa_cambio|floatformat:"0" }}"
+                                {% endif %}
+                            >
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            {% if tipo == "NC" %}
+                <div class="row d-none" id="nc_doc_relacion_cdc">
+                    {% if perms.OptsIO.form_documentheader_doc_relacion_cdc_ver %}
+                    <div class="col-md-6">
+                        <label>Factura relacionada</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                    {% if not perms.OptsIO.form_documentheader_doc_relacion_cdc_edita  %}
+                                        readonly
+                                        disabled
+                                    {% endif %}
+                                    required tabindex="1" 
+                                    name="doc_relacion_cdc" 
+                                    class="fl_select form-select form-select-lg">
+                                    {% if mobj %}
+                                        <option selected value="{{ mobj.doc_loop_link }}">{{ mobj.doc_relacion_numero }} - {{ mobj.doc_relacion_monto|floatformat:"0" }}</option>
+                                    {% endif %}
+                                </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_doc_motivo_ver %}
+                    <div class="col-md-3">
+                        <label>Motivo</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_documentheader_doc_relacion_cdc_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" 
+                                {% if not perms.OptsIO.form_documentheader_doc_motivo_edita %} readonly disabled {% endif %} name="doc_motivo"
+                                class="fl_select form-select form-select-lg">
+                                        <option value="Devolución">Devolución</option>
+                                        <option value="Bonificación">Bonificación</option>
+                                        <option value="Crédito incobrable">Crédito incobrable</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% if tipo == "AF" %}
+                <div class="row">
+                    {% if perms.OptsIO.form_documentheader_af_vendedor_cod_ver %}
+                        <div class="col-md-3">
+                            <label>Tipo de vendedor</label>
+                            <div class="input-group flex-nowrap fl_focus_highlight">
+                                <select 
+                                    {% if not perms.OptsIO.form_documentheader_af_vendedor_cod_edita  %}
+                                        readonly
+                                        disabled
+                                    {% endif %}
+                                    required tabindex="1" 
+                                    name="af_vendedor_cod" 
+                                    class="fl_select form-select form-select-lg">
+                                    {% if mobj %}
+                                        <option selected value="{{ mobj.af_vendedor_cod }}">{{ mobj.af_vendedor }}</option>
+                                    {% endif %}
+                                    <option selected value="1">No contribuyente</option>
+                                    <option value="2">Extranjero</option>
+                                </select>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_af_tdoc_cod_ver %}
+                    <div class="col-md-3">
+                        <label>Documento Identidad</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_documentheader_af_tdoc_cod_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_tdoc_cod" class="fl_select form-select form-select-lg">
+                                {% if mobj %}
+                                    <option selected value="{{ mobj.af_tdoc_cod }}">{{ mobj.af_tdoc }}</option>
+                                {% endif %}
+                                <option selected value="1">Cédula paraguaya</option>
+                                <option value="2">Pasaporte</option>
+                                <option value="3">Cédula extranjera</option>
+                                <option value="4">Carnet de residencia</option>
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_af_doc_id_ver %}
+                    <div class="col-md-4">
+                        <label>Numero documento</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input 
+                                {% if not perms.OptsIO.form_documentheader_af_doc_id_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_doc_id" class="fl_input form-control form-control-lg" />
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="row">
+                    {% if perms.OptsIO.form_documentheader_af_nombrefantasia_ver %}
+                    <div class="col-md-6">
+                        <label>Nombre del vendedor</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input 
+                                {% if not perms.OptsIO.form_documentheader_af_nombrefantasia_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_nombrefantasia" class="fl_input form-control form-control-lg" />
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_af_direccion_ver %}
+                    <div class="col-md-4">
+                        <label>Direccion</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <input 
+                                {% if not perms.OptsIO.form_documentheader_af_direccion_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_direccion" class="fl_input form-control form-control-lg" />
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="row">
+                    {% if perms.OptsIO.form_documentheader_af_dpto_cod_ver %}
+                    <div class="col-md-3">
+                        <label>Departamento</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_documentheader_af_dpto_cod_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_dpto_cod" class="fl_select form-select form-select-lg">
+                                {% if mobj %}
+                                    <option selected value="{{ mobj.af_dpto_cod }}">{{ mobj.af_dpto }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_af_distrito_cod_ver %}
+                    <div class="col-md-3">
+                        <label>Distrito</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_documentheader_af_distrito_cod_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_distrito_cod" class="fl_select form-select form-select-lg">
+                                {% if mobj %}
+                                    <option selected value="{{ mobj.af_distrito_cod }}">{{ mobj.af_distrito }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_af_ciudad_cod_ver %}
+                    <div class="col-md-3">
+                        <label>Ciudad</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <select 
+                                {% if not perms.OptsIO.form_documentheader_af_ciudad_cod_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                required tabindex="1" name="af_ciudad_cod" class="fl_select form-select form-select-lg">
+                                {% if mobj %}
+                                    <option selected value="{{ mobj.af_ciudad_cod }}">{{ mobj.af_ciudad }}</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            {% if tipo == "FE" or mobj.doc_tipo == "FE" %}
+                <div class="row">
+                    {% if perms.OptsIO.form_documentheader_forma_pago_id_ver %}
+                        <div class="col-md-3">
+                            <label>Forma Pago</label>
+                            <div class="input-group flex-nowrap fl_focus_highlight">
+                                <select readonly
+                                    required 
+                                    tabindex="12"  
+                                    {% if not perms.OptsIO.form_documentheader_forma_pago_id_edita %} readonly disabled {% endif %} name="forma_pago_id"
+                                    class="fl_select form-select form-select-lg">
+                                    {% if mobj.forma_pago_id %}
+                                        <option selected value="{{ mobj.forma_pago_id}}^{{ mobj.forma_pago}}">
+                                            {{ mobj.forma_pago }}
+                                        </option>
+                                    {% endif %}
+                                </select>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+            <h3 class="mt-2 mx-3" onclick="form_detalle_pedido_reset();">
+                Detalle
+            </h3>
+            <div class="card mt-2 mx-2 border-secondary">
+                <input type="hidden" name="documentdetail_id">
+                <div class="card-body">
+                    {% if not mobj %}
+                        <div class="row">
+                            {% if perms.OptsIO.form_documentheader_prod_cod_ver %}
+                                <div class="col-md-4">
+                                    <label>Producto/Servicio</label>
+                                    <div class="input-group flex-nowrap fl_focus_highlight">
+                                        {% if tipo == "AF" %}
+                                            <input 
+                                                {% if not perms.OptsIO.form_documentheader_prod_cod_edita  %}
+                                                    readonly
+                                                    disabled
+                                                {% endif %}
+                                                tabindex="12" name="prod_cod" class="fl_input form-control form-control-lg" />
+                                        {% else %}
+                                            <select 
+                                                {% if not perms.OptsIO.form_documentheader_prod_cod_edita  %}
+                                                    readonly
+                                                    disabled
+                                                {% endif %}
+                                                tabindex="12" name="prod_cod" class="fl_select form-select form-select-lg">
+                                            </select>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if perms.OptsIO.form_documentheader_precio_unitario_ver %}
+                                <div class="col-md-2">
+                                    <label>Precio</label>
+                                    <div class="input-group flex-nowrap fl_focus_highlight">
+                                        <input
+                                            {% if not perms.OptsIO.form_documentheader_precio_unitario_edita  %}
+                                                readonly
+                                                disabled
+                                            {% endif %}
+                                            tabindex="13" type="text" name="precio_unitario" class="fl_input form-control form-control-lg" 
+                                            {% if mobj %}
+                                                value="{{ mobj.precio_unitario }}"
+                                            {% endif %}
+                                            oninput="form_validation.just_number(event);calculate_producto_total()"
+                                        >
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if perms.OptsIO.form_documentheader_cantidad_ver %}
+                                <div class="col-md-2">
+                                    <label>Cantidad</label>
+                                    <div class="input-group flex-nowrap fl_focus_highlight">
+                                        <input
+                                            {% if not perms.OptsIO.form_documentheader_cantidad_edita  %}
+                                                readonly
+                                                disabled
+                                            {% endif %}
+                                            tabindex="14" type="text" name="cantidad" class="fl_input form-control form-control-lg" 
+                                            {% if mobj %}
+                                                value="{{ mobj.cantidad }}"
+                                            {% endif %}
+                                            oninput="form_validation.just_number(event);calculate_producto_total()"
+                                        >
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if perms.OptsIO.form_documentheader_d_total_ver %}
+                                <div class="col-md-2">
+                                    <label>Total</label>
+                                    <div class="input-group flex-nowrap fl_focus_highlight">
+                                        <input readonly
+                                            {% if not perms.OptsIO.form_documentheader_d_total_edita  %}
+                                                readonly
+                                                disabled
+                                            {% endif %}
+                                            tabindex="15" type="text" name="d_total" class="fl_input form-control form-control-lg" 
+                                            oninput="form_validation.just_number(event)"
+                                        >
+                                    </div>
+                                </div>
+                            {% endif %}
+                            {% if perms.OptsIO.form_documentheader_btn_detalle_ver %}
+                                <div class="col-md-2 mt-6">
+                                    <div class="input-group flex-nowrap fl_focus_highlight">
+                                        <button tabindex="16" type="button" role="button" onclick="add_documentdetail()" class="btn btn-info btn-lg">Agregar</button>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <hr class="border border-info border-1 opacity-50">
+                    <div id="document_detail_container">
+                        <table class="table table-bordered">
+                            <thead>
+                                <th>Producto/Servicio</th>
+                                <th>Precio</th>
+                                <th>Cantidad</th>
+                                <th>Exenta</th>
+                                <th>Gravada 5</th>
+                                <th>Gravada 10</th>
+                                <th>Total</th>
+                                <th>
+                                    <i class="ki-duotone ki-setting-2"></i>
+                                </th>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="documentheader_totals" class="mt-6">
+                    </div>
+                </div>
+
+            </div>
+            
+
+            <div class="row">
+                {% if perms.OptsIO.form_documentheader_observacion_ver %}
+                    <div class="col-md-8">
+                        <label>Observacion</label>
+                        <div class="input-group flex-nowrap fl_focus_highlight">
+                            <textarea
+                                {% if not perms.OptsIO.form_documentheader_observacion_edita  %}
+                                    readonly
+                                    disabled
+                                {% endif %}
+                                tabindex="17" type="text" name="observacion" class="fl_input form-control form-control-lg" 
+                            >{% if mobj %} {{ mobj.observacion }} {% endif %}</textarea>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-12 mb-3 mt-3" id="form_documentheader-btn-container">
+                {% if mobj %}
+                    {% comment %} {% if perms.OptsIO.form_documentheader_btn_actualizar_order %}
+                        <button
+                            tabindex="18"
+                            id="btn_actualizar_order"
+                            style="margin-top: 12px;" 
+                            class="btn btn-info btn-lg fl_focus_highlight">
+                            <i class="mdi mdi-update"></i>
+                            Actualizar</button>
+                    {% endif %} {% endcomment %}
+                {% else %}
+                    {% if perms.OptsIO.form_documentheader_btn_crear_order %}
+                        <button
+                            tabindex="19"
+                            id="btn_crear_order"
+                            style="margin-top: 12px;" 
+                            class="btn btn-info btn-lg fl_focus_highlight">
+                            <i class="mdi mdi-save"></i>
+                            Guardar</button>
+                    {% endif %}
+                {% endif %}
+                <div id="form_package_messages" class="mt-1"></div>
+            </div>
+        </form>
+    {% endif %}
+    
+    {% if mobj %}
+        <div id="info_order_state" class="mt-3">
+            <table class="table table-bordered">
+                <tbody>
+                    {% if perms.OptsIO.form_documentheader_info_cargado_usuario_ver %}
+                        {% if mobj.cargado_usuario %}
+                            <tr>
+                                <td>Cargado por: </td>
+                                <td>{{ mobj.cargado_usuario }} - {% if mobj.cargado_fecha %}{{ mobj.cargado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_info_procesado_usuario_ver %}
+                        {% if mobj.procesado_usuario %}
+                            <tr>
+                                <td>Procesado por: </td>
+                                <td>{{ mobj.procesado_usuario }} - {% if mobj.procesado_fecha %}{{ mobj.procesado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_info_cobrado_usuario_ver %}
+                        {% if mobj.cobrado_usuario %}
+                            <tr>
+                                <td>Cobrado por: </td>
+                                <td>{{ mobj.cobrado_usuario }} - {% if mobj.cobrado_fecha %}{{ mobj.cobrado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_info_anulado_usuario_ver %}
+                        {% if mobj.anulado_usuario %}
+                            <tr>
+                                <td>Anulado por: </td>
+                                <td>{{ mobj.anulado_usuario }} - {% if mobj.anulado_fecha %}{{ mobj.anulado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_info_actualizado_usuario_ver %}
+                        {% if mobj.actualizado_usuario %}
+                            <tr>
+                                <td>Actualizado por: </td>
+                                <td>{{ mobj.actualizado_usuario }} - {% if mobj.actualizado_fecha %}{{ mobj.actualizado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}
+                    {% if perms.OptsIO.form_documentheader_info_notificado_ver %}
+                        {% if mobj.notificado %}
+                            <tr>
+                                <td>Notificado al cliente el: </td>
+                                <td>{% if mobj.notificado_fecha %}{{ mobj.notificado_fecha|date:"d/m/y h:i:s" }} {% endif %}</td>
+                            </tr>
+                        {% endif %}
+                    {% endif %}                    
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+</div>
+<span class="d-none" id="t_doc_total">99999999</span>
+<script type="text/javascript">
+    qelem('#form_documentheader_{{ rr }} input[name=doc_fecha]').value = moment().format('YYYY-MM-DD');
+    qelem('#form_documentheader_{{ rr }} input[name=doc_vencimiento]').value = moment().format('YYYY-MM-DD');
+    document_detail = [];
+
+    form_search.se_select({
+        surl: '{% url "iom" %}',
+        dele: '#form_documentheader_{{ rr }} select[name=pdv_codigo]',
+        app_name: 'FL_Structure',
+        model_name: 'Clientes',
+        field_display: ['normalize_name', 'clientecodigo'],
+        field_id: ['clientecodigo'],
+        db_fields: ['clientecodigo', 'clientemail', 'sucursal__sucursal', 'razon_social'],
+        db_methods: ['normalize_name', 'get_ruc'],
+        qs_be: [
+            
+        ],
+        sterm: [
+            'or_clientenombre__icontains', 
+            'or_clienteapellido__icontains',
+            'or_clientecodigo__icontains'
+        ],
+        dbcon: 'fl',
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        specific_search: {
+            'module': 'apps.ReceptionPackages',
+            'package': 'mng_packages',
+            'attr': 'MPackages',
+            'mname': 'search_client',
+        },
+        theme: 'bootstrap5',
+        width: '100%',
+        dejoin: ' ',
+        templateSelection: (dd) => {
+            return dd.id;
+        },
+        {% if modal_selector %}
+          dropdownParent: $('{{ modal_selector }}'),
+        {% endif %}
+    });
+
+    
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: 'select[name=prod_cod]',
+        app_name: 'FL_Masters',
+        model_name: 'Producto',
+        field_display: ['descripcion'],
+        field_id: ['prod_cod'],
+        db_fields: ['prod_cod', 'moneda', 'descripcion','precio','exenta','g5','g10', 'porcentaje_iva__porcentaje'],
+        qs_be: [
+           {field: 'segmento', value: 'RETIRO'},
+        ],
+        dejoin_id: '^',
+        dejoin: ' ',
+        dbcon: 'default',
+        theme: 'bootstrap5',
+        width: '100%',
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+        tags: true,
+        createTag: function (params) {
+            var term = $.trim(params.term);
+            if (term === '') {
+                return null;
+            }
+            fsele = $('select[name=prod_cod]').find(`option[data-descripcion="${term}"]`);
+            if (fsele.length) {
+                $('select[name=prod_cod').val(fsele.val()).trigger('change');
+                $('select[name=prod_cod').select2('close');
+                $('input[name=precio_unitario').focus();
+                return null
+            }
+            return {
+              id: term,
+              text: term,
+              newTag: true // add additional parameters
+            }
+        },
+        {% if mobj %}
+            clean: false,
+        {% endif %}
+        init_select2: true,
+        on_focusopen: true,
+        {% if modal_selector %}
+           dropdownParent: $('{{ modal_selector }}'),
+        {% endif %}
+    }).then((rsp)=>{
+        
+        
+    })
+
+    $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').on('change', (evt)=>{
+        let dd = $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').select2('data');
+        {% if tipo == "FE" or tipo == "NC" %}
+            if (dd.length > 0) {
+                dd = dd[0];
+                get_last_number(dd.sucursal__sucursal);
+                gbe = new FormData();
+                gbe.append('module',  'apps.FL_Clients');
+                gbe.append('package',  'mng_cl');
+                gbe.append('attr',  'MCl');
+                gbe.append('mname',  'get_last_validate_j');
+                gbe.append('clientecodigo',  dd.clientecodigo);
+                gbe.append('dbcon',  'fl');
+                axios.post('{% url "iom" %}', gbe, { 
+                    headers: {
+                        'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                    }
+                }).then((rsp)=>{
+                    let rdata = rsp.data.mobj;
+                    if ((rdata.primera_carga) || (rdata.dias >= 90) ) {
+                        let mid =  `modal_${OptsIO.s4generate()}`;
+                        OptsIO.getTmpl(
+                        {
+                            url: '{% url "dtmpl" %}',
+                            dbcon: 'default',
+                            dattrs: {
+                                modal_selector: `#${mid}`,
+                                clientecodigo: dd.clientecodigo,
+                                dbcon: 'fl',
+                                e_focus: '#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]',
+                                i_destines: [
+                                    { source: 'input[name=ruc]',
+                                    dst: '#form_documentheader_{{ rr }} input[name=pdv_ruc]'
+                                    },
+                                    { source: 'input[name=nombrefactura]',
+                                    dst: '#form_documentheader_{{ rr }} input[name=pdv_nombrefactura]'
+                                    },
+                                    { source: 'input[name=email]',
+                                    dst: '#form_documentheader_{{ rr }} input[name=pdv_email]'
+                                    },
+                                    { source: 'input[name=dv]',
+                                    dst: '#form_documentheader_{{ rr }} input[name=pdv_ruc_dv]'
+                                    },
+                                    { source: 'input[name=direccion]',
+                                    dst: '#form_documentheader_{{ rr }} input[name=pdv_direccion_entrega]'
+                                    },
+                                ]
+                            },
+                            raw: true,
+                            specific_qdict: {
+                                module: 'apps.FL_Clients',
+                                package: 'mng_cl',
+                                attr: 'MCl',
+                                mname: 'get_last_validate',
+                            },
+                            template: 'FL_ClientsAdm/ValidarClienteUi.html'
+                        }
+                    ).then((rsp)=>{
+                        let data = rsp.data;
+                        UiB.drawModal({
+                                title: ``,
+                                content: data,
+                                target: '#t_modal_global',
+                                nid: mid,
+                        })
+                        UiB.kILLLoaderAjax()
+                    })
+                } else {
+                        $('#form_documentheader_{{ rr }} input[name=pdv_ruc]').val(dd.get_ruc);
+                        $('#form_documentheader_{{ rr }} input[name=pdv_nombrefactura]').val(dd.razon_social);
+                        $('#form_documentheader_{{ rr }} input[name=pdv_email]').val(dd.clientemail);
+                        form_input.calculate_dv('#form_documentheader_{{ rr }} input[name=pdv_ruc]', '#form_documentheader_{{ rr }} input[name=pdv_ruc_dv]')
+                        $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').focus();
+                    }
+                });
+                {% if tipo == "NC" %}
+                    $('#nc_doc_relacion_cdc').removeClass('d-none');
+                    $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').val(1);
+                    setTimeout(() => {
+                        $('#form_documentheader_{{ rr }} select[name=doc_relacion_cdc]').focus();
+                    }, 300);
+                    form_search.se_populate({
+                        surl: '{% url "iom" %}',
+                        dele: '#form_documentheader_{{ rr }} select[name=doc_relacion_cdc]',
+                        app_name: 'FL_Sifen',
+                        model_name: 'DocumentHeader',
+                        field_display: ['doc_numero', 'doc_total', 'doc_relacion_saldo'],
+                        field_id: ['id'],
+                        db_fields: ['id', 'doc_numero', 'doc_relacion_saldo'],
+                        db_methods: ['get_total_venta_gs'],
+                        qs_be: [
+                            { field: 'pdv_codigo', value: $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').val() },
+                            { field: 'doc_relacion_cdc__isnull', value: 1 },
+                            { field: 'doc_tipo', value: 'FE' },
+                            { field: 'doc_relacion_saldo__gt', value: 0}
+                        ],
+                        dbcon: 'default',
+                        headers: {
+                            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                        },
+                        specific_populate: {
+                            'module': 'apps.FL_Sifen',
+                            'package': 'mng_sifen',
+                            'attr': 'MSifen',
+                            'mname': 'search_factura_relacionada',
+                        },
+                        theme: 'bootstrap5',
+                        width: '100%',
+                        dejoin: ' ',
+                        clean: true,
+                        templateResult: (dd) => {
+                            if (!dd.id) {
+                                return dd.text
+                            }
+                            dset = dd.element.dataset;
+                            return $(`<span class="fw-bold fs-3">Nro:</span><span class="fw-bold fs-3 w-2">${dset.doc_numero}</span><span class="fw-bold fs-3"> Saldo: </span><span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(dset.doc_relacion_saldo))}</span> Total: <span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(dset.get_total_venta_gs))}</span>`)
+                        },
+                        init_select2: true,
+                        templateSelection: (dd) => {
+                            if (dd.id) {
+                                dset = dd.element.dataset;
+                                return $(`<span class="fw-bold fs-3">Nro:</span><span class="fw-bold fs-3 w-2">${dset.doc_numero}</span><span class="fw-bold fs-3"> Saldo: </span><span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(dset.doc_relacion_saldo))}</span> Total: <span class="badge badge-success fs-3 w-2">${UiN.formatNumberP(Math.round(dset.get_total_venta_gs))}</span>`)
+                            }
+                        },
+                        {% if modal_selector %}
+                            dropdownParent: $('{{ modal_selector }}'),
+                        {% endif %}
+                    }).then((rsp)=>{
+                        if (rsp.data.qs.length > 0) {
+                            $('#form_documentheader_{{ rr }} select[name=doc_relacion_cdc]').val(rsp.data.qs[0].id);
+                            $('#form_documentheader_{{ rr }} select[name=doc_relacion_cdc]').trigger('change');
+
+                        }
+                    });
+                {% endif %}
+            }
+        {% endif %}
+
+        {% if tipo == "AF" %}
+            tdata = new FormData();
+            tdata.append('module','apps.OptsIO');
+            tdata.append('package','io_serial');
+            tdata.append('attr', 'IoS');
+            tdata.append('mname', 'seModel')
+            tdata.append('model_app_name', 'FL_Structure');
+            tdata.append('model_name', 'Clientes');
+            tdata.append('fields', jfy([
+                'clientecodigo', 'clientemail', 'sucursal__sucursal'
+            ]));
+            tdata.append('methods', jfy([
+                'normalize_name', 'get_ruc'
+            ]));
+            tdata.append('dbcon', 'fl');
+            tdata.append('mquery', jfy([{'field': 'clientecodigo', 'value':  17460 }]));
+            axios.post('{% url "iom" %}', tdata, {headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}}).then((rsp)=>{
+                dd = rsp.data.qs[0];
+                $('#form_documentheader_{{ rr }} input[name=pdv_ruc]').val(dd.get_ruc);
+                $('#form_documentheader_{{ rr }} input[name=pdv_nombrefactura]').val(dd.razon_social);
+                $('#form_documentheader_{{ rr }} input[name=pdv_email]').val(dd.clientemail);
+                form_input.calculate_dv('#form_documentheader_{{ rr }} input[name=pdv_ruc]', '#form_documentheader_{{ rr }} input[name=pdv_ruc_dv]')
+                $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').val(1)
+                $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').attr('readonly', 'readonly');
+                $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').select2('enable', false);
+                get_last_number(dd.sucursal__sucursal);
+                setTimeout(()=>{
+                    $('#form_documentheader_{{ rr }} input[name=af_doc_id]').focus();
+                }, 900)
+                
+            })
+        {% endif %}
+    })
+
+    {% if tipo == "AF" %}
+        var data = {
+            id: 17460,
+            text: '17460'
+        };
+        var newOption = new Option(data.text, data.id, false, false);
+        $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').append(newOption).trigger('change');
+
+    {% endif %}
+
+    $('#form_documentheader_{{ rr }} select[name=doc_relacion_cdc]').on('change', (evt)=> {
+        //Get the invoice detail in set the first item as the 
+        let doc_pk = $('#form_documentheader_{{ rr }} select[name=doc_relacion_cdc]').val();
+        let moneda = $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val();
+        tdata = new FormData();
+        tdata.append('module','apps.OptsIO');
+        tdata.append('package','io_serial');
+        tdata.append('attr', 'IoS');
+        tdata.append('mname', 'seModel')
+        tdata.append('model_app_name', 'FL_Sifen');
+        tdata.append('model_name', 'DocumentDetail');
+        tdata.append('fields', jfy([
+            'prod_autocreado','prod_cod','prod_descripcion','precio_unitario',
+            'precio_unitario_siniva','cantidad','exenta',
+            'iva_5','gravada_5','gravada_10',
+            'iva_10','afecto',
+        ]));
+        tdata.append('dbcon', 'default');
+        tdata.append('mquery', jfy([{'field': 'documentheaderobj__pk', 'value':  doc_pk }]));
+        axios.post('{% url "iom" %}', tdata, {headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}}).then((rsp)=>{
+            if (rsp.data.qs[0].prod_autocreado === true) {
+                $('#form_documentheader_{{ rr }} select[name=prod_cod]').val(null).trigger('change');
+                var newOption = new Option(rsp.data.qs[0].prod_descripcion, 'prod_autocreado', false, false);
+                newOption.dataset.descripcion = rsp.data.qs[0].prod_descripcion;
+                newOption.dataset.moneda = 'GS'
+                newOption.dataset.prod_autocreado = true
+                $('#form_documentheader_{{ rr }} select[name=prod_cod]').append(newOption).trigger('change'); 
+                $('#form_documentheader_{{ rr }} select[name=prod_cod]').val('prod_autocreado').trigger('change');
+            } else {
+                $('#form_documentheader_{{ rr }} select[name=prod_cod]').val(rsp.data.qs[0].prod_cod).trigger('change');
+            }
+            qelem('#form_documentheader_{{ rr }} input[name=cantidad]').value = 1;
+            qelem('#form_documentheader_{{ rr }} input[name=d_total]').value = '';
+            setTimeout(()=>{
+                qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').value = '';
+                qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').focus();
+            }, 900)
+            // rsp.data.qs.forEach((dobj)=> {
+            //     document_detail.push({
+            //         moneda: moneda,
+            //         prod_cod: parseInt(dobj.prod_cod ),
+            //         prod_descripcion: dobj.prod_descripcion ,
+            //         precio_unitario: parseFloat(dobj.precio_unitario ),
+            //         precio_unitario_siniva: parseFloat(dobj.precio_unitario_siniva ),
+            //         cantidad: parseFloat(dobj.cantidad ),
+            //         exenta: parseFloat(dobj.exenta ),
+            //         iva_5: parseFloat(dobj.iva_5 ),
+            //         gravada_5: parseFloat(dobj.gravada_5 ),
+            //         gravada_10: parseFloat(dobj.gravada_10 ),
+            //         iva_10: parseFloat(dobj.iva_10 ),
+            //         afecto: parseFloat(dobj.afecto ),
+            //         total: parseFloat(dobj.afecto ) + parseFloat(dobj.exenta)
+            //     })
+            // });
+        })
+    })
+
+    $('#form_documentheader_{{ rr }} select[name=prod_cod]').on('change', (evt)=>{
+        let dd = $('#form_documentheader_{{ rr }} select[name=prod_cod]').select2('data');
+        dd = dd[0];
+        //console.log(dd.element.dataset, 'PRODUCTO ELEGIDO')
+        let moneda = $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val();
+        let tasa_cambio = parseFloat($('#form_documentheader_{{ rr }} input[name=tasa_cambio]').val());
+        if (moneda === '' || moneda === undefined) {
+            UiB.MsgSwall({
+                ttype: 'warning',
+                msg: `<span class="fs-1 badge badge-warning">Favor defina una moneda</span>`,
+                cancel_btn: false
+            })
+            return false
+        }
+        
+        if (parseFloat(dd.element.dataset.precio) > 0) {
+            let prod_moneda = dd.element.dataset.moneda;
+            let fixing = 0;
+            precio = parseFloat(dd.element.dataset.precio);
+            if ((moneda === 'GS') && (prod_moneda === 'USD')) {
+                precio = parseFloat(precio * tasa_cambio);
+            }
+            if ((moneda === 'USD') && (prod_moneda === 'GS')) {
+                precio = parseFloat(precio / tasa_cambio);
+            }
+            if ((moneda === 'GS') && (prod_moneda === 'GS')) {
+                precio = parseInt(precio);
+            }
+            f_cal = ivn.calculate_price(dd.element.dataset, precio, 1)
+            /* precio = parseInt(precio);
+            iva_5 = 0
+            iva_10 = 0
+            g5 = 0
+            g10 = 0
+            if (dd.element.dataset.exenta) {
+                exe = (precio*dd.element.dataset.exenta)/100
+            }
+            if (dd.element.dataset.g5) {
+                g5 = (precio*dd.element.dataset.g5)/100
+                iva_5 = (g5*5)/100
+            }
+            if (dd.element.dataset.g10) {
+                g10 = (precio*dd.element.dataset.g10)/100
+                iva_10 = (g10*5)/100
+            }
+            console.log(`
+                Moneda Documento ${moneda}
+                Moneda producto ${prod_moneda}
+                Precio del producto ${precio}
+                %Exenta ${dd.element.dataset.exenta} = ${exe}
+                %G5 ${dd.element.dataset.g5} = ${g5}
+                %I5 ${dd.element.dataset.g5} = ${iva_5}
+                %G10 ${dd.element.dataset.g10} = ${g10}
+                %I10 ${dd.element.dataset.g5} = ${iva_10}
+                %Exenta + %G5 + %G10 = ${(exe+g5+iva_5+g10+iva_10).toFixed(0)}
+            `)
+            precio += (iva_5+iva_10) */
+            if (we.isDecimal(f_cal.precio_unitario)) {
+                $('#form_documentheader_{{ rr }} input[name=precio_unitario]').val(f_cal.precio_unitario.toFixed(2));
+            } else {
+                $('#form_documentheader_{{ rr }} input[name=precio_unitario]').val(f_cal.precio_unitario.toFixed(0));
+            }
+            $('#form_documentheader_{{ rr }} input[name=precio_unitario]')
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-precio_unitario', precio);
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-moneda', prod_moneda);
+            $('#form_documentheader_{{ rr }} input[name=cantidad]').focus();
+        } else {
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').removeAttribute('data-precio_unitario');
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-moneda', moneda);
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-manual', 'SI');
+            $('#form_documentheader_{{ rr }} input[name=precio_unitario]').val('');
+            $('#form_documentheader_{{ rr }} input[name=precio_unitario]').focus();
+            
+        }
+        calculate_producto_total();
+    })
+    
+    $('#form_documentheader_{{ rr }} select[name=doc_moneda]').on('change', (evt)=>{
+        let moneda = $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val();
+        if (document_detail.length > 0 ) {
+            UiB.MsgSwall({
+                ttype: 'warning',
+                msg: `<span class="fs-1 badge badge-warning">Los detalles del documento se borrara, esta seguro ?</span>`,
+                cancel_btn: false
+            }).then((rsp)=> {
+                if (rsp.isConfirmed) {
+                    document_detail = [];
+                    populate_documentdetail();
+                } else {
+                    if (moneda === 'USD') {
+                        $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val('GS');
+                    } else {
+                        $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val('USD');
+                    }
+                    
+                }
+            })
+        }
+    })
+    
+    calculate_producto_total = () => {
+        precio_unitario = parseFloat($('#form_documentheader_{{ rr }} input[name=precio_unitario]').val());
+        cantidad = parseFloat($('#form_documentheader_{{ rr }} input[name=cantidad]').val());
+        if (we.isDecimal(precio_unitario)) {
+            d_total = precio_unitario*cantidad;
+        } else {
+            d_total = Math.round(precio_unitario*cantidad);
+        }
+        if (!isNaN(d_total)) {
+            $('#form_documentheader_{{ rr }} input[name=d_total]').val(d_total);
+        } else {
+            $('#form_documentheader_{{ rr }} input[name=d_total]').val(null);
+        }
+    }
+
+    getTasaUsd = () => {
+        let gbe = new FormData();
+        gbe.append('module', 'apps.ReceptionPackages');
+        gbe.append('package', 'mng_packages');
+        gbe.append('attr', 'MPackages');
+        gbe.append('mname', 'get_paquete_mdata');
+        gbe.append('dbcon', 'fl')
+        axios.post(
+            '{% url "iom" %}', 
+            gbe, 
+            { 
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            }
+        ).then((rsp)=>{
+            tasa = rsp.data.tasa_cambio;
+            $('#form_documentheader_{{ rr }} input[name=tasa_cambio]').val(tasa);
+        })
+    }
+
+    calculate_price_oo = (pobj, precio_unitario, cantidad) => {
+        d_total = parseFloat(precio_unitario*cantidad);
+        p_exenta = parseFloat(pobj.exenta);
+        p_g5 = parseFloat(pobj.g5);
+        p_g10 = parseFloat(pobj.g10);
+        exenta = 0
+        iva_5 = 0
+        gravada_5 = 0
+        iva_10 = 0
+        gravada_10 = 0
+        precio_unitario_siniva = 0
+        if (p_exenta) {
+            exenta = (d_total*p_exenta)/100
+        }
+        if (p_g5) {
+            gravada_5 = (d_total*p_g5)/100
+            iva_5 = gravada_5-(gravada_5/1.05)
+        }
+        if (p_g10) {
+            gravada_10 = (d_total*p_g10)/100
+            iva_10 = gravada_10-(gravada_10/1.1)
+        }
+        precio_unitario_siniva = precio_unitario - (iva_10+iva_5)
+        console.log(`
+            Calculando precio
+                PU = ${precio_unitario}
+                EXE = ${exenta}
+                G5 = ${gravada_5}
+                I5 = ${iva_5}
+                G10 = ${gravada_10}
+                I10 = ${iva_10}
+                PUS = ${precio_unitario_siniva}
+                EXE + G5 + G10 = ${exenta+gravada_5+gravada_10}
+                IVA5+IVA10 = ${iva_5+iva_10}
+        `)
+        return {
+            'exenta': exenta,
+            'iva_5': iva_5,
+            'gravada_5': gravada_5,
+            'iva_10': iva_10,
+            'gravada_10': gravada_10,
+            'precio_unitario_siniva': precio_unitario_siniva,
+            'precio_unitario': precio_unitario
+        }
+    }
+
+    add_documentdetail = () => {
+        not_recal = false;
+        change_currency = false;
+        let moneda = $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val();
+        if (moneda === '' || moneda === undefined) {
+            UiB.MsgSwall({
+                ttype: 'warning',
+                msg: `<span class="fs-1 badge badge-warning">Favor defina una moneda</span>`,
+                cancel_btn: false
+            })
+            return false
+        }
+        let tasa_cambio = parseFloat($('#form_documentheader_{{ rr }} input[name=tasa_cambio]').val());
+        documentdetail_id = qelem('#form_documentheader_{{ rr }} input[name=documentdetail_id]').value;
+        prod_cod = $('#form_documentheader_{{ rr }} select[name=prod_cod]').val();
+        {% if tipo == "AF" %}
+            prod_cod = $('#form_documentheader_{{ rr }} input[name=prod_cod]').val();
+            let prodobj = [{
+                element: {
+                    dataset: {
+                        exenta: 0,
+                        g5: 0,
+                        g10: 100,
+                        porcentaje_iva__porcentaje: 10,
+                        descripcion: prod_cod,
+                        moneda: 'GS'
+                    }
+                }
+            }]
+        {% else %}
+            let prodobj = $('#form_documentheader_{{ rr }} select[name=prod_cod]').select2('data');
+            console.log(prodobj,
+                isNaN(parseInt(prodobj.id)),
+                'isNaN'
+            );
+            if ((prodobj[0].selected === false) && (isNaN(parseInt(prodobj[0].id)) === true )) {
+                prod_cod = 1850
+                prodobj = [{
+                    element: {
+                        dataset: {
+                            exenta: 0,
+                            g5: 0,
+                            g10: 100,
+                            porcentaje_iva__porcentaje: 10,
+                            descripcion: prodobj[0].text,
+                            moneda: 'GS'
+                        }
+                    }
+                }]
+                console.log('Redefine', prodobj)
+            }
+            if (prodobj[0].id === 'prod_autocreado') {
+                prod_cod = 1850
+                prodobj = [{
+                    element: {
+                        dataset: {
+                            exenta: 0,
+                            g5: 0,
+                            g10: 100,
+                            porcentaje_iva__porcentaje: 10,
+                            descripcion: prodobj[0].text,
+                            moneda: 'GS'
+                        }
+                    }
+                }]
+                console.log('Redefine prod_autocreado', prodobj)
+            }
+        {% endif %}
+        prodobj = prodobj[0].element.dataset;
+        console.log(prodobj)
+        prod_descripcion = prodobj.descripcion;
+        prod_moneda = prodobj.moneda;
+        {% if tipo == "FE" %}
+            precio_unitario = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').getAttribute('data-precio_unitario'));
+            if (isNaN(precio_unitario)) {
+                precio_unitario = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').value);
+                qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-precio_unitario', precio_unitario);
+                qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-moneda', moneda);
+                prod_moneda = moneda;
+            }
+        {% endif %}
+        {% if tipo == "NC" or tipo == "AF" %}
+                precio_unitario = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').value);
+                qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-precio_unitario', precio_unitario);
+                qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').setAttribute('data-moneda', 'GS');
+        {% endif %}
+        pmanual = qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').getAttribute('data-manual');
+        if (pmanual === 'SI') {
+            prod_moneda = 'GS'
+            not_recal = true;
+            change_currency = true;
+        }
+        console.log(precio_unitario,prodobj, 'k')
+        cantidad = qelem('#form_documentheader_{{ rr }} input[name=cantidad]').value;
+        d_total = qelem('#form_documentheader_{{ rr }} input[name=d_total]').value;
+        console.log(
+            'codigo',prod_cod,
+            'precio_unitario',precio_unitario,
+            'cantidad',cantidad,
+            'd_total',d_total
+        )
+        if (prod_cod == '' || prod_cod === undefined || precio_unitario == '' || cantidad == '' || d_total == '') {
+            UiB.BeMsgHandle({rsps: {'error': 'Debe llenar todos los campos del detalle del documento'}});
+            return;
+        }
+        //Se asume que los precios seran cargados en dolares
+        if (moneda === 'USD') {
+            precio_unitario = precio_unitario * tasa_cambio;
+            moneda = 'GS'
+        }
+
+        //if ((moneda === 'GS') && (prod_moneda === 'USD')) {
+        //    precio_unitario = precio_unitario * tasa_cambio;
+        //}
+        //if ((moneda === 'USD') && (prod_moneda === 'GS')) {
+        //    precio_unitario = precio_unitario / tasa_cambio;
+        //}
+        
+        cantidad = parseFloat(cantidad);
+        d_total = parseFloat(d_total);
+        //console.log(precio_unitario, cantidad)
+        pcalc = ivn.calculate_price(prodobj, precio_unitario, cantidad);
+        //console.log(pcalc)
+        if ((documentdetail_id !== undefined) && (documentdetail_id !== '')) {
+            documentdetail_id = parseInt(documentdetail_id);
+            pk = document_detail[documentdetail_id].pk;
+            document_detail[documentdetail_id] = {
+                pk: pk,
+                doc_moneda: moneda,
+                moneda: prod_moneda,
+                prod_cod: prod_cod,
+                prod_descripcion: prod_descripcion,
+                precio_unitario_source: precio_unitario,
+                precio_unitario: pcalc.precio_unitario,
+                precio_unitario_siniva: pcalc.precio_unitario_siniva,
+                cantidad: cantidad,
+                exenta: pcalc.exenta,
+                iva_5: pcalc.iva_5,
+                gravada_5: pcalc.gravada_5,
+                gravada_10: pcalc.gravada_10,
+                iva_10: pcalc.iva_10,
+                afecto: gravada_5+gravada_10,
+                total: (gravada_5+gravada_10)+exenta,
+                not_recal: not_recal,
+                change_currency: change_currency
+            }
+            let gbe = new FormData();
+            gbe.append('module', 'apps.OptsIO');
+            gbe.append('package', 'io_maction');
+            gbe.append('attr', 'IOMaction');
+            gbe.append('mname', 'process_record');
+            gbe.append('model_app_name', 'FL_Sifen');
+            gbe.append('model_name', 'DocumentDetail');
+            gbe.append('dbcon', 'default')
+            gbe.append('uc_fields', jfy(document_detail[documentdetail_id]));
+            gbe.append('b_vals', jfy([]))
+            gbe.append('c_a', jfy([
+                {
+                    'module': 'apps.FL_Sifen',
+                    'package': 'mng_sifen',
+                    'attr': 'MSifen',
+                    'mname': 'actualizar_document_detail',
+                    'cont': false,
+                    'show_success': true
+                },
+            ]))
+            gbe.append('a_vals', jfy([]));
+            axios.post(
+                '{% url "iom" %}', 
+                gbe, 
+                { headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                    }
+                })
+            .then((rsp)=>{
+                msgs = rsp.data.msgs;
+                got_error = false;
+                completo = false;
+                msgs.forEach((ee)=>{
+                    if (ee.error) {
+                        got_error = true;
+                    }
+                })
+                if (Array.isArray(msgs)) {
+                    UiB.BeMsgHandle({
+                        rsps: msgs,
+                        timer: 3000,
+                    })
+                }
+                return msgs;
+            }).then((msgs)=>{
+                if (got_error === false) {
+                    populate_documentdetail();
+                    qelem('#form_documentheader_{{ rr }} input[name=documentdetail_id]').value = '';
+                    $('#form_documentheader_{{ rr }} select[name=prod_cod]').val(null).trigger('change');
+                    qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').value = '';
+                    qelem('#form_documentheader_{{ rr }} input[name=cantidad]').value = '';
+                    qelem('#form_documentheader_{{ rr }} input[name=d_total]').value = '';
+                    {% if t_guid %}
+                        $('#{{t_guid}}').DataTable().ajax.reload();
+                    {% endif %}
+                }
+            }).catch((err)=>{
+                UiB.MsgError(err);
+            }).finally(()=>{
+                let ft = document.querySelector('#form_documentheader_{{ rr }}');
+                if (ft) {
+                    ft.classList.remove('overlay-container');
+                    ft.classList.remove('overlay');
+                }
+            });
+        } else {
+            document_detail.push({
+                doc_moneda: moneda,
+                moneda: prod_moneda,
+                prod_cod: prod_cod,
+                prod_descripcion: prod_descripcion,
+                precio_unitario_source: precio_unitario,
+                precio_unitario: pcalc.precio_unitario,
+                precio_unitario_siniva: pcalc.precio_unitario_siniva,
+                cantidad: cantidad,
+                exenta: pcalc.exenta,
+                iva_5: pcalc.iva_5,
+                gravada_5: pcalc.gravada_5,
+                gravada_10: pcalc.gravada_10,
+                iva_10: pcalc.iva_10,
+                afecto: gravada_5+gravada_10,
+                total: (gravada_5+gravada_10)+exenta,
+                not_recal: not_recal,
+                change_currency: change_currency
+            })
+            populate_documentdetail();
+            qelem('#form_documentheader_{{ rr }} input[name=documentdetail_id]').value = '';
+            $('#form_documentheader_{{ rr }} select[name=prod_cod]').val(null).trigger('change');
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').value = '';
+            qelem('#form_documentheader_{{ rr }} input[name=cantidad]').value = '';
+            qelem('#form_documentheader_{{ rr }} input[name=d_total]').value = '';
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').removeAttribute('data-precio_unitario');
+            qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').removeAttribute('data-moneda');
+        }
+    }
+
+    remove_documentdetail = (idx)=>{
+        document_detail.splice(idx, 1);
+        populate_documentdetail();
+    }
+
+    remove_documentdetail_db = (idx, pk) => {
+        UiB.MsgSwall({
+            ttype: 'warning',
+            msg: `Esta seguro de eliminar este producto del pedido ?
+            <br>
+            Si elimina todos los productos, el pedido se eliminara tambien
+            `,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let gbe = new FormData();
+                gbe.append('module', 'apps.OptsIO');
+                gbe.append('package', 'io_maction');
+                gbe.append('attr', 'IOMaction');
+                gbe.append('mname', 'process_record');
+                gbe.append('model_app_name', 'FL_Sifen');
+                gbe.append('model_name', 'DocumentDetail');
+                gbe.append('dbcon', 'default')
+                gbe.append('uc_fields', jfy({'id': pk}));
+                gbe.append('b_vals', jfy([]))
+                gbe.append('c_a', jfy([
+                    {
+                        'module': 'apps.FL_Sifen',
+                        'package': 'mng_sifen',
+                        'attr': 'MSifen',
+                        'mname': 'eliminar_document_detail',
+                        'cont': false,
+                        'show_success': true
+                    },
+                ]))
+                gbe.append('a_vals', jfy([]));
+                axios.post(
+                    '{% url "iom" %}', 
+                    gbe, 
+                    { headers: {
+                        'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                        }
+                    })
+                .then((rsp)=>{
+                    msgs = rsp.data.msgs;
+                    got_error = false;
+                    completo = false;
+                    msgs.forEach((ee)=>{
+                        if (ee.error) {
+                            got_error = true;
+                        }
+                        if (ee.completo) {
+                            completo = true;
+                        }
+                    })
+                    if (Array.isArray(msgs)) {
+                        UiB.BeMsgHandle({
+                            rsps: msgs,
+                            timer: 3000,
+                        })
+                    }
+                    return msgs;
+                }).then((msgs)=>{
+                    if (got_error === false) {
+                        document_detail.splice(idx, 1);
+                        populate_documentdetail();
+                        if (completo === true) {
+                            {% if modal_selector %}
+                                my_modal = document.querySelector('{{ modal_selector }}')
+                                modalobj = bootstrap.Modal.getInstance(my_modal) // Retrieve a Carousel instance
+                                modalobj.dispose();
+                                qelem('{{ modal_selector }}').remove();
+                            {% endif %}
+                        }
+                        {% if t_guid %}
+                            $('#{{t_guid}}').DataTable().ajax.reload();
+                        {% endif %}
+                    }
+                }).catch((err)=>{
+                    UiB.MsgError(err);
+                }).finally(()=>{
+                    let ft = document.querySelector('#form_documentheader_{{ rr }}');
+                    if (ft) {
+                        ft.classList.remove('overlay-container');
+                        ft.classList.remove('overlay');
+                    }
+                });
+            }
+        })
+    }
+
+    edit_documentdetail_db = (idx, pk) => {
+        item = document_detail[idx];
+        qelem('#form_documentheader_{{ rr }} input[name=documentdetail_id]').value = idx;
+        $('#form_documentheader_{{ rr }} select[name=prod_cod]').val(item.prod_descripcion);
+        qelem('#form_documentheader_{{ rr }} input[name=precio_unitario]').value = item.precio_unitario;
+        qelem('#form_documentheader_{{ rr }} input[name=cantidad]').value = item.cantidad;
+        qelem('#form_documentheader_{{ rr }} input[name=d_total]').value = item.exenta+(item.gravada_10+item.gravada_5);
+    }
+
+    populate_documentdetail = ()=>{
+        let moneda = $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val();
+        let tf = 0;
+        if (moneda === 'GS') {
+            tf = 0;
+        }
+
+        $('#document_detail_container tbody').html('');
+        document_detail.forEach((item, index) => {
+            acs = `<button type="button" class="btn btn-danger btn-sm" onclick="remove_documentdetail(${index})">
+                    <i class="mdi mdi-delete"></i>
+                    </button>`
+            if (item.hasOwnProperty('pk')) {
+                acs = `<button type="button" class="btn btn-danger btn-sm" onclick="remove_documentdetail_db(${index}, ${item.pk})">
+                            <i class="mdi mdi-delete"></i>
+                       </button>
+                       <button type="button" class="btn btn-info btn-sm" onclick="edit_documentdetail_db(${index}, ${item.pk})">
+                         <i class="mdi mdi-square-edit-outline"></i>
+                        </button>
+                    `
+            }
+            {% if mobj %}
+                    acs = '';
+            {% endif %}
+            $('#document_detail_container tbody').append(`
+                <tr>
+                    <td>${item.prod_descripcion}</td>
+                    <td>${UiN.formatNumberU(item.precio_unitario.toFixed(tf))}</td>
+                    <td>${item.cantidad}</td>
+                    <td>${UiN.formatNumberU(item.exenta.toFixed(tf))}</td>
+                    <td>${UiN.formatNumberU(item.gravada_5.toFixed(tf))}</td>
+                    <td>${UiN.formatNumberU(item.gravada_10.toFixed(tf))}</td>
+                    <td>${UiN.formatNumberU(item.total.toFixed(tf))}</td>
+                    <td>
+                        ${acs}
+                    </td>
+                </tr>
+            `)
+        });
+        //if (document_detail.length > 0) {
+        //    $('#form_documentheader_{{ rr }} select[name=clientecodigo]').select2('enable', false);
+        //} else {
+        //    $('#form_documentheader_{{ rr }} select[name=clientecodigo]').select2('enable');
+        //}
+        calc_documentheader_totals();
+    }
+
+    calc_documentheader_totals = () => {
+        $('#documentheader_totals').html('');
+        $('#t_doc_total').html(99999999);
+        let tasa_cambio = parseFloat($('#form_documentheader_{{ rr }} input[name=tasa_cambio]').val());
+        let moneda = $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val();
+        // Conversión de moneda a GS si es necesario
+        if (moneda === 'USD') {
+            moneda = 'GS';
+        }
+        let exenta = 0.0;
+        let iva_5 = 0.0;
+        let gravada_5 = 0.0;
+        let iva_10 = 0.0;
+        let gravada_10 = 0.0;
+        let total = 0.0;
+        
+
+        document_detail.forEach((item, index) => {
+            exenta += item.exenta;
+            iva_5 += item.iva_5;
+            gravada_5 += item.gravada_5;
+            iva_10 += item.iva_10;
+            gravada_10 += item.gravada_10;
+            
+        });
+        total = (gravada_5+gravada_10)+exenta;
+        console.log(total, moneda, 'TOTAL')
+        if (total) {
+            if (moneda === 'GS') {
+                exenta_gs = exenta;
+                iva_5_gs = iva_5;
+                gravada_5_gs = gravada_5;
+                iva_10_gs = iva_10;
+                gravada_10_gs = gravada_10;
+                total_gs = parseInt(total);
+                exenta = exenta / tasa_cambio
+                iva_5 = iva_5 / tasa_cambio
+                gravada_5 = gravada_5 / tasa_cambio
+                iva_10 = iva_10 / tasa_cambio
+                gravada_10 = gravada_10 / tasa_cambio
+                total = total / tasa_cambio
+                redondeo_gs = UiN._roundToNearest100(total_gs) - total_gs;
+            } else {
+                exenta_gs = exenta * tasa_cambio;
+                iva_5_gs = iva_5 * tasa_cambio;
+                gravada_5_gs = gravada_5 * tasa_cambio;
+                iva_10_gs = iva_10 * tasa_cambio;
+                gravada_10_gs = gravada_10 * tasa_cambio;
+                total_gs = parseInt(total * tasa_cambio);
+                redondeo_gs = UiN._roundToNearest100(total_gs) - total_gs;
+            }
+
+            console.log(redondeo_gs, 'REDONDEO', total_gs);
+            
+            $('#documentheader_totals').html(`
+                <div class="row">
+                    <div class="col-auto usd-calrec">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberU(exenta.toFixed(2))}</span>
+                            <span class="fs-1 badge badge-light-info fs-base"><i class="mdi mdi-currency-usd"></i></span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Exenta</span>
+                    </div>
+                    <div class="col-auto usd-calrec">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberU(gravada_5.toFixed(2))}</span>
+                            <span class="fs-1 badge badge-light-info fs-base"><i class="mdi mdi-currency-usd"></i></span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Gravada 5</span>
+                    </div>
+                    <div class="col-auto usd-calrec">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberU(gravada_10.toFixed(2))}</span>
+                            <span class="fs-1 badge badge-light-info fs-base"><i class="mdi mdi-currency-usd"></i></span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Gravada 10</span>
+                    </div>
+                    <div class="col-auto usd-calrec">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberU((total).toFixed(2))}</span>
+                            <span class="fs-1 badge badge-light-info fs-base"><i class="mdi mdi-currency-usd"></i></span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Total</span>
+                    </div>
+                    <hr>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberP(Math.round(exenta_gs))}</span>
+                            <span class="fs-1 badge badge-light-success fs-base">Gs</span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Exenta</span>
+                    </div>
+
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberP(Math.round(gravada_5_gs))}</span>
+                            <span class="fs-1 badge badge-light-success fs-base">Gs</span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Gravada 5</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberP(Math.round(gravada_10_gs))}</span>
+                            <span class="fs-1 badge badge-light-success fs-base">Gs</span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Gravada 10</span>
+                    </div>                    
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberP(Math.round(total_gs))}</span>
+                            <span class="fs-1 badge badge-light-success fs-base">Gs</span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Sub Total</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberP(Math.round(redondeo_gs))}</span>
+                            <span class="fs-1 badge badge-light-success fs-base">Gs</span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Redondeo</span>
+                    </div>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center">
+                            <span class="fs-2hx fw-bold text-gray-900 me-2 lh-1 ls-n2">${UiN.formatNumberP(UiN._roundToNearest100(total_gs))}</span>
+                            <span class="fs-1 badge badge-light-success fs-base">Gs</span>
+                        </div>
+                        <span class="text-gray-500 pt-1 fw-semibold fs-6">Total</span>
+                    </div>
+                </div>
+            `)
+            $('#t_doc_total').html(UiN._roundToNearest100(total_gs));
+            
+        }
+    }
+
+    form_documentheader_readonly = () => {
+        const form = document.getElementById('form_documentheader_{{ rr }}');
+        const elements = form.elements;
+        for (let i = 0; i < elements.length; i++) {
+            const element = elements[i];
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA' || element.tagName === 'SELECT') {
+                element.readOnly = true;
+            }
+        }
+        $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').select2('enable', false);
+        $('#form_documentheader_{{ rr }} select[name=prod_cod]').select2('enable', false);
+        $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').prop('disabled', true);
+        $('#form_documentheader_{{ rr }} select[name=doc_moneda]').prop('disabled', true);
+        $('#form_documentheader_{{ rr }} select[name=forma_pago_id]').prop('disabled', true);
+    }
+
+    form_documentheader_reset = () => {
+        $('#form_documentheader_{{ rr }} input[name=pdv_ruc]').val('');
+        $('#form_documentheader_{{ rr }} input[name=pdv_ruc_dv]').val('');
+        
+        $('#form_documentheader_{{ rr }} input[name=pdv_nombrefactura]').val('');
+        $('#form_documentheader_{{ rr }} input[name=pdv_email]').val('');
+        $('#form_documentheader_{{ rr }} input[name=doc_numero]').val('');
+        $('#form_documentheader_{{ rr }} input[name=doc_vencimiento]').val('');
+        $('#form_documentheader_{{ rr }} input[name=precio_unitario]').val('');
+        $('#form_documentheader_{{ rr }} input[name=cantidad]').val('');
+        $('#form_documentheader_{{ rr }} input[name=d_total]').val('');
+        $('#form_documentheader_{{ rr }} textarea[name=observacion]').val('');
+        
+        $('#form_documentheader_{{ rr }} select[name=pdv_codigo]').val(null).trigger('change');
+        $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo]').val('');
+        $('#form_documentheader_{{ rr }} select[name=doc_moneda]').val('GS');
+        $('#form_documentheader_{{ rr }} select[name=prod_cod]').val(null).trigger('change');
+
+        document_detail = [];
+        populate_documentdetail();
+    }
+
+
+    qelem('#form_documentheader_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        {% if mobj.anulado_fecha %}
+            UiB.BeMsgHandle({
+                rsps: [{'error': 'El documento esta anulado, no se puede modificar'}],
+                timer: 5000,
+                //n_modal: '{{ modal_selector }}',
+            })
+            return false;
+        {% endif %}
+        btn_submitter_id = evt.submitter.attributes['id'].value;
+        console.log(evt.submitter);
+        if (document_detail.length == 0) {
+            UiB.BeMsgHandle({
+                rsps: [{'error': 'Debe agregar al menos un producto'}],
+                timer: 5000,
+                //n_modal: '{{ modal_selector }}',
+            })
+            return false;
+        }
+        var fdata = new FormData();
+        fdata.append('module', 'apps.OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('dbcon', 'default')
+        let formData = new FormData(event.target);
+        let edata = form_serials.form_to_json(formData);
+        {% if tipo == "FE" %}
+            fpi = edata.forma_pago_id.split('^')
+            delete edata['forma_pago_id'];
+            ti_pagos = {
+                'forma_pago_id': fpi[0],
+                'forma_pago': fpi[1],
+            }
+            edata['ti_pagos'] = ti_pagos;
+        {% endif %}
+        seldis = [
+            'pdv_codigo', 
+            'doc_moneda', 
+            'doc_cre_tipo',
+        ]
+        seldis.forEach((idx) => {
+            vv = $(`#form_documentheader_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        edata['detail'] = document_detail;
+        edata['send_invoice'] = true;
+        //if (edata.doc_cre_tipo_cod === "2") {
+        //    edata['insert_pago'] = true;
+        //    edata['ti_pagos'] = {
+        //        'moneda': edata.doc_moneda,
+        //        'forma_pago_id': 8, //Factura Crédito
+        //    };
+        //}
+        fdata.append('uc_fields', jfy(edata));
+        console.log(jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([
+            {% if mobj %}
+                {
+                    'module': 'apps.FL_Sifen',
+                    'package': 'mng_sifen',
+                    'attr': 'MSifen',
+                    'mname': 'actualizar_order',
+                    'cont': false,
+                    'show_success': true
+                },
+            {% else %}
+                {
+                    'module': 'apps.FL_Sifen',
+                    'package': 'mng_sifen',
+                    'attr': 'MSifen',
+                    'mname': 'crear_documentheader',
+                    'cont': false,
+                    'show_success': true
+                },
+            {% endif %}
+        ]))
+        fdata.append('a_vals', jfy([]));
+        document.querySelector('#form_documentheader_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_documentheader_{{ rr }}').classList.add('overlay');
+        axios.post(
+            '{% url "iom" %}', 
+            fdata, 
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            got_error = false;
+            oid = undefined
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    got_error = true;
+                }
+                if (ee.record_id) {
+                    oid = ee.record_id;
+                }
+            })                
+            if (Array.isArray(msgs)) {
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 3000,
+                })
+            }
+            return {'msgs': msgs, 'record_id': oid};
+        }).then((msgs)=>{
+            if (got_error === false) {
+                {% if t_guid %}
+                    $('#{{t_guid}}').DataTable().ajax.reload();
+                {% endif %}
+                
+                
+                if (msgs.record_id) {
+                    let timerInterval;
+                    Swal.fire({
+                        html: `<h2 id="t_gen_documentheader_imprimir">PDF del documento ${msgs.record_id} creado con exito</h2>`,
+                        timerProgressBar: true,
+                        showCancelButton: false,
+                        showConfirmButton: false,
+                        didOpen: async () => {
+                            Swal.showLoading();
+                            $('#t_gen_documentheader_imprimir').html(`
+                                <button class="btn btn-primary" type="button" disabled>
+                                    <span class="spinner-grow spinner-grow-sm" aria-hidden="true"></span>
+                                    <span role="status">Generando impresion...</span>
+                                </button>`);
+                            let gbe = new FormData();
+                            gbe.append('module',  'apps.FL_Sifen');
+                            gbe.append('package',  'mng_sifen');
+                            gbe.append('attr',  'MSifen');
+                            gbe.append('mname',  'generando_documentheader');
+                            gbe.append('dbcon',  'default');
+                            gbe.append('id', msgs.record_id);
+                            axios.post(
+                                '{% url "iom" %}',
+                                gbe,
+                                {
+                                   headers: {
+                                        'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                                  }
+                                }
+                            ).then((rsp)=>{
+                                if (rsp.data.success) {
+                                    //$('#t_gen_documentheader_imprimir').html(`<a class="link-underline-dark" href="${rsp.data.documentheader_urls.ek_pdf_file}" target="_blank">Descargar PDF</a>`);
+                                    let link = document.createElement('a');
+                                    link.href = rsp.data.documentheader_urls.ek_pdf_file;
+                                    link.target = '_blank';
+                                    link.click();
+                                    Swal.close();
+                                }
+                            }).finally(Swal.hideLoading())
+                        }
+                    })  
+                }
+                {% if modal_selector %}
+                    my_modal = document.querySelector('{{ modal_selector }}')
+                    modalobj = bootstrap.Modal.getInstance(my_modal) // Retrieve a Carousel instance
+                    modalobj.dispose();
+                    qelem('{{ modal_selector }}').remove();
+                {% endif %}
+                {% if offcanvas %}
+                    $('{{ offcanvas }}Body').html('');
+                    $('{{ offcanvas }} button[data-bs-dismiss=offcanvas]').click();
+                {% endif %}
+                {% if offcanvasglobal %}
+                    $('#offcanvasDaBoUiBody').html('');
+                    $('#btn-offcanvas-global-close').click();
+                {% endif %}
+                form_documentheader_reset();
+                
+            }
+        }).catch((err)=>{
+            UiB.MsgError(err);
+        }).finally(()=>{
+            let ft = document.querySelector('#form_documentheader_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    })
+    {% if not mobj %}
+        getTasaUsd();
+    {% endif %}
+
+    {% if mobj %}
+        {% for m in mobj.get_documentdetail %}
+            {% if m.pcalc_source %}
+                document_detail.push({
+                    moneda: '{{ mobj.doc_moneda }}',
+                    prod_cod: parseInt('{{ m.prod_cod }}'),
+                    prod_descripcion: '{{ m.prod_descripcion }}',
+                    precio_unitario: parseFloat('{{ m.pcalc_source.precio_unitario }}'),
+                    precio_unitario_siniva: parseFloat('{{ m.precio_unitario_siniva }}'),
+                    cantidad: parseFloat('{{ m.cantidad }}'),
+                    exenta: parseFloat('{{ m.pcalc_source.exenta }}'),
+                    iva_5: parseFloat('{{ m.pcalc_source.iva_5 }}'),
+                    gravada_5: parseFloat('{{ m.pcalc_source.gravada_5 }}'),
+                    gravada_10: parseFloat('{{ m.pcalc_source.gravada_10 }}'),
+                    iva_10: parseFloat('{{ m.pcalc_source.iva_10 }}'),
+                    afecto: parseFloat('{{ m.pcalc_source.afecto }}'),
+                    total: parseFloat('{{ m.pcalc_source.afecto }}') + parseFloat('{{ m.pcalc_source.exenta}}')
+                })
+            {% else %}
+                document_detail.push({
+                    moneda: '{{ mobj.doc_moneda }}',
+                    prod_cod: parseInt('{{ m.prod_cod }}'),
+                    prod_descripcion: '{{ m.prod_descripcion }}',
+                    precio_unitario: parseFloat('{{ m.precio_unitario_source }}'),
+                    precio_unitario_siniva: parseFloat('{{ m.precio_unitario_siniva }}'),
+                    cantidad: parseFloat('{{ m.cantidad }}'),
+                    exenta: parseFloat('{{ m.exenta }}'),
+                    iva_5: parseFloat('{{ m.iva_5 }}'),
+                    gravada_5: parseFloat('{{ m.gravada_5 }}'),
+                    gravada_10: parseFloat('{{ m.gravada_10 }}'),
+                    iva_10: parseFloat('{{ m.iva_10 }}'),
+                    afecto: parseFloat('{{ m.afecto }}'),
+                    total: parseFloat('{{ m.afecto }}') + parseFloat('{{ m.exenta}}')
+                })
+            {% endif %}
+        {% endfor %}
+        populate_documentdetail();
+    {% endif %}
+    
+    get_last_number = (establecimiento) => {
+        gbe = new FormData();
+        gbe.append('module',  'apps.FL_Sifen');
+        gbe.append('package',  'ekuatia_serials');
+        gbe.append('attr',  'Eserial');
+        gbe.append('mname',  'get_last_number');
+        gbe.append('tipo',  "{{ tipo }}");
+        gbe.append('establecimiento',  establecimiento);
+        axios.post('{% url "iom" %}', gbe, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp)=>{
+            let rdata = rsp.data;
+            numero = rdata.numero.toString();
+            establecimiento = establecimiento.toString();
+            nr = `${'1'.padStart(3, '0')}-${establecimiento.padStart(3, '0')}-${numero.padStart(7, '0')}`
+            $('#form_documentheader_{{ rr }} input[name=doc_numero]').val(nr);
+        });
+    }
+    {% if not mobj %}
+        t_no_enter = [
+            'precio_unitario',
+            'cantidad',
+            'd_total'
+        ]
+        t_no_enter.forEach((itk)=>{
+            form_input.on_enter_func(qelem(`input[name=${itk}]`), ()=>{});
+        })
+    {% endif %}
+
+    {% if mobj %}
+        setTimeout(()=>{
+            form_documentheader_readonly();
+        }, 3000)
+    {% endif%}
+
+    {% if tipo == "AF" %}
+        form_search.se_populate({
+            surl: '{% url "iom" %}',
+            dele: 'select[name=af_dpto_cod]',
+            app_name: 'FL_Sifen',
+            model_name: 'Departamentos',
+            field_display: ['nombre_departamento'],
+            field_id: ['codigo_departamento'],
+            db_fields: ['codigo_departamento', 'nombre_departamento'],
+            qs_be: [],
+            dejoin_id: '^',
+            dejoin: ' ',
+            dbcon: 'default',
+            theme: 'bootstrap5',
+            width: '100%',
+            endRow: 1000,
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            },
+            clean: true,
+            init_select2: true,
+            on_focusopen: true,
+            {% if modal_selector %}
+                dropdownParent: $('{{ modal_selector }}'),
+            {% endif %}
+        })
+
+        $('select[name=af_dpto_cod]').on('change', (evt)=> {
+            form_search.se_populate({
+                surl: '{% url "iom" %}',
+                dele: 'select[name=af_distrito_cod]',
+                app_name: 'FL_Sifen',
+                model_name: 'Distrito',
+                field_display: ['nombre_distrito'],
+                field_id: ['codigo_distrito'],
+                db_fields: ['codigo_distrito', 'nombre_distrito'],
+                qs_be: [{field: 'dptoobj__codigo_departamento', value: $('select[name=af_dpto_cod]').val() }],
+                dejoin_id: '^',
+                dejoin: ' ',
+                dbcon: 'default',
+                theme: 'bootstrap5',
+                width: '100%',
+                endRow: 1000,
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                },
+                clean: true,
+                init_select2: true,
+                on_focusopen: true,
+                {% if modal_selector %}
+                    dropdownParent: $('{{ modal_selector }}'),
+                {% endif %}
+            })
+        })
+
+        $('select[name=af_distrito_cod]').on('change', (evt)=> {
+            form_search.se_populate({
+                surl: '{% url "iom" %}',
+                dele: 'select[name=af_ciudad_cod]',
+                app_name: 'FL_Sifen',
+                model_name: 'Ciudades',
+                field_display: ['nombre_ciudad'],
+                field_id: ['codigo_ciudad'],
+                db_fields: ['codigo_ciudad', 'nombre_ciudad'],
+                qs_be: [{field: 'distritoobj__codigo_distrito', value: $('select[name=af_distrito_cod]').val() }],
+                dejoin_id: '^',
+                dejoin: ' ',
+                dbcon: 'default',
+                theme: 'bootstrap5',
+                width: '100%',
+                endRow: 1000,
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                },
+                clean: true,
+                init_select2: true,
+                on_focusopen: true,
+                {% if modal_selector %}
+                    dropdownParent: $('{{ modal_selector }}'),
+                {% endif %}
+            })
+        })
+    {% endif %}
+
+    {% if tipo == "FE" %}
+        get_metodos_de_pagos = () => {
+            $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').on('change', ()=> {
+                let gbe = new FormData();
+                gbe.append('module',  'apps.FL_Sifen');
+                gbe.append('package',  'mng_sifen');
+                gbe.append('attr',  'MSifen');
+                gbe.append('mname',  'metodos_de_pagos');
+                gbe.append('dbcon',  'default');
+                gbe.append('doc_cre_tipo_cod', $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').val());
+                axios.post('{% url "iom" %}',gbe,{ headers: HEADERS })
+                .then((rsp) => {
+                    data = rsp.data;
+                    selected = '';
+                    {% if not mobj.forma_pago_id %}
+                        $('#form_documentheader_{{ rr }} select[name=forma_pago_id]').html('<option value="">Seleccione un metodo de pago</option>');
+                        if (data.length === 1 ) {
+                            selected = 'selected'
+                        }
+                    {% endif %}
+                    data.forEach((it)=> {
+                        {% if mobj and mobj.forma_pago_id %}
+                            cuf = parseInt({{ mobj.forma_pago_id }});
+                            if (cuf === it.id) {
+                                continue;
+                                return
+                            }
+                        {% endif %}
+                        $('#form_documentheader_{{ rr }} select[name=forma_pago_id]').append(`
+                            <option ${selected} value="${it.id}^${it.nombre}">${it.nombre}</option>
+                        `)
+                    })
+                    
+                })
+            })
+        }
+        get_metodos_de_pagos();
+    {% endif %}
+</script>

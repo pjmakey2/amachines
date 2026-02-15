@@ -1,0 +1,513 @@
+{% load static %}
+
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h4>Gestión de Números</h4>
+            <p class="text-muted">Extienda números existentes o cree nuevos establecimientos</p>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="enumberTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="extend-tab" data-bs-toggle="tab" data-bs-target="#extend-pane" type="button">
+                <i class="mdi mdi-plus-circle"></i> Extender Números
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="create-tab" data-bs-toggle="tab" data-bs-target="#create-pane" type="button">
+                <i class="mdi mdi-store-plus"></i> Nuevo Establecimiento
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="enumberTabsContent">
+        <!-- Tab 1: Extend Numbers -->
+        <div class="tab-pane fade show active" id="extend-pane" role="tabpanel">
+            <form id="form_extend_numbers">
+                <!-- Select Timbrado and Establecimiento -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Seleccionar Timbrado y Establecimiento</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label>Timbrado</label>
+                                <select required name="extend_timbrado_id" class="form-control">
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label>Establecimiento</label>
+                                <select required name="extend_establecimiento" class="form-control">
+                                    <option value="">Seleccione timbrado primero</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Numbers Stats -->
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">Números Actuales</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Tipo</th>
+                                        <th>Serie</th>
+                                        <th>Rango</th>
+                                        <th>Total</th>
+                                        <th>Disponibles</th>
+                                        <th>Usados</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody_current_numbers">
+                                    <tr><td colspan="6" class="text-center text-muted">Seleccione timbrado y establecimiento</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add New Ranges -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Agregar Nuevos Rangos</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <label>Tipo Doc.</label>
+                                <select name="extend_range_tipo" class="form-control">
+                                    <option value="FE">FE</option>
+                                    <option value="NC">NC</option>
+                                    <option value="ND">ND</option>
+                                    <option value="AF">AF</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label>Expedición</label>
+                                <input type="number" name="extend_range_expd" class="form-control" value="1" />
+                            </div>
+                            <div class="col-md-2">
+                                <label>Serie</label>
+                                <input type="text" name="extend_range_serie" class="form-control" value="ZZZ" maxlength="3" />
+                            </div>
+                            <div class="col-md-2">
+                                <label>Inicio</label>
+                                <input type="number" name="extend_range_nstart" class="form-control" value="1001" />
+                            </div>
+                            <div class="col-md-2">
+                                <label>Fin</label>
+                                <input type="number" name="extend_range_nend" class="form-control" value="2000" />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-success w-100" id="btn_add_extend_range">
+                                    <i class="mdi mdi-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <table class="table table-striped table-bordered" id="table_extend_ranges">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Expd</th>
+                                    <th>Serie</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Cantidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody_extend_ranges"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" id="btn_extend_numbers">
+                    <i class="mdi mdi-content-save"></i> Extender Números
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab 2: Create New Establecimiento -->
+        <div class="tab-pane fade" id="create-pane" role="tabpanel">
+            <form id="form_create_establecimiento">
+                <!-- Select Timbrado -->
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">Seleccionar Timbrado</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label>Timbrado</label>
+                                <select required name="create_timbrado_id" class="form-control">
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label>Número Establecimiento</label>
+                                <input required type="number" name="create_establecimiento" class="form-control" placeholder="2" />
+                            </div>
+                            <div class="col-md-4">
+                                <label>Dirección</label>
+                                <input type="text" name="create_direccion" class="form-control" placeholder="Dirección del establecimiento" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Number Ranges for New Establecimiento -->
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">Rangos de Números</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-2">
+                                <label>Tipo Doc.</label>
+                                <select name="create_range_tipo" class="form-control">
+                                    <option value="FE">FE</option>
+                                    <option value="NC">NC</option>
+                                    <option value="ND">ND</option>
+                                    <option value="AF">AF</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label>Expedición</label>
+                                <input type="number" name="create_range_expd" class="form-control" value="1" />
+                            </div>
+                            <div class="col-md-2">
+                                <label>Serie</label>
+                                <input type="text" name="create_range_serie" class="form-control" value="ZZZ" maxlength="3" />
+                            </div>
+                            <div class="col-md-2">
+                                <label>Inicio</label>
+                                <input type="number" name="create_range_nstart" class="form-control" value="1" />
+                            </div>
+                            <div class="col-md-2">
+                                <label>Fin</label>
+                                <input type="number" name="create_range_nend" class="form-control" value="1000" />
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-success w-100" id="btn_add_create_range">
+                                    <i class="mdi mdi-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary btn-sm" id="btn_add_all_create">
+                                <i class="mdi mdi-plus-box-multiple"></i> Agregar FE, NC, ND, AF
+                            </button>
+                        </div>
+
+                        <table class="table table-striped table-bordered">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Expd</th>
+                                    <th>Serie</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Cantidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody_create_ranges"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg" id="btn_create_establecimiento">
+                    <i class="mdi mdi-content-save"></i> Crear Establecimiento
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    // Arrays for ranges
+    var extendRanges = [];
+    var createRanges = [];
+
+    // Populate Timbrado selects
+    function loadTimbrados() {
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen_serials');
+        fdata.append('attr', 'SEserial');
+        fdata.append('mname', 'get_timbrados');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+        }).then((rsp) => {
+            let timbrados = rsp.data.timbrados || [];
+            let options = '<option value="">Seleccione timbrado</option>';
+            timbrados.forEach(t => {
+                options += `<option value="${t.id}">${t.timbrado} (${t.ruc})</option>`;
+            });
+            qelem('select[name=extend_timbrado_id]').innerHTML = options;
+            qelem('select[name=create_timbrado_id]').innerHTML = options;
+        });
+    }
+
+    // Load establecimientos when timbrado changes
+    qelem('select[name=extend_timbrado_id]').addEventListener('change', function() {
+        let timbradoId = this.value;
+        if (!timbradoId) {
+            qelem('select[name=extend_establecimiento]').innerHTML = '<option value="">Seleccione timbrado primero</option>';
+            return;
+        }
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen_serials');
+        fdata.append('attr', 'SEserial');
+        fdata.append('mname', 'get_establecimientos_by_timbrado');
+        fdata.append('timbrado_id', timbradoId);
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+        }).then((rsp) => {
+            let establecimientos = rsp.data.establecimientos || [];
+            let options = '<option value="">Seleccione establecimiento</option>';
+            establecimientos.forEach(e => {
+                options += `<option value="${e.establecimiento}">${e.establecimiento} - ${e.direccion || 'Sin dirección'}</option>`;
+            });
+            qelem('select[name=extend_establecimiento]').innerHTML = options;
+        });
+    });
+
+    // Load current numbers when establecimiento changes
+    qelem('select[name=extend_establecimiento]').addEventListener('change', function() {
+        let timbradoId = qelem('select[name=extend_timbrado_id]').value;
+        let establecimiento = this.value;
+
+        if (!timbradoId || !establecimiento) {
+            qelem('#tbody_current_numbers').innerHTML = '<tr><td colspan="6" class="text-center text-muted">Seleccione timbrado y establecimiento</td></tr>';
+            return;
+        }
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen_serials');
+        fdata.append('attr', 'SEserial');
+        fdata.append('mname', 'get_current_numbers');
+        fdata.append('timbrado_id', timbradoId);
+        fdata.append('establecimiento', establecimiento);
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+        }).then((rsp) => {
+            let current = rsp.data.current || {};
+            let html = '';
+            ['FE', 'NC', 'ND', 'AF'].forEach(tipo => {
+                let c = current[tipo] || {};
+                if (c.exists) {
+                    html += `
+                        <tr>
+                            <td><span class="badge bg-primary">${tipo}</span></td>
+                            <td>${c.serie}</td>
+                            <td>${c.first} - ${c.last}</td>
+                            <td>${c.total}</td>
+                            <td class="text-success">${c.available}</td>
+                            <td class="text-danger">${c.used}</td>
+                        </tr>
+                    `;
+                } else {
+                    html += `
+                        <tr class="table-warning">
+                            <td><span class="badge bg-secondary">${tipo}</span></td>
+                            <td colspan="5" class="text-muted">Sin números</td>
+                        </tr>
+                    `;
+                }
+            });
+            qelem('#tbody_current_numbers').innerHTML = html;
+        });
+    });
+
+    // Render extend ranges table
+    function renderExtendRanges() {
+        let tbody = qelem('#tbody_extend_ranges');
+        tbody.innerHTML = '';
+        extendRanges.forEach((r, i) => {
+            let qty = r.nend - r.nstart + 1;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${r.tipo}</td>
+                    <td>${r.expd}</td>
+                    <td>${r.serie}</td>
+                    <td>${r.nstart}</td>
+                    <td>${r.nend}</td>
+                    <td>${qty.toLocaleString()}</td>
+                    <td><button type="button" class="btn btn-sm btn-danger" onclick="deleteExtendRange(${i})"><i class="mdi mdi-delete"></i></button></td>
+                </tr>
+            `;
+        });
+    }
+
+    // Render create ranges table
+    function renderCreateRanges() {
+        let tbody = qelem('#tbody_create_ranges');
+        tbody.innerHTML = '';
+        createRanges.forEach((r, i) => {
+            let qty = r.nend - r.nstart + 1;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${r.tipo}</td>
+                    <td>${r.expd}</td>
+                    <td>${r.serie}</td>
+                    <td>${r.nstart}</td>
+                    <td>${r.nend}</td>
+                    <td>${qty.toLocaleString()}</td>
+                    <td><button type="button" class="btn btn-sm btn-danger" onclick="deleteCreateRange(${i})"><i class="mdi mdi-delete"></i></button></td>
+                </tr>
+            `;
+        });
+    }
+
+    // Add extend range
+    qelem('#btn_add_extend_range').addEventListener('click', function() {
+        let tipo = qelem('select[name=extend_range_tipo]').value;
+        let expd = parseInt(qelem('input[name=extend_range_expd]').value) || 1;
+        let serie = qelem('input[name=extend_range_serie]').value.toUpperCase() || 'ZZZ';
+        let nstart = parseInt(qelem('input[name=extend_range_nstart]').value) || 1;
+        let nend = parseInt(qelem('input[name=extend_range_nend]').value) || 1000;
+
+        if (nend < nstart) {
+            UiB.MsgError('El número final debe ser mayor o igual al inicial');
+            return;
+        }
+
+        extendRanges.push({ tipo, expd, serie, nstart, nend });
+        renderExtendRanges();
+    });
+
+    // Add create range
+    qelem('#btn_add_create_range').addEventListener('click', function() {
+        let tipo = qelem('select[name=create_range_tipo]').value;
+        let expd = parseInt(qelem('input[name=create_range_expd]').value) || 1;
+        let serie = qelem('input[name=create_range_serie]').value.toUpperCase() || 'ZZZ';
+        let nstart = parseInt(qelem('input[name=create_range_nstart]').value) || 1;
+        let nend = parseInt(qelem('input[name=create_range_nend]').value) || 1000;
+
+        if (nend < nstart) {
+            UiB.MsgError('El número final debe ser mayor o igual al inicial');
+            return;
+        }
+
+        if (createRanges.find(r => r.tipo === tipo)) {
+            UiB.MsgError(`Ya existe un rango para ${tipo}`);
+            return;
+        }
+
+        createRanges.push({ tipo, expd, serie, nstart, nend });
+        renderCreateRanges();
+    });
+
+    // Add all types for create
+    qelem('#btn_add_all_create').addEventListener('click', function() {
+        let expd = parseInt(qelem('input[name=create_range_expd]').value) || 1;
+        let serie = qelem('input[name=create_range_serie]').value.toUpperCase() || 'ZZZ';
+        let nstart = parseInt(qelem('input[name=create_range_nstart]').value) || 1;
+        let nend = parseInt(qelem('input[name=create_range_nend]').value) || 1000;
+
+        ['FE', 'NC', 'ND', 'AF'].forEach(tipo => {
+            if (!createRanges.find(r => r.tipo === tipo)) {
+                createRanges.push({ tipo, expd, serie, nstart, nend });
+            }
+        });
+        renderCreateRanges();
+    });
+
+    // Delete functions
+    window.deleteExtendRange = function(i) { extendRanges.splice(i, 1); renderExtendRanges(); };
+    window.deleteCreateRange = function(i) { createRanges.splice(i, 1); renderCreateRanges(); };
+
+    // Submit extend form
+    qelem('#form_extend_numbers').addEventListener('submit', function(evt) {
+        evt.preventDefault();
+
+        if (extendRanges.length === 0) {
+            UiB.MsgError('Debe agregar al menos un rango');
+            return;
+        }
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen_serials');
+        fdata.append('attr', 'SEserial');
+        fdata.append('mname', 'extend_numbers_ui');
+        fdata.append('timbrado_id', qelem('select[name=extend_timbrado_id]').value);
+        fdata.append('establecimiento', qelem('select[name=extend_establecimiento]').value);
+        fdata.append('ranges', jfy(extendRanges));
+
+        qelem('#btn_extend_numbers').disabled = true;
+        qelem('#btn_extend_numbers').innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Procesando...';
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+        }).then((rsp) => {
+            if (rsp.data.success) {
+                UiB.MsgSuccess(rsp.data.success);
+                extendRanges = [];
+                renderExtendRanges();
+            } else if (rsp.data.error) {
+                UiB.MsgError(rsp.data.error);
+            }
+        }).finally(() => {
+            qelem('#btn_extend_numbers').disabled = false;
+            qelem('#btn_extend_numbers').innerHTML = '<i class="mdi mdi-content-save"></i> Extender Números';
+        });
+    });
+
+    // Submit create form
+    qelem('#form_create_establecimiento').addEventListener('submit', function(evt) {
+        evt.preventDefault();
+
+        if (createRanges.length === 0) {
+            UiB.MsgError('Debe agregar al menos un rango');
+            return;
+        }
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen_serials');
+        fdata.append('attr', 'SEserial');
+        fdata.append('mname', 'create_establecimiento_ui');
+        fdata.append('timbrado_id', qelem('select[name=create_timbrado_id]').value);
+        fdata.append('establecimiento', qelem('input[name=create_establecimiento]').value);
+        fdata.append('direccion', qelem('input[name=create_direccion]').value);
+        fdata.append('ranges', jfy(createRanges));
+
+        qelem('#btn_create_establecimiento').disabled = true;
+        qelem('#btn_create_establecimiento').innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Procesando...';
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+        }).then((rsp) => {
+            if (rsp.data.success) {
+                UiB.MsgSuccess(rsp.data.success);
+                createRanges = [];
+                renderCreateRanges();
+            } else if (rsp.data.error) {
+                UiB.MsgError(rsp.data.error);
+            }
+        }).finally(() => {
+            qelem('#btn_create_establecimiento').disabled = false;
+            qelem('#btn_create_establecimiento').innerHTML = '<i class="mdi mdi-content-save"></i> Crear Establecimiento';
+        });
+    });
+
+    // Initialize
+    loadTimbrados();
+</script>

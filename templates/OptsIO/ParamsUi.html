@@ -1,0 +1,16 @@
+Interfaz creada en base al contexto <crud_patterm class="md">
+    
+</crud_patterm>
+
+class SysParams(models.Model):
+    valor = models.CharField(max_length=120)
+    tipo = models.CharField(max_length=60)
+    valor_s = models.TextField()
+    valor_f = models.FloatField()
+    valor_j = models.JSONField(default=dict)
+    ruta_archivo = models.FileField(upload_to='opts', null=True)
+    vigencia = models.DateField()
+    save_user = models.CharField(max_length=120)
+    date_save = models.DateTimeField()
+
+Esta forma de creacion de interfaz es la base

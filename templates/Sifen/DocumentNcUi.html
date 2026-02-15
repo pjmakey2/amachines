@@ -1,0 +1,390 @@
+<div class="documentnc_ui_container container-fluid">
+    <div class="documentnc_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_documentnc" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear NC
+            </button>
+            <button id="btn_borrar_documentnc" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_documentnc" class="form-control am_input" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_documentnc_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_nc = [];
+    documentnc_home_be = function (data, settings) {
+        tt = qelem(`#table_documentnc_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [
+            { field: 'doc_tipo', value: 'NC' }
+        ];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery_nc.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery_nc)}`);
+            mquery = [...mquery, ...gmquery_nc];
+        }
+        log.info(`documentnc_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_documentnc = `dtable_${OptsIO.s4generate()}`;
+    dt_documentnc_pc = Grid.datatables_wrapper({
+          t_guid: t_documentnc,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Notas de Crédito',
+          tselector: 'table_documentnc_ui',
+          app_name: 'Sifen',
+          model_name: 'DocumentHeader',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [{ field: 'doc_tipo', value: 'NC' }],
+          plength: 100,
+          builder_be: documentnc_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[6, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_nc_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-documentnc-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
+                    <i title="Descargar PDF" class="tr-documentnc-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                `,
+                render: (data, type, rowobj) => {
+                    let icons = `
+                        <i title="Ver/Editar" class="tr-documentnc-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
+                        <i title="Descargar PDF" class="tr-documentnc-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                        <i title="Enviar Email" class="tr-documentnc-email text fs-5 mdi mdi-email-outline text-primary me-2"></i>
+                    `;
+                    if (rowobj.ek_estado == 'Aprobado' && rowobj.ek_qr_link) {
+                        icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode"></i></a>`;
+                    }
+                    return icons;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'ek_qr_link', tit: 'QR Link', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'bs', tit: 'BS', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_moneda', tit: 'Moneda', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false,
+                render: (data, type, rowobj) => {
+                    if (!data) return '';
+                    let date = new Date(data);
+                    let day = String(date.getDate()).padStart(2, '0');
+                    let month = String(date.getMonth() + 1).padStart(2, '0');
+                    let year = String(date.getFullYear()).slice(-2);
+                    return `${day}/${month}/${year}`;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_tipo_desc', tit: 'Tipo Doc', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    const tipoMap = {
+                        'Factura electrónica': 'FE',
+                        'Nota de crédito electrónica': 'NCE',
+                        'Nota de débito electrónica': 'NDE',
+                        'Autofactura electrónica': 'AFE',
+                        'Nota de remisión electrónica': 'NRE'
+                    };
+                    return tipoMap[data] || data;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_numero', tit: 'Número', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    let est = String(rowobj.doc_establecimiento).padStart(3, '0');
+                    let exp = String(rowobj.doc_expedicion).padStart(3, '0');
+                    let num = String(data).padStart(7, '0');
+                    return `${est}-${exp}-${num}`;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'mdb', idx: 'get_doc_relacion', tit: 'Relacionada', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_motivo', tit: 'Motivo', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'mdb', idx: 'ek_estado',
+                 tit: 'Estado', cls: 'align-left',
+                 dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => {
+                    if ((rowobj.ek_estado) || (rowobj.lote_estado == 'Aprobado')) {
+                        return `<span class="badge bg-success">Enviado</span>`
+                    }
+                    if (rowobj.lote_estado == 'Rechazado') {
+                        return `<span style="width: 12rem;" class="badge bg-danger text-wrap">${rowobj.lote_msg}</span>`
+                    }
+                    return `<span class="badge bg-info">Pendiente</span>`
+                 }
+             },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'lote_estado', tit: 'lote_estado', cls: 'align-left', dtyp: 'date', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'lote_msg', tit: 'lote_msg', cls: 'align-left', dtyp: 'date', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_vencimiento', tit: 'Vencimiento', cls: 'align-left', dtyp: 'date', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_total', tit: 'Total', cls: 'align-right', dtyp: 'float', hide: false,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_total_redondeo', tit: 'Total Redondeo', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_iva', tit: 'IVA', cls: 'align-right', dtyp: 'float', hide: false,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_exenta', tit: 'Exenta', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_g10', tit: 'G10', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_i10', tit: 'I10', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_g5', tit: 'G5', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_i5', tit: 'I5', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_descuento', tit: 'Descuento', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data, type, rowobj) => {
+                    return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_establecimiento', tit: 'Establecimiento', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_expedicion', tit: 'Expedición', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_innominado', tit: 'Innominado', cls: 'align-center', dtyp: 'bool', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_tipocontribuyente', tit: 'Tipo Contrib', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_type_business', tit: 'Tipo Negocio', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_codigo', tit: 'Código Cliente', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_ruc', tit: 'RUC', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    if (rowobj.pdv_ruc_dv !== null && rowobj.pdv_ruc_dv !== undefined && rowobj.pdv_ruc_dv !== '') {
+                        return `${data}-${rowobj.pdv_ruc_dv}`;
+                    }
+                    return data;
+                }
+               },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_ruc_dv', tit: 'RUC DV', cls: 'align-left', dtyp: 'int', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_nombrefactura', tit: 'Nombre Factura', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_direccion_entrega', tit: 'Dirección', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_celular', tit: 'Celular', cls: 'align-left', dtyp: 'str', hide: false },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_email', tit: 'Email', cls: 'align-left', dtyp: 'str', hide: false },
+          ]
+      })
+
+    $(`#${t_documentnc} tbody`).on('click', '.tr-documentnc-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentnc}`).DataTable().row( elerow ).data()
+        documentnc_form(rowobj.id);
+    })
+
+    $(`#${t_documentnc} tbody`).on('click', '.tr-documentnc-pdf', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentnc}`).DataTable().row( elerow ).data();
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'generando_documentheader');
+        fdata.append('id', rowobj.id);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_documentnc_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                // Download the PDF file
+                let link = document.createElement("a");
+                link.href = data.ek_pdf_file;
+                link.target = "_blank";
+                link.click();
+                UiB.MsgSuccess(data.success);
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            log.error(`Error al generar PDF: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al generar el PDF.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    })
+
+    $(`#${t_documentnc} tbody`).on('click', '.tr-documentnc-email', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentnc}`).DataTable().row( elerow ).data();
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'send_invoice_from_ui');
+        fdata.append('id', rowobj.id);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_documentnc_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            UiB.BeMsgHandle({
+                rsps: data,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+        }).catch((err) => {
+            log.error(`Error al enviar email: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al enviar el email.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    })
+
+    qelem('#btn_crear_documentnc').addEventListener('click', function() {
+          documentnc_form();
+      });
+
+    qelem('#btn_borrar_documentnc').addEventListener('click', function() {
+        let table = $(`#${t_documentnc}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_sifen');
+            gbe.append('attr', 'MSifen');
+            gbe.append('mname', 'delete_documentheader');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensage recibo del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_documentnc}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    documentnc_form = (pk) => {
+        dattrs = {
+            title: 'Crear Nota de Crédito',
+            t_guid: t_documentnc,
+            sui_rr: '{{ rr }}',
+            from_DocumentNcUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'DocumentHeader',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/DocumentCreateNcUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Nota de Crédito';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_documentnc').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_nc = [];
+            if (qelem('#input_buscar_documentnc').value.trim() !== '') {
+                gmquery_nc.push({
+                    'field': 'or_doc_numero__icontains', 'value': qelem('input#input_buscar_documentnc').value
+                })
+                gmquery_nc.push({
+                    'field': 'or_pdv_nombrefactura__icontains', 'value': qelem('input#input_buscar_documentnc').value
+                })
+                gmquery_nc.push({
+                    'field': 'or_pdv_ruc__icontains', 'value': qelem('input#input_buscar_documentnc').value
+                })
+            }
+            $(`#${t_documentnc}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_documentnc}`).on('draw.dt', function() {
+  tt = qelem(`#table_documentnc_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

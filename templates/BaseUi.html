@@ -1,0 +1,370 @@
+{% load static %}
+{% load io_tags %}
+<!doctype html>
+<html lang="es" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>{% business_name %} - Sistema ERP</title>
+    <link rel="icon" type="image/png" href="{% business_favicon %}">
+
+    {% include "./AMCSS.html" %}
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="" data-bs-spy="scroll" data-bs-target="#elements-section" data-bs-offset="0" tabindex="0">
+    {% csrf_token %}
+    <!-- Loader Start -->
+    <div id="loading">
+        <div class="loader"></div>
+    </div>
+    <!-- Loader END -->
+
+    <!-- ========== Offcanvas Container ========== -->
+    {% include "./AMOffcanvasUi.html" %}
+
+    <!-- ========== Modal Container ========== -->
+    {% include "./AMModalUi.html" %}
+
+    <!-- Begin page -->
+    <div class="wrapper" id="mainWrapper">
+        <!-- La vista se carga dinámicamente según preferencia del usuario -->
+        <div id="viewContainer">
+            <!-- Loading placeholder -->
+            <div class="d-flex justify-content-center align-items-center" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="text-center">
+                    <div class="spinner-border text-light" role="status">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                    <p class="text-white mt-3">Cargando interfaz...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- END wrapper -->
+
+    <!-- START LOADER -->
+    <div class="ldld full"></div>
+    <!-- END LOADER -->
+
+    <!-- START Theme Settings -->
+    {# {% include "./AMThemeSettingsUi.html" %} #}
+    <!-- END Theme Settings -->
+
+    {% include "./AMJS.html" %}
+
+    {% block extra_js %}{% endblock %}
+
+    <style>
+        .business-selector-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .business-selector-item:hover {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.05);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .business-selector-item.active {
+            border-color: #48bb78;
+            background: rgba(72, 187, 120, 0.05);
+        }
+
+        .business-create-new {
+            border-style: dashed !important;
+            border-color: #667eea !important;
+        }
+
+        .business-create-new:hover {
+            background: rgba(102, 126, 234, 0.1) !important;
+        }
+
+        /* Mobile responsive - contenido principal */
+        @media (max-width: 768px) {
+            .content-page {
+                padding-top: 60px !important;
+            }
+
+            .content-page .container-fluid {
+                padding: 10px !important;
+            }
+        }
+    </style>
+
+    <script type="text/javascript">
+        window.name = "BaseUi";
+
+        // Load the appropriate view based on user preference
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPreferredView();
+        });
+
+        // Function to load the preferred view (launcher or sidebar)
+        async function loadPreferredView() {
+            var viewMode = localStorage.getItem('amachine_view_mode') || 'launcher';
+            var templateName = viewMode === 'sidebar' ? 'AMSidebarUi.html' : 'AMLauncherUi.html';
+
+            try {
+                // Load the view template
+                var params = new URLSearchParams();
+                params.append('tmpl', templateName);
+
+                var response = await axios.get('{% url "dtmpl" %}?' + params.toString());
+
+                if (response.data) {
+                    var viewContainer = document.getElementById('viewContainer');
+                    viewContainer.innerHTML = response.data;
+
+                    // Execute scripts in the loaded content (await external scripts first)
+                    await executeScriptsInContainer(viewContainer);
+
+                    // After view is loaded, check business status
+                    setTimeout(function() {
+                        checkBusinessStatus();
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error loading view:', error);
+                // Fallback: show error message
+                document.getElementById('viewContainer').innerHTML = '<div class="alert alert-danger m-4">Error al cargar la interfaz. Por favor recargue la página.</div>';
+            }
+        }
+
+        // Execute scripts in dynamically loaded content
+        // Loads external scripts first, then executes inline scripts
+        async function executeScriptsInContainer(container) {
+            var scripts = container.querySelectorAll('script');
+            var externalScripts = [];
+            var inlineScripts = [];
+
+            // Separate external and inline scripts
+            scripts.forEach(function(script) {
+                if (script.src) {
+                    externalScripts.push(script);
+                } else {
+                    inlineScripts.push(script);
+                }
+            });
+
+            // Load all external scripts first and wait for them
+            var loadPromises = externalScripts.map(function(oldScript) {
+                return new Promise(function(resolve, reject) {
+                    var newScript = document.createElement('script');
+
+                    // Copy attributes
+                    Array.from(oldScript.attributes).forEach(function(attr) {
+                        newScript.setAttribute(attr.name, attr.value);
+                    });
+
+                    newScript.onload = resolve;
+                    newScript.onerror = reject;
+                    document.head.appendChild(newScript);
+                });
+            });
+
+            // Wait for all external scripts to load
+            await Promise.all(loadPromises);
+
+            // Now execute inline scripts
+            inlineScripts.forEach(function(oldScript) {
+                var newScript = document.createElement('script');
+
+                // Copy attributes
+                Array.from(oldScript.attributes).forEach(function(attr) {
+                    newScript.setAttribute(attr.name, attr.value);
+                });
+
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        // Check business status on page load
+        function initBusinessCheck() {
+            checkBusinessStatus();
+        }
+
+        function checkBusinessStatus() {
+            // Get user businesses using seModel
+            var tdata = new FormData();
+            tdata.append('module', 'OptsIO');
+            tdata.append('package', 'io_serial');
+            tdata.append('attr', 'IoS');
+            tdata.append('mname', 'seModel');
+            tdata.append('model_app_name', 'OptsIO');
+            tdata.append('model_name', 'UserBusiness');
+            tdata.append('fields', jfy(['id', 'active', 'businessobj__id', 'businessobj__name', 'businessobj__ruc', 'businessobj__logo']));
+            tdata.append('dbcon', 'default');
+            tdata.append('mquery', jfy([{'field': 'userprofileobj__username', 'value': '{{ request.user.username }}'}]));
+
+            axios.post('{% url "iom" %}', tdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                var businesses = rsp.data.qs;
+
+                if (!businesses || businesses.length === 0) {
+                    // Case 1: No businesses at all - show setup form
+                    log.info('No businesses found - showing setup form');
+                    showBusinessSetupModal();
+                } else {
+                    // Check if there's an active business
+                    var hasActive = businesses.some(function(b) { return b.active === true; });
+
+                    if (!hasActive) {
+                        // Case 2: Has businesses but none is active - show selector
+                        log.info('Businesses found but none active - showing selector');
+                        showBusinessSelectorModal(businesses);
+                    } else {
+                        // Case 3: Has active business - do nothing, use it
+                        log.info('Active business found - ready to use');
+                    }
+                }
+            }).catch((err) => {
+                log.error('Error checking businesses: ' + jfy(err));
+            });
+        }
+
+        // Function to manually open business selector (called from toolbar/menu)
+        window.openBusinessSelector = function() {
+            // Get user businesses
+            var tdata = new FormData();
+            tdata.append('module', 'OptsIO');
+            tdata.append('package', 'io_serial');
+            tdata.append('attr', 'IoS');
+            tdata.append('mname', 'seModel');
+            tdata.append('model_app_name', 'OptsIO');
+            tdata.append('model_name', 'UserBusiness');
+            tdata.append('fields', jfy(['id', 'active', 'businessobj__id', 'businessobj__name', 'businessobj__ruc', 'businessobj__logo']));
+            tdata.append('dbcon', 'default');
+            tdata.append('mquery', jfy([{'field': 'userprofileobj__username', 'value': '{{ request.user.username }}'}]));
+
+            axios.post('{% url "iom" %}', tdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                var businesses = rsp.data.qs;
+                if (businesses && businesses.length > 0) {
+                    // User has businesses - show selector
+                    showBusinessSelectorModal(businesses);
+                } else {
+                    // User has no businesses - show setup form
+                    showBusinessSetupModal();
+                }
+            }).catch((err) => {
+                log.error('Error checking businesses: ' + jfy(err));
+                UiB.MsgError('Error al obtener negocios');
+            });
+        };
+
+        function showBusinessSelectorModal(businesses) {
+            // Create business selector HTML
+            var html = '<div class="p-4">';
+            html += '<h5 class="mb-3">Seleccionar Negocio</h5>';
+            html += '<p class="text-muted mb-4">Seleccione el negocio con el que desea trabajar o agregue uno nuevo:</p>';
+            html += '<div class="business-selector-list">';
+
+            businesses.forEach(function(business) {
+                var isActive = business.active ? 'active' : '';
+                html += '<div class="business-selector-item ' + isActive + '" data-business-id="' + business.businessobj__id + '" onclick="selectBusiness(' + business.businessobj__id + ')">';
+                html += '<div class="d-flex align-items-center">';
+                html += '<div class="flex-grow-1">';
+                html += '<h6 class="mb-1">' + business.businessobj__name + '</h6>';
+                html += '<small class="text-muted">RUC: ' + business.businessobj__ruc + '</small>';
+                html += '</div>';
+                if (business.active) {
+                    html += '<span class="badge bg-success">Activo</span>';
+                }
+                html += '</div>';
+                html += '</div>';
+            });
+
+            // Add "Add More Business" option
+            html += '<div class="business-selector-item business-create-new" onclick="showBusinessSetupModal()">';
+            html += '<div class="d-flex align-items-center">';
+            html += '<i class="mdi mdi-plus-circle me-2" style="font-size: 24px; color: #667eea;"></i>';
+            html += '<div>';
+            html += '<h6 class="mb-0" style="color: #667eea;">Agregar Otro Negocio</h6>';
+            html += '<small class="text-muted">Asignarme un negocio existente o crear uno nuevo</small>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+
+            html += '</div></div>';
+
+            $('#offcanvasGlobalUiBody').html(html);
+            var offcanvasElement = document.getElementById('offcanvasGlobalUi');
+            var bsOffcanvas = new bootstrap.Offcanvas(offcanvasElement, {
+                backdrop: 'static',
+                keyboard: false
+            });
+            bsOffcanvas.show();
+            document.getElementById('offcanvasGlobalUiLabel').innerText = 'Seleccionar Negocio';
+        }
+
+        function selectBusiness(businessId) {
+            // Set active business via backend
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'mng_registration');
+            fdata.append('attr', 'MRegistration');
+            fdata.append('mname', 'set_active_business');
+            fdata.append('business_id', businessId);
+            fdata.append('dbcon', 'default');
+
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    UiB.MsgSuccess('Negocio seleccionado correctamente');
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    UiB.MsgError(rsp.data.error || 'Error al seleccionar negocio');
+                }
+            });
+        }
+
+        function showBusinessSetupModal() {
+            var dattrs = {
+                title: 'Configuración de Negocio',
+                offcanvasglobal: true
+            };
+
+            var tps = {
+                url: '{% url "dtmpl" %}',
+                dattrs: dattrs,
+                template: 'OptsIO/BusinessSetupUi.html',
+                raw: true
+            };
+
+            OptsIO.getTmpl(tps).then((rsp) => {
+                var data = rsp.data;
+                $('#offcanvasGlobalUiBody').html(data);
+
+                var offcanvasElement = document.getElementById('offcanvasGlobalUi');
+                var bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+                if (!bsOffcanvas) {
+                    bsOffcanvas = new bootstrap.Offcanvas(offcanvasElement, {
+                        backdrop: 'static',
+                        keyboard: false
+                    });
+                }
+                bsOffcanvas.show();
+                UiB.kILLLoaderAjax();
+            }).catch((err) => {
+                log.error('Error loading Business setup: ' + jfy(err));
+                UiB.MsgError('Error al cargar configuración de negocio');
+                UiB.kILLLoaderAjax();
+            });
+        }
+    </script>
+</body>
+</html>

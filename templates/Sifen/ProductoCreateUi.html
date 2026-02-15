@@ -1,0 +1,499 @@
+<div class="ui_producto">
+    <form id="form_producto_{{ rr }}" class="form_producto">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <h6 class="mb-3">Información Básica</h6>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>Código <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="number" name="prod_cod" class="form-control" placeholder="Código del producto"
+                           value="{% if mobj %}{{ mobj.prod_cod }}{% endif %}" {% if mobj %}readonly{% endif %} required />
+                </div>
+                <small class="text-muted">{% if not mobj %}Se generará automáticamente si se deja vacío{% endif %}</small>
+            </div>
+            <div class="col-md-6">
+                <label>EAN / Código de Barras</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="ean" class="form-control" placeholder="Código de barras"
+                           value="{% if mobj %}{{ mobj.ean }}{% endif %}" />
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <label>Descripción <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <textarea name="descripcion" class="form-control" rows="2" placeholder="Descripción del producto" required>{% if mobj %}{{ mobj.descripcion }}{% endif %}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <label>Foto del Producto</label>
+                <div class="mb-3">
+                    {% if mobj and mobj.photo %}
+                        <div class="mb-2">
+                            <img src="{{ mobj.photo.url }}" alt="{{ mobj.descripcion }}" id="preview_photo_{{ rr }}" style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; border: 1px solid #dee2e6;">
+                        </div>
+                    {% else %}
+                        <div class="mb-2" id="preview_container_{{ rr }}" style="display: none;">
+                            <img src="" alt="Preview" id="preview_photo_{{ rr }}" style="max-width: 200px; max-height: 200px; object-fit: cover; border-radius: 8px; border: 1px solid #dee2e6;">
+                        </div>
+                    {% endif %}
+                    <input type="file" name="photo" class="form-control" accept="image/*" id="input_photo_{{ rr }}">
+                    <small class="text-muted">Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Categoría</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <select name="categoriaobj_id" class="form-control">
+                        <option value="">Sin categoría</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Marca</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <select name="marcaobj_id" class="form-control">
+                        <option value="">Sin marca</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Unidad de Medida <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <select name="medidaobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h6 class="mb-3">Precios e Impuestos</h6>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Precio <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="precio" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.precio }}{% endif %}" required />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Costo</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="costo" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.costo }}{% else %}0{% endif %}" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Moneda <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <select name="moneda" class="form-control" required>
+                        <option value="PYG" {% if mobj and mobj.moneda == 'PYG' %}selected{% endif %}>PYG (Guaraníes)</option>
+                        <option value="USD" {% if mobj and mobj.moneda == 'USD' %}selected{% endif %}>USD (Dólares)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <label>Porcentaje IVA <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <select name="porcentaje_iva_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label>Stock</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="stock" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.stock }}{% else %}0{% endif %}" />
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4">
+        <h6 class="mb-3">Distribución de Impuestos (%)</h6>
+        <p class="text-muted small mb-3">
+            <i class="mdi mdi-information"></i>
+            La suma de Exenta + Gravada 5% + Gravada 10% debe ser igual a 100%.
+            No se puede combinar Gravada 5% con Gravada 10% (solo una de ellas puede ser mayor a 0).
+        </p>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Exenta (%)</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="exenta" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.exenta }}{% else %}0{% endif %}"
+                           id="input_exenta_{{ rr }}" />
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Gravada 5% (%)</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="g5" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.g5 }}{% else %}0{% endif %}"
+                           id="input_g5_{{ rr }}" />
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label>Gravada 10% (%)</label>
+                <div class="input-group flex-nowrap am_focus_highlight mb-3">
+                    <input type="text" name="g10" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.g10 }}{% else %}100{% endif %}"
+                           id="input_g10_{{ rr }}" />
+                    <span class="input-group-text">%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info" id="alert_total_{{ rr }}">
+                    <strong>Total: <span id="span_total_{{ rr }}">100</span>%</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="activo" class="form-check-input" id="activo_{{ rr }}"
+                           {% if not mobj or mobj.activo %}checked{% endif %}>
+                    <label class="form-check-label" for="activo_{{ rr }}">
+                        Activo
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">
+                    <i class="mdi mdi-content-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = '{% if mobj %}Editar{% else %}Nuevo{% endif %} Producto';
+
+    // Initialize input masks for money fields
+    function initializeInputMasks() {
+        let maskOptions = {
+            alias: 'numeric',
+            groupSeparator: ',',
+            radixPoint: '.',
+            autoGroup: true,
+            digits: 2,
+            digitsOptional: false,
+            rightAlign: true,
+            allowMinus: false,
+            removeMaskOnSubmit: true,
+            autoUnmask: true
+        };
+
+        // Apply mask to precio, costo and stock
+        Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=precio]'));
+        Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=costo]'));
+        Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=stock]'));
+
+        // Apply mask to percentages
+        let percentMaskOptions = {
+            alias: 'numeric',
+            groupSeparator: ',',
+            radixPoint: '.',
+            autoGroup: true,
+            digits: 2,
+            digitsOptional: false,
+            rightAlign: true,
+            allowMinus: false,
+            removeMaskOnSubmit: true,
+            autoUnmask: true,
+            min: 0,
+            max: 100
+        };
+
+        Inputmask(percentMaskOptions).mask(qelem('#input_exenta_{{ rr }}'));
+        Inputmask(percentMaskOptions).mask(qelem('#input_g5_{{ rr }}'));
+        Inputmask(percentMaskOptions).mask(qelem('#input_g10_{{ rr }}'));
+    }
+
+    // Initialize masks on load
+    initializeInputMasks();
+
+    // Photo preview
+    qelem('#input_photo_{{ rr }}').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var preview = qelem('#preview_photo_{{ rr }}');
+                preview.src = e.target.result;
+                {% if not mobj or not mobj.photo %}
+                    qelem('#preview_container_{{ rr }}').style.display = 'block';
+                {% endif %}
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Populate Categoria
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_producto_{{ rr }} select[name=categoriaobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Categoria',
+        field_display: ['nombre'],
+        field_id: ['id'],
+        db_fields: ['id', 'nombre'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.categoriaobj %}
+            $('#form_producto_{{ rr }} select[name=categoriaobj_id]').val('{{ mobj.categoriaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    // Populate Marca
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_producto_{{ rr }} select[name=marcaobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Marca',
+        field_display: ['nombre'],
+        field_id: ['id'],
+        db_fields: ['id', 'nombre'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.marcaobj %}
+            $('#form_producto_{{ rr }} select[name=marcaobj_id]').val('{{ mobj.marcaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    // Populate Medida
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_producto_{{ rr }} select[name=medidaobj_id]',
+        app_name: 'Sifen',
+        model_name: 'Medida',
+        field_display: ['medida', 'medida_descripcion'],
+        field_id: ['id'],
+        db_fields: ['id', 'medida', 'medida_descripcion'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        endRow: 1000,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.medidaobj %}
+            $('#form_producto_{{ rr }} select[name=medidaobj_id]').val('{{ mobj.medidaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    // Populate Porcentaje IVA
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_producto_{{ rr }} select[name=porcentaje_iva_id]',
+        app_name: 'Sifen',
+        model_name: 'PorcentajeIva',
+        field_display: ['descripcion'],
+        field_id: ['id'],
+        db_fields: ['id', 'porcentaje', 'descripcion'],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.porcentaje_iva %}
+            $('#form_producto_{{ rr }} select[name=porcentaje_iva_id]').val('{{ mobj.porcentaje_iva.id }}').trigger('change');
+        {% endif %}
+    });
+
+    // Validación en tiempo real de porcentajes
+    function updateTotal() {
+        var exenta = parseFloat(qelem('#input_exenta_{{ rr }}').value) || 0;
+        var g5 = parseFloat(qelem('#input_g5_{{ rr }}').value) || 0;
+        var g10 = parseFloat(qelem('#input_g10_{{ rr }}').value) || 0;
+
+        var total = exenta + g5 + g10;
+        qelem('#span_total_{{ rr }}').innerText = total.toFixed(2);
+
+        var alertDiv = qelem('#alert_total_{{ rr }}');
+        if (total !== 100) {
+            alertDiv.classList.remove('alert-info');
+            alertDiv.classList.add('alert-danger');
+        } else {
+            alertDiv.classList.remove('alert-danger');
+            alertDiv.classList.add('alert-info');
+        }
+    }
+
+    qelem('#input_exenta_{{ rr }}').addEventListener('input', updateTotal);
+    qelem('#input_g5_{{ rr }}').addEventListener('input', updateTotal);
+    qelem('#input_g10_{{ rr }}').addEventListener('input', updateTotal);
+
+    save_producto = (target) => {
+        // Validar porcentajes antes de enviar
+        var fdata = new FormData();
+        var exenta = parseFloat(qelem('#input_exenta_{{ rr }}').value) || 0;
+        var g5 = parseFloat(qelem('#input_g5_{{ rr }}').value) || 0;
+        var g10 = parseFloat(qelem('#input_g10_{{ rr }}').value) || 0;
+
+        var total = exenta + g5 + g10;
+
+        if (total !== 100) {
+            UiB.MsgError(`La suma de porcentajes debe ser 100%. Actualmente es ${total.toFixed(2)}%`);
+            return;
+        }
+
+        // Validar que no se combine g5 y g10
+        if (g5 > 0 && g10 > 0) {
+            UiB.MsgError('No se puede combinar Gravada 5% con Gravada 10%. Solo una de ellas puede ser mayor a 0.');
+            return;
+        }
+
+        log.info(`#form_producto_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+
+        // Extract form data for edata
+        //let edata = {};
+        //for (let [key, value] of formData.entries()) {
+        //    if (key !== 'photo') {  // Skip the file field
+        //        edata[key] = value;
+        //    }
+        //}
+        let edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+
+        seldis = ['categoriaobj_id', 'marcaobj_id', 'medidaobj_id', 'porcentaje_iva_id']
+        seldis.forEach((idx) => {
+            vv = $(`#form_producto_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        // Handle checkbox
+        edata['activo'] = qelem('#form_producto_{{ rr }} input[name=activo]').checked;
+
+        // Create new FormData with all fields
+        
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'Producto');
+        fdata.append('dbcon', 'default');
+
+        log.info(`#form_producto_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_producto_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]));
+        log.info(`#form_producto_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'Sifen',
+                'package': 'mng_producto',
+                'attr': 'MProducto',
+                'mname': 'create_producto',
+                'cont': false,
+                'show_success': true
+            },
+        ]));
+        log.info(`#form_producto_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]));
+
+        // Append photo file if exists
+        var photoInput = qelem('#input_photo_{{ rr }}');
+        if (photoInput.files && photoInput.files[0]) {
+            fdata.append('photo', photoInput.files[0]);
+        }
+        log.info(`#form_producto_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_producto_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_producto_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_producto_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_producto_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_producto_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_producto_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_producto_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_producto_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_producto_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_producto_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_producto_{{ rr }} Submitting form`);
+        save_producto(event.target);
+    })
+</script>

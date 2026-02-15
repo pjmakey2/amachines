@@ -1,0 +1,642 @@
+/**
+ * Launcher Styles - Amachine ERP
+ * Vista tipo ERPNext con grid de apps (SPA)
+ */
+
+/* ============================================
+   LAUNCHER CONTAINER
+   ============================================ */
+
+.launcher-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ============================================
+   HEADER / TOOLBAR
+   ============================================ */
+
+.launcher-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 16px;
+}
+
+/* Text shadow for readability on transparent header */
+.launcher-header,
+.launcher-header .logo-text,
+.launcher-header .current-app-title,
+.launcher-header .business-badge,
+.launcher-header .back-btn i {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Back Button */
+.back-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateX(-2px);
+}
+
+.back-btn i {
+    font-size: 22px;
+}
+
+/* Logo */
+.launcher-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.launcher-header .logo img {
+    height: 36px;
+    width: auto;
+    border-radius: 8px;
+}
+
+.launcher-header .logo-text {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+}
+
+/* Current App Title */
+.current-app-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-left: 8px;
+}
+
+.current-app-title i {
+    font-size: 18px;
+    opacity: 0.8;
+}
+
+/* Search Bar */
+.launcher-search {
+    flex: 1;
+    max-width: 500px;
+    margin: 0 24px;
+    position: relative;
+}
+
+.launcher-search input {
+    width: 100%;
+    padding: 10px 16px 10px 44px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s;
+}
+
+.launcher-search input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.launcher-search input:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.launcher-search .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.launcher-search-wrapper {
+    position: relative;
+}
+
+/* Search Clear Button */
+.launcher-search .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.launcher-search .search-clear:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.launcher-search .search-clear i {
+    font-size: 14px;
+}
+
+.launcher-search input {
+    padding-right: 40px;
+}
+
+/* User Section */
+.launcher-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.business-badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 20px;
+    color: white;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.business-badge i {
+    font-size: 16px;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.user-avatar:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+/* View Toggle Button */
+.view-toggle-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.view-toggle-btn i {
+    font-size: 20px;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.launcher-main {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+/* ============================================
+   LAUNCHER HOME (GRID DE APPS)
+   ============================================ */
+
+.launcher-home {
+    padding: 40px 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Section Title */
+.app-section {
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Apps Grid */
+.apps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 24px;
+}
+
+/* App Card */
+.app-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.app-card:hover {
+    transform: translateY(-4px);
+}
+
+.app-card:hover .app-icon {
+    transform: scale(1.05);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+}
+
+.app-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.app-icon i {
+    font-size: 32px;
+    color: white;
+}
+
+/* Fix for Bootstrap Icons */
+.app-icon i[class^="bi-"]::before,
+.app-icon i[class*=" bi-"]::before {
+    font-size: 32px;
+    color: white;
+}
+
+.app-name {
+    font-size: 12px;
+    color: white;
+    text-align: center;
+    font-weight: 500;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ============================================
+   APP CONTENT AREA (SPA)
+   ============================================ */
+
+.app-content {
+    background: #f8f9fa;
+    min-height: calc(100vh - 65px);
+}
+
+.app-content .container,
+.app-content .container-fluid {
+    padding-top: 20px;
+}
+
+.app-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background: #f8f9fa;
+    color: #4a5568;
+}
+
+.app-loading p {
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+.app-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background: #f8f9fa;
+    color: #4a5568;
+    text-align: center;
+    padding: 40px;
+}
+
+.app-error h4 {
+    margin: 16px 0 8px;
+    color: #2d3748;
+}
+
+.app-error p {
+    opacity: 0.7;
+    margin-bottom: 20px;
+}
+
+/* ============================================
+   USER DROPDOWN
+   ============================================ */
+
+.user-dropdown {
+    position: relative;
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    min-width: 220px;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s;
+    z-index: 200;
+}
+
+.user-dropdown.open .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.user-dropdown-header {
+    padding: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.user-dropdown-header .user-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.user-dropdown-header .user-email {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.user-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #4a5568;
+    text-decoration: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.user-dropdown-item:hover {
+    background: #f7fafc;
+    color: #667eea;
+}
+
+.user-dropdown-item i {
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+.user-dropdown-divider {
+    height: 1px;
+    background: #e2e8f0;
+    margin: 4px 0;
+}
+
+/* ============================================
+   SEARCH RESULTS
+   ============================================ */
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    margin-top: 8px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 150;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    outline: none;
+}
+
+.search-result-item:hover,
+.search-result-item:focus {
+    background: #f7fafc;
+}
+
+.search-result-item .result-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.search-result-item .result-icon i {
+    font-size: 18px;
+    color: white;
+}
+
+.search-result-item .result-name {
+    font-weight: 500;
+    color: #2d3748;
+}
+
+.search-result-item .result-menu {
+    font-size: 12px;
+    color: #718096;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .launcher-header {
+        padding: 12px 16px;
+        gap: 12px;
+    }
+
+    .launcher-search {
+        display: none;
+    }
+
+    .business-badge {
+        display: none;
+    }
+
+    .launcher-header .logo-text {
+        display: none;
+    }
+
+    .current-app-title span {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .launcher-home {
+        padding: 24px 16px;
+    }
+
+    .apps-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 16px;
+    }
+
+    .app-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 14px;
+    }
+
+    .app-icon i {
+        font-size: 26px;
+    }
+
+    .app-name {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 480px) {
+    .apps-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+    }
+
+    .app-icon {
+        width: 52px;
+        height: 52px;
+        border-radius: 12px;
+    }
+
+    .app-icon i {
+        font-size: 22px;
+    }
+
+    .section-title {
+        font-size: 12px;
+    }
+
+    .back-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .back-btn i {
+        font-size: 18px;
+    }
+}
+
+/* ============================================
+   ANIMACIONES
+   ============================================ */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.app-card {
+    animation: fadeInUp 0.4s ease forwards;
+}
+
+.app-section:nth-child(1) .app-card { animation-delay: 0.05s; }
+.app-section:nth-child(2) .app-card { animation-delay: 0.1s; }
+.app-section:nth-child(3) .app-card { animation-delay: 0.15s; }
+
+/* Fade transition for SPA navigation */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.app-content {
+    animation: fadeIn 0.3s ease;
+}
+
+.launcher-home {
+    animation: fadeIn 0.3s ease;
+}

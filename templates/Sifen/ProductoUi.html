@@ -1,0 +1,284 @@
+<div class="producto_ui_container container-fluid">
+    <div class="producto_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_producto" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_producto" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_producto" class="form-control" placeholder="Buscar producto...">
+        </div>
+    </div>
+
+    <div id="table_producto_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    producto_home_be = function (data, settings) {
+        tt = qelem(`#table_producto_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`producto_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_producto = `dtable_${OptsIO.s4generate()}`;
+    dt_producto_pc = Grid.datatables_wrapper({
+          t_guid: t_producto,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Productos',
+          tselector: 'table_producto_ui',
+          app_name: 'Sifen',
+          model_name: 'Producto',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: producto_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[2, 'asc']],
+              rowId: function(row, se) {
+                  return `tr_producto_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-producto-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'mdb',
+                 idx: 'get_photo_url',
+                 tit: 'Foto',
+                 cls: 'align-center',
+                 dtyp: 'str',
+                 hide: false,
+                 nord: true,
+                 render: (data, type, rowobj) => {
+                     if (data) {
+                         return `<img src="${data}" alt="${rowobj.descripcion}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 5px;">`;
+                     } else {
+                         return `<div style="width: 50px; height: 50px; background: #e9ecef; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                                     <i class="mdi mdi-image-off text-muted"></i>
+                                 </div>`;
+                     }
+                 }
+              },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'prod_cod',
+                 tit: 'Código',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'descripcion',
+                 tit: 'Descripción',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'moneda',
+                 tit: 'Moneda',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: true
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'precio',
+                 tit: 'Precio',
+                 cls: 'align-right',
+                 dtyp: 'float',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `${rowobj.moneda} ${parseFloat(data).toLocaleString('es-PY')}`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'categoriaobj__nombre',
+                 tit: 'Categoría',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'marcaobj__nombre',
+                 tit: 'Marca',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'stock',
+                 tit: 'Stock',
+                 cls: 'align-right',
+                 dtyp: 'float',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return parseFloat(data).toLocaleString('es-PY');
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'activo',
+                 tit: 'Activo',
+                 cls: 'align-center',
+                 dtyp: 'bool',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return data ? 'Sí' : 'No';
+                 }
+              },
+          ]
+      })
+
+    $(`#${t_producto} tbody`).on('click', '.tr-producto-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_producto}`).DataTable().row( elerow ).data()
+        producto_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_producto').addEventListener('click', function() {
+          producto_form_crud();
+      });
+
+    qelem('#btn_borrar_producto').addEventListener('click', function() {
+        let table = $(`#${t_producto}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_producto');
+            gbe.append('attr', 'MProducto');
+            gbe.append('mname', 'delete_producto');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensage recibo del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_producto}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    producto_form_crud = (pk) => {
+        dattrs = {
+            title: 'Crear Producto',
+            t_guid: t_producto,
+            sui_rr: '{{ rr }}',
+            from_ProductoUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'Producto',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/ProductoCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Producto';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_producto').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_producto').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_descripcion__icontains', 'value': qelem('input#input_buscar_producto').value
+                })
+                gmquery.push({
+                    'field': 'or_ean__icontains', 'value': qelem('input#input_buscar_producto').value
+                })
+                gmquery.push({
+                    'field': 'or_prod_cod__icontains', 'value': qelem('input#input_buscar_producto').value
+                })
+            }
+            $(`#${t_producto}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_producto}`).on('draw.dt', function() {
+  tt = qelem(`#table_producto_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

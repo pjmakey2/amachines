@@ -1,0 +1,230 @@
+<div class="enumbers_ui_container container-fluid">
+    <div class="enumbers_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_enumbers" class="btn btn-primary me-2">
+                <i class="mdi mdi-plus"></i> Crear
+            </button>
+            <button id="btn_borrar_enumbers" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_enumbers" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_enumbers_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    enumbers_home_be = function (data, settings) {
+        tt = qelem(`#table_enumbers_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`enumbers_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_enumbers = `dtable_${OptsIO.s4generate()}`;
+    dt_enumbers_pc = Grid.datatables_wrapper({
+          t_guid: t_enumbers,
+          url_exec: '{% url "iom" %}',
+          title: 'Lista de Números',
+          tselector: 'table_enumbers_ui',
+          app_name: 'Sifen',
+          model_name: 'Enumbers',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          check_gmquery: true,
+          builder_be: enumbers_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_tclh_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-enumbers-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'expobj__establecimiento',
+                 tit: 'Establecimiento',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'tipo',
+                 tit: 'Tipo',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'serie',
+                 tit: 'Serie',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'numero',
+                 tit: 'Número',
+                 cls: 'align-right',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'estado',
+                 tit: 'Estado',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+          ]
+      })
+
+    $(`#${t_enumbers} tbody`).on('click', '.tr-enumbers-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_enumbers}`).DataTable().row( elerow ).data()
+        enumbers_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_crear_enumbers').addEventListener('click', function() {
+          enumbers_form_crud();
+      });
+
+    qelem('#btn_borrar_enumbers').addEventListener('click', function() {
+        let table = $(`#${t_enumbers}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Sifen');
+            gbe.append('package', 'mng_enumbers');
+            gbe.append('attr', 'MEnumbers');
+            gbe.append('mname', 'delete_enumbers');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp)=>{
+                msgs = rsp.data.msgs;
+                log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                UiB.BeMsgHandle({
+                    rsps: msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                })
+                $(`#${t_enumbers}`).DataTable().ajax.reload();
+            }).catch((err)=>{
+                log.error(`Error al borrar registros: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error al borrar los registros. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    enumbers_form_crud = (pk) => {
+        dattrs = {
+            title: 'Crear Número',
+            t_guid: t_enumbers,
+            sui_rr: '{{ rr }}',
+            from_EnumbersUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'Sifen',
+            model_name: 'Enumbers',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Sifen/EnumbersCreateUi.html',
+            raw: true,
+
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Número';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_enumbers').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_enumbers').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_tipo__icontains', 'value': qelem('input#input_buscar_enumbers').value
+                })
+                gmquery.push({
+                    'field': 'or_serie__icontains', 'value': qelem('input#input_buscar_enumbers').value
+                })
+                gmquery.push({
+                    'field': 'or_estado__icontains', 'value': qelem('input#input_buscar_enumbers').value
+                })
+            }
+            $(`#${t_enumbers}`).DataTable().ajax.reload();
+
+        }
+    }
+
+$(`#${t_enumbers}`).on('draw.dt', function() {
+  tt = qelem(`#table_enumbers_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

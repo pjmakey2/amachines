@@ -1,0 +1,1308 @@
+<div class="ui_documentheader">
+    <form id="form_documentheader_{{ rr }}" class="form_documentheader">
+        {% if mobj %}
+            <input type="hidden"
+                name="id"
+                value="{{ mobj.pk }}"
+            >
+        {% endif %}
+        <input type='hidden' name="source" value="MANUAL" />
+        <input type='hidden' name="doc_tipo" value="FE" />
+        <input type='hidden' name="doc_op" value="VTA" />
+        <input type='hidden' name="doc_tipo_cod" value="1" />
+
+        <!-- Row 3: timbrado_id, doc_establecimiento -->
+        <div class="row mt-2">
+            <div class="col-md-2">
+                <div class="form-floating-select2 form-floating-select2-sm">
+                    <select required name="timbrado_id" class="form-select"></select>
+                    <label>Timbrado</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating-select2 form-floating-select2-sm">
+                    <select required name="doc_establecimiento" class="form-select"></select>
+                    <label>Establecimiento</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input type="text" name="doc_numero" class="form-control bg-light" readonly value="-" placeholder="Número" />
+                    <label>Número</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 1: pdv_ruc, pdv_ruc_dv, pdv_nombrefactura -->
+        <div class="row mt-2">
+            <div class="msg_pdv_ruc"></div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required
+                        type="text"
+                        name="pdv_ruc"
+                        class="form-control"
+                        placeholder="RUC"
+                        oninput="form_validation.just_number(event)"
+                        {% if mobj %} value="{{ mobj.pdv_ruc }}" {% endif %}
+                    />
+                    <label>RUC</label>
+                </div>
+
+            </div>
+            <div class="col-md-1">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="number"
+                        name="pdv_ruc_dv"
+                        class="form-control"
+                        placeholder="DV"
+                        {% if mobj %} value="{{ mobj.pdv_ruc_dv }}" {% endif %}
+                    />
+                    <label>DV</label>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required
+                        type="text"
+                        name="pdv_nombrefactura"
+                        class="form-control"
+                        placeholder="Nombre Factura"
+                        {% if mobj %} value="{{ mobj.pdv_nombrefactura }}" {% endif %}
+                    />
+                    <label>Nombre Factura</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: pdv_celular, pdv_email -->
+        <div class="row mt-2">
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required
+                        type="text"
+                        name="pdv_celular"
+                        class="form-control"
+                        placeholder="Celular"
+                        oninput="form_validation.just_number(this)"
+                        value="{% if mobj %}{{ mobj.pdv_celular }}{% else %}000000{% endif %}"
+                    />
+                    <label>Celular</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required
+                        type="email"
+                        name="pdv_email"
+                        class="form-control"
+                        placeholder="Email"
+                        {% if mobj %} value="{{ mobj.pdv_email }}" {% endif %}
+                    />
+                    <label>Email</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <select required name="doc_moneda" class="form-select">
+                        <option value="GS" {% if not mobj.doc_moneda %} selected {% endif %} {% if mobj.doc_moneda == 'GS' %}selected{% endif %}>GS - Guaraníes</option>
+                        <option value="USD" {% if mobj.doc_moneda == 'USD' %}selected{% endif %}>USD - Dólares</option>
+                    </select>
+                    <label>Moneda</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <select
+                        required
+                        name="doc_cre_tipo_cod"
+                        class="form-select"
+                    >
+                        <option {% if not mobj %} selected {% endif %} {% if mobj.doc_cre_tipo_cod == 1 %}selected{% endif %} value="1">Contado</option>
+                        <option {% if mobj.doc_cre_tipo_cod == 2 %}selected{% endif %} value="2">Crédito</option>
+                    </select>
+                    <label>Cond. Venta</label>
+                </div>
+            </div>
+            <div id="doc_vencimiento_container" class="col-md-2 d-none">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required
+                        type="date"
+                        name="doc_vencimiento"
+                        class="form-control"
+                        placeholder="Vto"
+                        {% if mobj %} value="{{ mobj.doc_vencimiento|date:'Y-m-d' }}" {% endif %}
+                    />
+                    <label>Vto</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 5: pdv_type_business, doc_tipo_pago_cod -->
+        <div class="row mt-2">
+            <div class="col-md-3">
+                <div class="form-floating form-floating-sm">
+                    <select required name="pdv_tipocontribuyente" class="form-select">
+                        <option value="1" {% if  mobj.pdv_tipocontribuyente == '1' %}selected{% endif %}>Fisica</option>
+                        <option value="2" {% if mobj.pdv_tipocontribuyente == '2' %}selected{% endif %}>Juridica</option>
+                        <option value="3" {% if not mobj or mobj.pdv_tipocontribuyente == '3' %}selected{% endif %}>No contribuyente</option>
+                    </select>
+                    <label>Tipo Contrib.</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating form-floating-sm">
+                    <select required name="pdv_type_business" class="form-select">
+                        <option value="B2C" {% if not mobj or mobj.pdv_type_business == 'B2C' %}selected{% endif %}>B2C - Consumidor</option>
+                        <option value="B2B" {% if mobj.pdv_type_business == 'B2B' %}selected{% endif %}>B2B - Empresa</option>
+                        <option value="B2G" {% if mobj.pdv_type_business == 'B2G' %}selected{% endif %}>B2G - Gobierno</option>
+                        <option value="B2F" {% if mobj.pdv_type_business == 'B2F' %}selected{% endif %}>B2F - Extranjero</option>
+                    </select>
+                    <label>Tipo Negocio</label>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-floating form-floating-sm">
+                    <select required name="doc_tipo_pago_cod" class="form-select">
+                        <option value="1" {% if not mobj.doc_tipo_pago_cod or mobj.doc_tipo_pago_cod == 1 %}selected{% endif %}>Efectivo</option>
+                        <option value="2" {% if mobj.doc_tipo_pago_cod == 2 %}selected{% endif %}>Cheque</option>
+                        <option value="3" {% if mobj.doc_tipo_pago_cod == 3 %}selected{% endif %}>Tarjeta crédito</option>
+                        <option value="4" {% if mobj.doc_tipo_pago_cod == 4 %}selected{% endif %}>Tarjeta débito</option>
+                        <option value="5" {% if mobj.doc_tipo_pago_cod == 5 %}selected{% endif %}>Transferencia</option>
+                        <option value="6" {% if mobj.doc_tipo_pago_cod == 6 %}selected{% endif %}>Giro</option>
+                        <option value="7" {% if mobj.doc_tipo_pago_cod == 7 %}selected{% endif %}>Billetera electrónica</option>
+                        <option value="8" {% if mobj.doc_tipo_pago_cod == 8 %}selected{% endif %}>Tarjeta empresarial</option>
+                        <option value="9" {% if mobj.doc_tipo_pago_cod == 9 %}selected{% endif %}>Vale</option>
+                        <option value="10" {% if mobj.doc_tipo_pago_cod == 10 %}selected{% endif %}>Retención</option>
+                        <option value="11" {% if mobj.doc_tipo_pago_cod == 11 %}selected{% endif %}>Pago anticipo</option>
+                        <option value="12" {% if mobj.doc_tipo_pago_cod == 12 %}selected{% endif %}>Valor fiscal</option>
+                        <option value="13" {% if mobj.doc_tipo_pago_cod == 13 %}selected{% endif %}>Valor comercial</option>
+                        <option value="14" {% if mobj.doc_tipo_pago_cod == 14 %}selected{% endif %}>Compensación</option>
+                        <option value="15" {% if mobj.doc_tipo_pago_cod == 15 %}selected{% endif %}>Permuta</option>
+                        <option value="16" {% if mobj.doc_tipo_pago_cod == 16 %}selected{% endif %}>Pago bancario</option>
+                        <option value="17" {% if mobj.doc_tipo_pago_cod == 17 %}selected{% endif %}>Pago Móvil</option>
+                        <option value="18" {% if mobj.doc_tipo_pago_cod == 18 %}selected{% endif %}>Donación</option>
+                        <option value="19" {% if mobj.doc_tipo_pago_cod == 19 %}selected{% endif %}>Promoción</option>
+                        <option value="20" {% if mobj.doc_tipo_pago_cod == 20 %}selected{% endif %}>Consumo Interno</option>
+                        <option value="21" {% if mobj.doc_tipo_pago_cod == 21 %}selected{% endif %}>Pago Electrónico</option>
+                        <option value="99" {% if mobj.doc_tipo_pago_cod == 99 %}selected{% endif %}>Otro</option>
+                    </select>
+                    <label>Tipo Pago</label>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-2">
+
+        <!-- Detail Lines Section -->
+        <h5 class="mb-3 d-none">Líneas de Detalle</h5>
+
+        <div class="d-flex gap-1 align-items-end">
+            <div>
+                <label class="form-label mb-1">Unidad</label>
+                <select
+                    name="detail_prod_unidad_medida_desc"
+                    class="form-select"
+                    style="width: 120px;"
+                >
+                </select>
+            </div>
+            <div>
+                <label class="form-label mb-1">Descripción</label>
+                <select
+                    name="detail_prod_descripcion"
+                    class="form-select"
+                    style="width: 300px;"
+                >
+                </select>
+            </div>
+            <div>
+                <label class="form-label mb-1">PU</label>
+                <input
+                    type="text"
+                    name="detail_precio_unitario"
+                    class="form-control"
+                    placeholder="0"
+                    style="width: 180px;"
+                />
+            </div>
+            <div>
+                <label class="form-label mb-1">Cantidad</label>
+                <input
+                    type="text"
+                    name="detail_cantidad"
+                    class="form-control"
+                    placeholder="0"
+                    style="width: 90px;"
+                />
+            </div>
+            <div>
+                <label class="form-label mb-1">Desc. %</label>
+                <input
+                    type="text"
+                    name="detail_descuento_pct"
+                    class="form-control"
+                    placeholder="0"
+                    style="width: 80px;"
+                />
+            </div>
+            <div>
+                <button
+                    type="button"
+                    class="btn btn-success btn-sm btn_agregar_linea"
+                >
+                    <i class="mdi mdi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Descuento Global -->
+        <div class="row mt-2">
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="text"
+                        name="doc_descuento_global_pct"
+                        class="form-control"
+                        placeholder="0"
+                        value="0"
+                    />
+                    <label>Descuento Global %</label>
+                </div>
+            </div>
+            <div class="col-md-10">
+                <small class="text-muted">Porcentaje de descuento global aplicado a cada ítem de la factura.</small>
+            </div>
+        </div>
+
+        <!-- Tax Distribution (only for manual products) -->
+        <div class="row mt-2 div_tax_distribution" style="display:none;">
+            <div class="col-md-12 mb-2">
+                <small class="text-info"><strong>Distribución de Impuestos:</strong> La suma debe ser 100%. Solo se puede usar Gravada 5% + Exenta O Gravada 10% + Exenta.</small>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input
+                        type="text"
+                        name="detail_exenta"
+                        class="form-control"
+                        placeholder="0"
+                        value="0"
+                    />
+                    <label>Exenta (%)</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input
+                        type="text"
+                        name="detail_g5"
+                        class="form-control"
+                        placeholder="0"
+                        value="0"
+                    />
+                    <label>Gravada 5% (%)</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input
+                        type="text"
+                        name="detail_g10"
+                        class="form-control"
+                        placeholder="100"
+                        value="100"
+                    />
+                    <label>Gravada 10% (%)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Table -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <table class="table table-striped table-bordered table_details">
+                    <thead class="table-dark thead_details">
+                        <!-- Header will be rendered by JavaScript -->
+                    </thead>
+                    <tbody class="tbody_details">
+                        <!-- Detail lines will be added here -->
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="9" class="text-end">Total:</th>
+                            <th class="total_details">0.00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="row mt-4">
+            <div class="col-md-2 text-start">
+                <button
+                    id="btn_crear"
+                    class="btn btn-lg btn-primary"
+                    type="submit"
+                >
+                    {% if mobj %} Actualizar {% else %} Guardar {% endif %}
+                </button>
+            </div>
+            <div class="col-md-4 text-start">
+                <button
+                    id="btn_enviar"
+                    class="btn btn-lg btn-info"
+                    type="submit"
+                >
+                    {% if mobj %} Actualizar {% else %} Guardar {% endif %} y Enviar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not mobj %}
+        $('#form_documentheader_{{ rr }} input[name=doc_vencimiento]').val(
+            new Date(new Date().setDate(new Date().getDate() + 30)).toISOString().split('T')[0]
+        );
+    {% endif %}
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Documento {{ mobj.pk }}{% else %}Crear Documento{% endif %}`;
+
+    // Array to store details
+    var details = [];
+    var editingIndex = null;
+
+    // Function to get current currency and decimal settings
+    function getDecimalPlaces() {
+        let moneda = qelem('select[name="doc_moneda"]').value;
+        return moneda === 'USD' ? 2 : 0;
+    }
+
+    // Function to format number as money based on currency
+    function formatMoney(value, decimals = null) {
+        if (decimals === null) {
+            decimals = getDecimalPlaces();
+        }
+        let num = parseFloat(value) || 0;
+        return num.toLocaleString('es-PY', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    }
+
+    // Initialize input masks for money fields
+    function initializeInputMasks() {
+        let decimals = getDecimalPlaces();
+        let maskOptions = {
+            alias: 'numeric',
+            groupSeparator: '.',
+            radixPoint: ',',
+            autoGroup: true,
+            digits: decimals,
+            digitsOptional: false,
+            rightAlign: true,
+            allowMinus: false,
+            removeMaskOnSubmit: true,
+            autoUnmask: true
+        };
+
+        // Apply mask to precio_unitario
+        Inputmask(maskOptions).mask(qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]'));
+
+        // Apply mask to cantidad
+        Inputmask({
+            alias: 'numeric',
+            groupSeparator: '.',
+            radixPoint: ',',
+            autoGroup: true,
+            digits: decimals,
+            digitsOptional: false,
+            rightAlign: true,
+            allowMinus: false,
+            removeMaskOnSubmit: true,
+            autoUnmask: true
+        }).mask(qelem('#form_documentheader_{{ rr }} input[name=detail_cantidad]'));
+
+        // Apply mask to descuento por item (porcentaje 0-100)
+        Inputmask({
+            alias: 'numeric',
+            groupSeparator: '',
+            radixPoint: '.',
+            digits: 2,
+            digitsOptional: true,
+            rightAlign: true,
+            allowMinus: false,
+            min: 0,
+            max: 100,
+            removeMaskOnSubmit: true,
+            autoUnmask: true
+        }).mask(qelem('#form_documentheader_{{ rr }} input[name=detail_descuento_pct]'));
+
+        // Apply mask to descuento global (porcentaje 0-100)
+        Inputmask({
+            alias: 'numeric',
+            groupSeparator: '',
+            radixPoint: '.',
+            digits: 2,
+            digitsOptional: true,
+            rightAlign: true,
+            allowMinus: false,
+            min: 0,
+            max: 100,
+            removeMaskOnSubmit: true,
+            autoUnmask: true
+        }).mask(qelem('#form_documentheader_{{ rr }} input[name=doc_descuento_global_pct]'));
+    }
+
+    // Update masks when currency changes
+    qelem('select[name="doc_moneda"]').addEventListener('change', function() {
+        initializeInputMasks();
+        renderDetailsTable();
+    });
+
+    // Re-render table when global discount changes
+    qelem('#form_documentheader_{{ rr }} input[name=doc_descuento_global_pct]').addEventListener('change', function() {
+        renderDetailsTable();
+    });
+    qelem('#form_documentheader_{{ rr }} input[name=doc_descuento_global_pct]').addEventListener('blur', function() {
+        renderDetailsTable();
+    });
+
+    // Initialize masks on load
+    initializeInputMasks();
+
+    // Initialize select2 for producto description with tags
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]',
+        width: '400px',
+        app_name: 'Sifen',
+        model_name: 'Producto',
+        field_display: ['descripcion'],
+        field_id: ['prod_cod'],
+        sterm: ['descripcion', 'prod_cod'],
+        db_fields: ['prod_cod', 'descripcion', 'precio', 'exenta', 'g5', 'g10', 'medidaobj__medida_cod', 'medidaobj__medida'],
+        dbcon: 'default',
+        tags: true,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5',
+        placeholder: 'Seleccione o escriba descripción'
+    });
+
+    // Initialize input masks for tax distribution fields
+    var percentMaskOptions = {
+        alias: 'numeric',
+        groupSeparator: ',',
+        radixPoint: '.',
+        autoGroup: true,
+        digits: 2,
+        digitsOptional: false,
+        rightAlign: true,
+        allowMinus: false,
+        removeMaskOnSubmit: true,
+        autoUnmask: true,
+        min: 0,
+        max: 100
+    };
+    Inputmask(percentMaskOptions).mask(qelem('#form_documentheader_{{ rr }} input[name=detail_exenta]'));
+    Inputmask(percentMaskOptions).mask(qelem('#form_documentheader_{{ rr }} input[name=detail_g5]'));
+    Inputmask(percentMaskOptions).mask(qelem('#form_documentheader_{{ rr }} input[name=detail_g10]'));
+
+    // Variable to store selected product data
+    var selectedProductData = null;
+
+    // Listen for product selection
+    $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').on('select2:select', function(e) {
+        var data = e.params.data;
+
+        // Check if it's a real product from database (has custom data)
+        if (data.element && data.element.dataset && data.element.dataset.prod_cod) {
+            selectedProductData = {
+                prod_cod: data.element.dataset.prod_cod || data.id,
+                precio: parseFloat(data.element.dataset.precio || 0),
+                exenta: parseFloat(data.element.dataset.exenta || 0),
+                g5: parseFloat(data.element.dataset.g5 || 0),
+                g10: parseFloat(data.element.dataset.g10 || 0),
+                medida_cod: data.element.dataset.medida_cod || '77',
+                medida: data.element.dataset.medida || 'UNI'
+            };
+
+            // Auto-fill precio if product has price
+            if (selectedProductData.precio > 0) {
+                qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]').value = selectedProductData.precio;
+            }
+
+            // Auto-select unidad medida if available (use code, not string)
+            if (selectedProductData.medida_cod) {
+                $('#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc]').val(selectedProductData.medida_cod).trigger('change');
+            }
+
+            // Hide tax distribution fields (product from model has its own distribution)
+            qelem('#form_documentheader_{{ rr }} .div_tax_distribution').style.display = 'none';
+
+            log.info('Product selected from database: ' + JSON.stringify(selectedProductData, null, 2));
+        } else {
+            // Manual entry (tag created, not from database)
+            selectedProductData = null;
+            // Show tax distribution fields for manual products
+            qelem('#form_documentheader_{{ rr }} .div_tax_distribution').style.display = 'flex';
+
+            log.info('Manual product entry detected');
+        }
+
+        // Set focus to precio_unitario field
+        qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]').focus();
+    });
+
+    // Also handle when field is cleared
+    $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').on('select2:clear', function() {
+        selectedProductData = null;
+        qelem('#form_documentheader_{{ rr }} .div_tax_distribution').style.display = 'flex';
+    });
+
+    // Populate Etimbrado select
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_documentheader_{{ rr }} select[name=timbrado_id]',
+        app_name: 'Sifen',
+        model_name: 'Etimbrado',
+        field_display: ['timbrado'],
+        field_id: ['id'],
+        db_fields: ['timbrado', 'id', 'ruc'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: false,
+        placeholder: 'Seleccione timbrado',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        endRow: 100,
+        first_selected: true,
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+    }).then(() => {
+        {% if mobj %}
+            qelem('#form_documentheader_{{ rr }} select[name=timbrado_id]').value = '{{ mobj.get_timbrado_id }}';
+        {% endif %}
+
+        $('#form_documentheader_{{ rr }} select[name=timbrado_id]').trigger('change');
+        initFloatingSelect2('#form_documentheader_{{ rr }} select[name=timbrado_id]');
+    });
+
+    // Floating label helper for Select2
+    function initFloatingSelect2(selector) {
+        let $select = $(selector);
+        let $container = $select.closest('.form-floating-select2');
+
+        // Set initial state
+        if ($select.val()) {
+            $container.addClass('has-value');
+        }
+
+        // On change
+        $select.on('change', function() {
+            $container.toggleClass('has-value', $(this).val() !== '' && $(this).val() !== null);
+        });
+
+        // On focus
+        $select.on('select2:open', function() {
+            $container.addClass('select2-focused');
+        }).on('select2:close', function() {
+            $container.removeClass('select2-focused');
+        });
+    }
+
+    // Function to populate Establecimiento based on Timbrado
+    function populateEstablecimiento(timbradoId) {
+        form_search.se_populate({
+            surl: '{% url "iom" %}',
+            dele: '#form_documentheader_{{ rr }} select[name=doc_establecimiento]',
+            app_name: 'Sifen',
+            model_name: 'Eestablecimiento',
+            field_display: ['establecimiento'],
+            field_id: ['establecimiento'],
+            db_fields: ['establecimiento', 'direccion'],
+            qs_be: [
+                { field: 'timbradoobj_id', value: timbradoId }
+            ],
+            dbcon: 'default',
+            theme: 'bootstrap-5',
+            width: '100%',
+            allowClear: false,
+            placeholder: 'Seleccione establecimiento',
+            dropdownParent: $('#offcanvasGlobalUi'),
+            endRow: 100,
+            first_selected: true,
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            },
+        }).then(() => {
+            {% if mobj %}
+                qelem('#form_documentheader_{{ rr }} select[name=doc_establecimiento]').value = '{{ mobj.doc_establecimiento }}';
+            {% endif %}
+            $('#form_documentheader_{{ rr }} select[name=doc_establecimiento]').trigger('change');
+            initFloatingSelect2('#form_documentheader_{{ rr }} select[name=doc_establecimiento]');
+        });
+    }
+
+    // On Timbrado change, populate Establecimiento
+    $('#form_documentheader_{{ rr }} select[name=timbrado_id]').on('change', function() {
+        let timbradoId = $(this).val();
+        if (timbradoId) {
+            populateEstablecimiento(timbradoId);
+        }
+    });
+
+    // Function to fetch available numbers
+    function fetchAvailableNumbers(timbrado, establecimiento) {
+        {% if mobj %}
+            qelem('#form_documentheader_{{ rr }} input[name=doc_numero]').value = '{{ mobj.doc_numero }}';
+            return;
+        {% endif %}
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'ekuatia_serials');
+        fdata.append('attr', 'Eserial');
+        fdata.append('mname', 'get_last_number');
+        fdata.append('timbrado', timbrado);
+        fdata.append('establecimiento', establecimiento);
+        fdata.append('tipo', 'FE');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            let docNumeroInput = qelem('#form_documentheader_{{ rr }} input[name=doc_numero]');
+            if (data.numero) {
+                docNumeroInput.value = data.numero;
+                docNumeroInput.classList.remove('text-muted', 'text-danger');
+                docNumeroInput.classList.add('text-success', 'fw-bold');
+            } else if (data.error) {
+                docNumeroInput.value = data.error;
+                docNumeroInput.classList.remove('text-success', 'fw-bold');
+                docNumeroInput.classList.add('text-danger');
+            }
+        }).catch((err) => {
+            log.error('Error fetching last number: ' + JSON.stringify(err, null, 2));
+            qelem('#form_documentheader_{{ rr }} input[name=doc_numero]').value = 'Error';
+        });
+    }
+
+    // On Establecimiento change, fetch available numbers
+    $('#form_documentheader_{{ rr }} select[name=doc_establecimiento]').on('change', function() {
+        // Get timbrado number (text) from selected option
+        let timbrado = $('#form_documentheader_{{ rr }} select[name=timbrado_id] option:selected').text().trim();
+        let establecimiento = $(this).val();
+        if (timbrado && establecimiento) {
+            fetchAvailableNumbers(timbrado, establecimiento);
+        }
+    });
+
+    // Populate Unidad Medida select
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc]',
+        app_name: 'Sifen',
+        model_name: 'Medida',
+        field_display: ['medida'],
+        field_id: ['medida_cod'],
+        db_fields: ['medida', 'medida_cod'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '120px',
+        allowClear: true,
+        placeholder: 'Seleccione unidad',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        endRow: 10000,
+        headers: {
+            'X-CSRFToken': OptsIO.getCookie('csrftoken')
+        },
+    }).then(() => {
+        $('#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc]').val('77').trigger('change');
+    });
+
+    // Function to render details table
+    function renderDetailsTable() {
+        var form = qelem('#form_documentheader_{{ rr }}');
+        var thead = form.querySelector('.thead_details');
+        var tbody = form.querySelector('.tbody_details');
+        var tfoot = form.querySelector('tfoot');
+        tbody.innerHTML = '';
+        var totalBruto = 0;
+        var totalDescItem = 0;
+        var totalDescGlobal = 0;
+        var totalNeto = 0;
+        var totalExenta = 0;
+        var totalGravada5 = 0;
+        var totalIva5 = 0;
+        var totalGravada10 = 0;
+        var totalIva10 = 0;
+        var decimals = getDecimalPlaces();
+
+        // Get descuento global percentage
+        var descuentoGlobalPct = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=doc_descuento_global_pct]').value) || 0;
+
+        // Render table header
+        thead.innerHTML = `
+            <tr>
+                <th>UNID</th>
+                <th>DESC</th>
+                <th>PU</th>
+                <th>CANT</th>
+                <th>D.Item</th>
+                <th>D.Glob</th>
+                <th>EXENTA</th>
+                <th>G 10%</th>
+                <th>I 10%</th>
+                <th>Subtotal</th>
+                <th>AC</th>
+            </tr>
+        `;
+
+        details.forEach((detail, index) => {
+            var bruto = parseFloat(detail.precio_unitario) * parseFloat(detail.cantidad);
+            // Calcular descuento por item basado en porcentaje
+            var descItemPct = parseFloat(detail.per_descuento || 0);
+            var descItem = bruto * (descItemPct / 100);
+            // Calcular descuento global basado en porcentaje del bruto
+            var descGlob = bruto * (descuentoGlobalPct / 100);
+            var neto = bruto - descItem - descGlob;
+            if (neto < 0) neto = 0;
+
+            totalBruto += bruto;
+            totalDescItem += descItem;
+            totalDescGlobal += descGlob;
+            totalNeto += neto;
+            totalExenta += parseFloat(detail.exenta || 0);
+            totalGravada5 += parseFloat(detail.gravada_5 || 0);
+            totalIva5 += parseFloat(detail.iva_5 || 0);
+            totalGravada10 += parseFloat(detail.gravada_10 || 0);
+            totalIva10 += parseFloat(detail.iva_10 || 0);
+
+            // Formato: valor(porcentaje%)
+            var descItemStr = descItem > 0 ? `${formatMoney(descItem, decimals)}(${descItemPct.toFixed(2)}%)` : '-';
+            var descGlobStr = descGlob > 0 ? `${formatMoney(descGlob, decimals)}(${descuentoGlobalPct.toFixed(2)}%)` : '-';
+
+            var row = `
+                <tr>
+                    <td>${detail.prod_unidad_medida_desc_text || detail.prod_unidad_medida_desc}</td>
+                    <td>${detail.prod_descripcion}</td>
+                    <td class="text-end">${formatMoney(detail.precio_unitario, decimals)}</td>
+                    <td class="text-end">${formatMoney(detail.cantidad, decimals)}</td>
+                    <td class="text-end">${descItemStr}</td>
+                    <td class="text-end">${descGlobStr}</td>
+                    <td class="text-end">${formatMoney(detail.exenta || 0, decimals)}</td>
+                    <td class="text-end">${formatMoney(detail.gravada_10 || 0, decimals)}</td>
+                    <td class="text-end">${formatMoney(detail.iva_10 || 0, decimals)}</td>
+                    <td class="text-end">${formatMoney(neto, decimals)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-warning" onclick="editDetail(${index})">
+                            <i class="mdi mdi-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteDetail(${index})">
+                            <i class="mdi mdi-delete"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        tfoot.innerHTML = `
+            <tr>
+                <th colspan="4" class="text-end">Total:</th>
+                <th class="text-end">${formatMoney(totalDescItem, decimals)}</th>
+                <th class="text-end">${formatMoney(totalDescGlobal, decimals)}</th>
+                <th class="text-end">${formatMoney(totalExenta, decimals)}</th>
+                <th class="text-end">${formatMoney(totalGravada10, decimals)}</th>
+                <th class="text-end">${formatMoney(totalIva10, decimals)}</th>
+                <th class="text-end">${formatMoney(totalNeto, decimals)}</th>
+                <th></th>
+            </tr>
+        `;
+    }
+
+    // Function to add or update detail
+    qelem('#form_documentheader_{{ rr }} .btn_agregar_linea').addEventListener('click', function() {
+        let unidadCode = qelem('#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc]').value.trim();
+        let unidadText = $('#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc] option:selected').text().trim() || 'UNI';
+        let descripcionSelect = $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').val();
+        let descripcionText = $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion] option:selected').text().trim();
+        let precio = qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]').value;
+        let cantidad = qelem('#form_documentheader_{{ rr }} input[name=detail_cantidad]').value;
+        let descuentoPct = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=detail_descuento_pct]').value) || 0;
+
+        if (!unidadCode || !descripcionSelect || !precio || !cantidad) {
+            UiB.MsgError('Por favor, complete todos los campos de la línea de detalle.');
+            return;
+        }
+
+        // Validate descuento percentage is between 0 and 100
+        if (descuentoPct < 0 || descuentoPct > 100) {
+            UiB.MsgError('El porcentaje de descuento debe estar entre 0 y 100.');
+            return;
+        }
+
+        // Calculate monetary discount from percentage
+        let bruto = parseFloat(precio) * parseFloat(cantidad);
+        let descuento = bruto * (descuentoPct / 100);
+
+        let detail = {
+            prod_unidad_medida_desc: unidadCode,
+            prod_unidad_medida_desc_text: unidadText,
+            prod_descripcion: descripcionText || descripcionSelect,
+            precio_unitario: parseFloat(precio),
+            cantidad: parseFloat(cantidad),
+            descuento: descuento,
+            per_descuento: descuentoPct
+        };
+
+        // Create product object for calculation
+        let prodobj;
+
+        // Determine if it's a product from model or manual entry
+        if (selectedProductData) {
+            // Product from database - use its tax distribution
+            detail.prod_cod = selectedProductData.prod_cod;
+            detail.is_from_model = true;
+
+            // Determine porcentaje_iva based on distribution
+            let porcentaje_iva = selectedProductData.g10 > 0 ? 10 : (selectedProductData.g5 > 0 ? 5 : 0);
+
+            prodobj = {
+                exenta: selectedProductData.exenta,
+                g5: selectedProductData.g5,
+                g10: selectedProductData.g10,
+                porcentaje_iva__porcentaje: porcentaje_iva
+            };
+
+            log.info('Using product from model with distribution: exenta=' + prodobj.exenta + '%, g5=' + prodobj.g5 + '%, g10=' + prodobj.g10 + '%');
+        } else {
+            // Manual entry - use manual tax distribution
+            let exenta = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=detail_exenta]').value) || 0;
+            let g5 = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=detail_g5]').value) || 0;
+            let g10 = parseFloat(qelem('#form_documentheader_{{ rr }} input[name=detail_g10]').value) || 0;
+
+            // Validate: sum must be 100%
+            let total = exenta + g5 + g10;
+            if (Math.abs(total - 100) > 0.01) {
+                UiB.MsgError(`La suma de porcentajes debe ser 100%. Actualmente es ${total.toFixed(2)}%`);
+                return;
+            }
+
+            // Validate: cannot combine g5 and g10
+            if (g5 > 0 && g10 > 0) {
+                UiB.MsgError('No se puede combinar Gravada 5% con Gravada 10%. Solo una de ellas puede ser mayor a 0.');
+                return;
+            }
+
+            detail.prod_cod = 1850;  // Special code for manual products
+            detail.is_from_model = false;
+
+            // Determine porcentaje_iva based on distribution
+            let porcentaje_iva = g10 > 0 ? 10 : (g5 > 0 ? 5 : 0);
+
+            prodobj = {
+                exenta: exenta,
+                g5: g5,
+                g10: g10,
+                porcentaje_iva__porcentaje: porcentaje_iva
+            };
+
+            log.info('Using manual product with distribution: exenta=' + prodobj.exenta + '%, g5=' + prodobj.g5 + '%, g10=' + prodobj.g10 + '%');
+        }
+
+        // Calculate tax amounts using ivn.calculate_price (for display only)
+        let pcalc = ivn.calculate_price(prodobj, parseFloat(precio), parseFloat(cantidad));
+
+        // Store calculated values for TABLE DISPLAY
+        detail.exenta = pcalc.exenta;
+        detail.iva_5 = pcalc.iva_5;
+        detail.gravada_5 = pcalc.gravada_5;
+        detail.base_gravada_5 = pcalc.base_gravada_5;
+        detail.iva_10 = pcalc.iva_10;
+        detail.gravada_10 = pcalc.gravada_10;
+        detail.base_gravada_10 = pcalc.base_gravada_10;
+
+        // Store percentage distribution for BACKEND (these are what we send)
+        detail.exenta_pct = prodobj.exenta;
+        detail.g5_pct = prodobj.g5;
+        detail.g10_pct = prodobj.g10;
+
+        // per_descuento ya está definido desde el input de porcentaje
+
+        if (editingIndex !== null) {
+            // Update existing detail
+            details[editingIndex] = detail;
+            editingIndex = null;
+            qelem('#form_documentheader_{{ rr }} .btn_agregar_linea').innerHTML = '<i class="mdi mdi-plus"></i>';
+        } else {
+            // Add new detail
+            details.push(detail);
+        }
+
+        // Clear inputs
+        //qelem('#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc]').value = '';
+        $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').val(null).trigger('change');
+        selectedProductData = null;
+        qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]').value = '';
+        qelem('#form_documentheader_{{ rr }} input[name=detail_cantidad]').value = '';
+        qelem('#form_documentheader_{{ rr }} input[name=detail_descuento_pct]').value = '0';
+
+        // Hide tax distribution fields after adding detail
+        qelem('#form_documentheader_{{ rr }} .div_tax_distribution').style.display = 'none';
+
+        // Reset tax distribution to defaults (but hidden)
+        qelem('#form_documentheader_{{ rr }} input[name=detail_exenta]').value = '0';
+        qelem('#form_documentheader_{{ rr }} input[name=detail_g5]').value = '0';
+        qelem('#form_documentheader_{{ rr }} input[name=detail_g10]').value = '100';
+
+        //$('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').select2('open');
+        renderDetailsTable();
+    });
+
+    // Function to edit detail
+    window.editDetail = function(index) {
+        let detail = details[index];
+        qelem('#form_documentheader_{{ rr }} select[name=detail_prod_unidad_medida_desc]').value = detail.prod_unidad_medida_desc;
+
+        // Set description in select2
+        if (detail.prod_cod && detail.prod_cod !== 1850) {
+            // Product from model
+            let option = new Option(detail.prod_descripcion, detail.prod_cod, true, true);
+            $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').append(option).trigger('change');
+            selectedProductData = {
+                prod_cod: detail.prod_cod,
+                precio: detail.precio_unitario,
+                exenta: detail.exenta_pct || 0,
+                g5: detail.g5_pct || 0,
+                g10: detail.g10_pct || 0
+            };
+            qelem('#form_documentheader_{{ rr }} .div_tax_distribution').style.display = 'none';
+        } else {
+            // Manual product
+            let option = new Option(detail.prod_descripcion, detail.prod_descripcion, true, true);
+            $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').append(option).trigger('change');
+            selectedProductData = null;
+            qelem('#form_documentheader_{{ rr }} .div_tax_distribution').style.display = 'flex';
+            qelem('#form_documentheader_{{ rr }} input[name=detail_exenta]').value = detail.exenta_pct || 0;
+            qelem('#form_documentheader_{{ rr }} input[name=detail_g5]').value = detail.g5_pct || 0;
+            qelem('#form_documentheader_{{ rr }} input[name=detail_g10]').value = detail.g10_pct || 100;
+        }
+        qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]').value = detail.precio_unitario;
+        qelem('#form_documentheader_{{ rr }} input[name=detail_cantidad]').value = detail.cantidad;
+        qelem('#form_documentheader_{{ rr }} input[name=detail_descuento_pct]').value = detail.per_descuento || 0;
+
+        editingIndex = index;
+        qelem('#form_documentheader_{{ rr }} .btn_agregar_linea').innerHTML = '<i class="mdi mdi-pencil"></i> Actualizar Línea';
+    };
+
+    // Function to delete detail
+    window.deleteDetail = function(index) {
+        UiB.MsgSwall({
+            msg: '¿Estás seguro de que deseas eliminar esta línea?',
+            ttype: 'warning'
+        }).then((result) => {
+            details.splice(index, 1);
+            renderDetailsTable();
+        });
+    };
+
+    // Save function
+    save_documentheader = (target, btn_submitter_id) => {
+        if (details.length === 0) {
+            UiB.MsgError('Debe agregar al menos una línea de detalle.');
+            return;
+        }
+
+
+
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Sifen');
+        fdata.append('model_name', 'DocumentHeader');
+        fdata.append('dbcon', 'default');
+
+        log.info(`#form_documentheader_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+
+        // Remove temporary detail input fields
+        delete edata['detail_prod_unidad_medida_desc'];
+        delete edata['detail_prod_descripcion'];
+        delete edata['detail_precio_unitario'];
+        delete edata['detail_cantidad'];
+        delete edata['detail_descuento_pct'];
+        delete edata['detail_exenta'];
+        delete edata['detail_g5'];
+        delete edata['detail_g10'];
+
+        // Process global discount percentage - calculate total and per-item discount
+        let descGlobalPct = parseFloat(edata['doc_descuento_global_pct'] || 0);
+        delete edata['doc_descuento_global_pct'];
+
+        // Add details to edata
+        if (details.length === 0) {
+            UiB.MsgError('Debe agregar al menos una línea de detalle.');
+            return;
+        }
+
+        // Prepare details for backend - send percentage distribution and discounts
+        // Calculate global discount for each item based on percentage
+        let detailsForBackend = details.map(d => {
+            let bruto = d.precio_unitario * d.cantidad;
+            let descGlobalItem = bruto * (descGlobalPct / 100);
+            return {
+                prod_cod: d.prod_cod,
+                prod_descripcion: d.prod_descripcion,
+                prod_unidad_medida_desc: d.prod_unidad_medida_desc,
+                prod_unidad_medida_desc_text: d.prod_unidad_medida_desc_text,
+                precio_unitario: d.precio_unitario,
+                cantidad: d.cantidad,
+                is_from_model: d.is_from_model,
+                // Send percentages to backend
+                exenta: d.exenta_pct,
+                g5: d.g5_pct,
+                g10: d.g10_pct,
+                // Send discount per item (valor monetario calculado)
+                descuento: d.descuento || 0,
+                per_descuento: d.per_descuento || 0,
+                // Send global discount for this item
+                descuento_global_item: descGlobalItem
+            };
+        });
+
+        // Calculate total global discount (sum of all items)
+        let totalDescGlobal = detailsForBackend.reduce((sum, d) => sum + d.descuento_global_item, 0);
+        edata['doc_descuento_global'] = totalDescGlobal;
+
+        edata['details'] = detailsForBackend;
+
+        if (btn_submitter_id === 'btn_enviar') {
+            edata['send_save'] = true;
+        }
+
+        log.info(`#form_documentheader_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_documentheader_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]));
+        log.info(`#form_documentheader_{{ rr }} c_a to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('c_a', jfy([
+            {
+                'module': 'Sifen',
+                'package': 'mng_sifen',
+                'attr': 'MSifen',
+                'mname': 'create_documentheader',
+                'cont': false,
+                'show_success': true
+            },
+        ]));
+        log.info(`#form_documentheader_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]));
+
+        log.info(`#form_documentheader_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_documentheader_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_documentheader_{{ rr }}').classList.add('overlay');
+
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_documentheader_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_documentheader_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_documentheader_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return msgs;
+        }).then((msgs)=>{
+            if (got_error === false) {
+                log.success(`#form_documentheader_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_documentheader_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_documentheader_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_documentheader_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_documentheader_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_documentheader_{{ rr }} Submitting form`);
+        btn_submitter_id = evt.submitter.attributes['id'].value;
+        save_documentheader(event.target, btn_submitter_id);
+    })
+
+    qelem('#form_documentheader_{{ rr }} input[name="pdv_ruc"]').addEventListener('focusout', (evt)=>{
+        $('.msg_pdv_ruc').text('');
+        let ruc = evt.target.value.trim();
+        // Fetch business name via AJAX
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'validate_ruc');
+        fdata.append('ruc', ruc);
+
+        axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            rdata = rsp.data;
+            console.log(rdata);
+            if (rdata.success) {
+                qelem('input[name=pdv_ruc_dv]').value = rdata.pdv_ruc_dv;
+                qelem('input[name=pdv_nombrefactura]').value = rdata.pdv_nombrefactura;
+                if (rdata.pdv_email != null) {
+                    qelem('input[name=pdv_email]').value = rdata.pdv_email;
+                }
+                if (rdata.pdv_celular != null) {
+                    qelem('input[name=pdv_celular]').value = rdata.pdv_celular;
+                }
+                if (rdata.pdv_type_business != null) {
+                    qelem('select[name=pdv_type_business]').value = rdata.pdv_type_business;
+                }
+                if (rdata.pdv_tipocontribuyente != null) {
+                    qelem('select[name=pdv_tipocontribuyente]').value = rdata.pdv_tipocontribuyente;
+                }
+                qelem('.msg_pdv_ruc').classList.toggle('text-success', true);
+                qelem('.msg_pdv_ruc').classList.toggle('text-danger', false);
+                $('.msg_pdv_ruc').text('RUC válido y datos cargados.');
+                if (rdata.pdv_celular === null) {
+                    qelem('#form_documentheader_{{ rr }} input[name=pdv_celular]').focus();
+                } else {
+                    qelem('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').focus();
+                }
+            } else {
+                qelem('input[name=pdv_nombrefactura]').focus();
+                qelem('input[name=pdv_email]').value = '';
+                qelem('input[name=pdv_celular]').value = '';
+                qelem('select[name=pdv_type_business]').value = 'B2C';
+                qelem('select[name=pdv_tipocontribuyente]').value = '3';
+
+            }
+            if (rdata.error) {
+                qelem('.msg_pdv_ruc').classList.toggle('text-success', false);
+                qelem('.msg_pdv_ruc').classList.toggle('text-danger', true);
+                qelem('select[name=pdv_tipocontribuyente]').value = '3';
+                $('.msg_pdv_ruc').text(rdata.error);
+                // Calculate DV locally if validation fails
+                form_input.calculate_dv('input[name=pdv_ruc]', 'input[name=pdv_ruc_dv]');
+            }
+        })
+        .catch((err)=>{
+            console.log(err);
+            log.error(`#form_documentheader_{{ rr }} Error calculating dv of the ruc: ` + JSON.stringify(err, null, 2));
+        });
+    });
+
+
+
+    {% if mobj %}
+        // Load existing details via AJAX
+        load_detail = () => {
+            fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'get_documentdetails');
+            fdata.append('header_id', '{{ mobj.pk }}');
+            fdata.append('dbcon', 'default');
+
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {
+                    'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            }).then((rsp) => {
+                let data = rsp.data;
+                log.info('Loaded document details: ' + JSON.stringify({
+                    success: data.success,
+                    doc_descuento_global: data.doc_descuento_global,
+                    doc_descuento_global_pct: data.doc_descuento_global_pct,
+                    details_count: data.details ? data.details.length : 0
+                }));
+                if (data.success && data.details) {
+                    details = rsp.data.details;
+                    // Set global discount percentage if exists
+                    if (data.doc_descuento_global_pct && data.doc_descuento_global_pct > 0) {
+                        let descGlobalInput = qelem('#form_documentheader_{{ rr }} input[name=doc_descuento_global_pct]');
+                        descGlobalInput.value = data.doc_descuento_global_pct.toFixed(2);
+                        // Trigger inputmask to update
+                        $(descGlobalInput).trigger('input');
+                    }
+                    renderDetailsTable();
+                }
+            }).catch((err) => {
+                log.error('Error loading details: ' + JSON.stringify(err, null, 2));
+            });
+        }
+
+        load_detail();
+
+        {% if mobj.ek_estado or mobj.lote_estado == 'Aprobado' %}
+            $('#offcanvasGlobalUiLabel').html('Documento {{ mobj.doc_numero }} Enviado - Vista de solo lectura');
+            setTimeout(() => {
+                form_ui.set_readonly('form_documentheader_{{ rr }}');
+            }, 500);
+
+        {% endif %}
+
+        {% if mobj.doc_cre_tipo_cod == 2 %}
+            $('#doc_vencimiento_container').removeClass('d-none');
+        {% endif %}
+    {% else %}
+        setTimeout(() => {
+            qelem('#form_documentheader_{{ rr }} input[name="pdv_ruc"]').focus();
+        }, 500);
+    {% endif %}
+
+    $('#form_documentheader_{{ rr }} select[name=doc_cre_tipo_cod]').on('change', function(evt) {
+        let tipoCod = $(evt.target).val();
+        console.log(tipoCod === 2, tipoCod);
+        if ((tipoCod === '2') || (tipoCod === 2)) {
+            $('#doc_vencimiento_container').removeClass('d-none');
+        } else {
+            $('#doc_vencimiento_container').addClass('d-none');
+        }
+    });
+</script>

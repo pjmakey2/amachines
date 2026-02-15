@@ -1,0 +1,166 @@
+<div class="ui_roles">
+    <form id="form_roles_{{ rr }}" class="form_roles">
+        <input type="hidden"
+            name="id"
+            {% if mobj %} value="{{ mobj.pk }}" {% endif %}
+        >
+
+        <!-- Datos del Rol -->
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="mdi mdi-shield-account"></i> Datos del Rol
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <label class="required">Nombre del Rol</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <input
+                                type="text"
+                                name="name"
+                                class="form-control"
+                                placeholder="Ej: Administrador, Vendedor, Gerente"
+                                required
+                                {% if mobj %} value="{{ mobj.name }}" {% endif %}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <label>Descripción</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <textarea
+                                name="description"
+                                class="form-control"
+                                rows="3"
+                                placeholder="Descripción del rol (opcional)"
+                            >{% if mobj %}{{ mobj.description }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label>Estado</label>
+                        <div class="input-group flex-nowrap am_focus_highlight">
+                            <select name="active" class="form-control">
+                                <option value="true" {% if mobj and mobj.active %}selected{% elif not mobj %}selected{% endif %}>Activo</option>
+                                <option value="false" {% if mobj and not mobj.active %}selected{% endif %}>Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">
+                <i class="mdi mdi-close"></i> Cancelar
+            </button>
+            <button type="submit" class="btn btn-primary">
+                <i class="mdi mdi-content-save"></i> Guardar
+            </button>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Rol {{ mobj.name }}{% else %}Crear Rol{% endif %}`;
+
+    save_roles = (target) => {
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'OptsIO');
+        fdata.append('model_name', 'Roles');
+        fdata.append('dbcon', 'default')
+        log.info(`#form_roles_{{ rr }} Preparing data to be sent to the backend`);
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+        const efiles = form_serials.form_files(formData);
+        efiles.forEach((idx)=> {
+            ff = formData.get(idx);
+            fdata.append(idx, ff, ff.name)
+        })
+        seldis = ['active']
+        seldis.forEach((idx) => {
+            vv = $(`#form_roles_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) {
+                edata[idx] = vv
+            }
+        })
+        log.info(`#form_roles_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
+        fdata.append('uc_fields', jfy(edata));
+        log.info(`#form_roles_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('b_vals', jfy([]))
+        log.info(`#form_roles_{{ rr }} c_a to be sent: `);
+        fdata.append('c_a', jfy([
+            {
+                'module': 'OptsIO',
+                'package': 'io_roles',
+                'attr': 'IORoles',
+                'mname': 'create_roles',
+                'cont': false,
+                'show_success': true
+            },
+        ]))
+        log.info(`#form_roles_{{ rr }} a_vals to be sent: ` + JSON.stringify([], null, 2));
+        fdata.append('a_vals', jfy([]))
+        log.info(`#form_roles_{{ rr }} Set overlay to the form`);
+        document.querySelector('#form_roles_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_roles_{{ rr }}').classList.add('overlay');
+        return axios.post(
+            '{% url "iom" %}',
+            fdata,
+            { headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+                }
+            })
+        .then((rsp)=>{
+            msgs = rsp.data.msgs;
+            log.info(`#form_roles_{{ rr }} Response msgs: ` + JSON.stringify(msgs, null, 2));
+            if (!rsp.data.hasOwnProperty('msgs')) {
+                msgs = [rsp.data];
+            }
+            got_error = false;
+            msgs.forEach((ee)=>{
+                if (ee.error) {
+                    log.error(`#form_roles_{{ rr }} There is an error from the backend ${jfy(ee)}`);
+                    got_error = true;
+                }
+            })
+            log.info(`#form_roles_{{ rr }} Compiling messages to show to the user ${msgs}`);
+            UiB.BeMsgHandle({
+                rsps: msgs,
+                timer: 2000,
+                offcanvasglobal: true
+            })
+            return {msgs: msgs, got_error: got_error};
+        }).then((result)=>{
+            if (result.got_error === false) {
+                log.success(`#form_roles_{{ rr }} There is no error reload the datatable {{ t_guid }}`);
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err)=>{
+            log.error(`#form_roles_{{ rr }} Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(()=>{
+            log.info(`#form_roles_{{ rr }} Removing overlay from the form`);
+            let ft = document.querySelector('#form_roles_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+
+    }
+
+    qelem('#form_roles_{{ rr }}').addEventListener('submit', (evt)=>{
+        evt.preventDefault();
+        log.info(`#form_roles_{{ rr }} Submitting form`);
+        save_roles(event.target);
+    })
+
+</script>

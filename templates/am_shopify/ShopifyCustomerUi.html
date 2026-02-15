@@ -1,0 +1,311 @@
+<div class="shopifycustomer_ui_container container-fluid">
+    <div class="shopifycustomer_ui_msgs"></div>
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_sync_clientes" class="btn btn-primary me-2">
+                <i class="mdi mdi-sync"></i> Sincronizar
+            </button>
+            <button id="btn_migrar_clientes" class="btn btn-success me-2">
+                <i class="mdi mdi-database-export"></i> Migrar a SIFEN
+            </button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_clientes" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_shopifycustomer_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery = [];
+    shopifycustomer_home_be = function (data, settings) {
+        tt = qelem(`#table_shopifycustomer_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        crdata = Object.assign({}, settings.ajax.initquery);
+        mquery = [];
+        t_guid = settings.ajax.t_guid;
+        if (gmquery.length > 0) {
+            log.info(`Adding global mquery: ${jfy(gmquery)}`);
+            mquery = [...mquery, ...gmquery];
+        }
+        log.info(`shopifycustomer_home_be mquery: ${jfy(mquery)}`);
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        adata = Object.assign(data, crdata);
+        return adata
+    }
+    t_shopifycustomer = `dtable_${OptsIO.s4generate()}`;
+    dt_shopifycustomer_pc = Grid.datatables_wrapper({
+          t_guid: t_shopifycustomer,
+          url_exec: '{% url "iom" %}',
+          title: 'Clientes de Shopify',
+          tselector: 'table_shopifycustomer_ui',
+          app_name: 'am_shopify',
+          model_name: 'ShopifyCustomer',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: shopifycustomer_home_be,
+          t_opts: {
+              select: {
+                style: 'os'
+              },
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) {
+                  return `tr_shopifycustomer_${row.id}`
+              }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC',  dtyp: 'str', dfl: '', nord: false,
+                dfcon: `
+                    <i title="Ver/Editar" class="tr-shopifycustomer-query text fs-5 mdi mdi-archive-eye-outline"></i>
+                `,
+               },
+               { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'shopify_id',
+                 tit: 'Shopify ID',
+                 cls: 'align-left',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'first_name',
+                 tit: 'Nombre',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'last_name',
+                 tit: 'Apellido',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'email',
+                 tit: 'Email',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'phone',
+                 tit: 'Teléfono',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'tags',
+                 tit: 'Tags (RUC)',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     if (data && data.toLowerCase().includes('ruc:')) {
+                         return `<span class="badge bg-success">${data}</span>`;
+                     }
+                     return data || '';
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'orders_count',
+                 tit: 'Órdenes',
+                 cls: 'align-right',
+                 dtyp: 'int',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'total_spent',
+                 tit: 'Total Gastado',
+                 cls: 'align-right',
+                 dtyp: 'str',
+                 hide: false,
+                 render: (data, type, rowobj) => {
+                     return `${rowobj.currency} ${UiN.formatNumberU(parseFloat(data || 0).toFixed(0))}`;
+                 }
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'default_address_city',
+                 tit: 'Ciudad',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+              { fdis: true,
+                 gre: true,
+                 btyp: 'fdb',
+                 idx: 'state',
+                 tit: 'Estado',
+                 cls: 'align-left',
+                 dtyp: 'str',
+                 hide: false
+              },
+          ]
+      })
+
+    $(`#${t_shopifycustomer} tbody`).on('click', '.tr-shopifycustomer-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_shopifycustomer}`).DataTable().row( elerow ).data()
+        shopifycustomer_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_sync_clientes').addEventListener('click', function() {
+        UiB.MsgSwall({
+            msg: '¿Desea sincronizar los clientes desde Shopify?',
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'sync_customers_from_ui');
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs || [rsp.data],
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifycustomer}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al sincronizar: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al sincronizar. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    qelem('#btn_migrar_clientes').addEventListener('click', function() {
+        let table = $(`#${t_shopifycustomer}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un cliente para migrar.');
+            return;
+        }
+        let idsToMigrate = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Desea migrar ${idsToMigrate.length} cliente(s) a SIFEN?`,
+            ttype: 'info'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                let fdata = new FormData();
+                fdata.append('module', 'am_shopify');
+                fdata.append('package', 'mng_shopify');
+                fdata.append('attr', 'MShopify');
+                fdata.append('mname', 'migrate_customers_to_sifen');
+                fdata.append('ids', jfy(idsToMigrate));
+
+                axios.post('{% url "iom" %}', fdata).then((rsp) => {
+                    msgs = rsp.data.msgs;
+                    log.info(`Mensaje recibido del backend: ${jfy(msgs)}`);
+                    UiB.BeMsgHandle({
+                        rsps: msgs,
+                        timer: 2000,
+                        offcanvasglobal: false
+                    });
+                    $(`#${t_shopifycustomer}`).DataTable().ajax.reload();
+                }).catch((err) => {
+                    log.error(`Error al migrar: ${jfy(err)}`);
+                    UiB.MsgError('Ocurrió un error al migrar. Por favor, intenta de nuevo.');
+                });
+            }
+        });
+    });
+
+    shopifycustomer_form_crud = (pk) => {
+        dattrs = {
+            title: 'Ver Cliente',
+            t_guid: t_shopifycustomer,
+            sui_rr: '{{ rr }}',
+            from_ShopifyCustomerUi: true,
+            offcanvasglobal: true
+        }
+
+        tps = {
+            model_app_name: 'am_shopify',
+            model_name: 'ShopifyCustomer',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'am_shopify/ShopifyCustomerCreateUi.html',
+            raw: true,
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Detalle del Cliente';
+        }
+        OptsIO.getTmpl(tps).then((rsp)=>{
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi')
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi')
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#input_buscar_clientes').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery = [];
+            if (qelem('#input_buscar_clientes').value.trim() !== '') {
+                gmquery.push({
+                    'field': 'or_first_name__icontains', 'value': qelem('input#input_buscar_clientes').value
+                })
+                gmquery.push({
+                    'field': 'or_last_name__icontains', 'value': qelem('input#input_buscar_clientes').value
+                })
+                gmquery.push({
+                    'field': 'or_email__icontains', 'value': qelem('input#input_buscar_clientes').value
+                })
+                gmquery.push({
+                    'field': 'or_tags__icontains', 'value': qelem('input#input_buscar_clientes').value
+                })
+            }
+            $(`#${t_shopifycustomer}`).DataTable().ajax.reload();
+        }
+    }
+
+$(`#${t_shopifycustomer}`).on('draw.dt', function() {
+  tt = qelem(`#table_shopifycustomer_ui`);
+  tt.classList.remove('overlay-container');
+  tt.classList.remove('overlay');
+})
+
+</script>

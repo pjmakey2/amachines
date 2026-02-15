@@ -1,0 +1,849 @@
+{% load static %}
+<!-- Topbar/Toolbar -->
+<nav class="nav navbar navbar-expand-lg navbar-light iq-navbar" id="mainToolbar">
+    <div class="container-fluid navbar-inner">
+        <!-- Botón hamburguesa para móvil -->
+        <button class="btn btn-link mobile-menu-toggle me-2" id="mobileMenuToggle" type="button">
+            <i class="mdi mdi-menu" style="font-size: 1.5rem; color: #2d3748;"></i>
+        </button>
+        <div class="ms-auto">
+            <ul class="mb-2 navbar-nav align-items-center navbar-list mb-lg-0">
+                <!-- Task Notifications Bell -->
+                <li class="nav-item dropdown" id="taskNotificationBell">
+                    <a class="nav-link position-relative" href="#" id="taskBellDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="mdi mdi-bell-outline" style="font-size: 1.5rem;"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" id="taskBadge">
+                            0
+                        </span>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end task-notification-dropdown" aria-labelledby="taskBellDropdown" style="width: 350px; max-height: 400px;">
+                        <div class="dropdown-header d-flex justify-content-between align-items-center px-3 py-2 border-bottom">
+                            <h6 class="mb-0">Running Tasks</h6>
+                            <span class="badge bg-primary" id="taskCountHeader">0</span>
+                        </div>
+                        <div class="task-list-container" id="taskListContainer" style="max-height: 300px; overflow-y: auto;">
+                            <div class="text-center py-4 text-muted" id="noTasksMessage">
+                                <i class="mdi mdi-checkbox-marked-circle-outline" style="font-size: 2rem;"></i>
+                                <p class="mb-0 mt-2">No running tasks</p>
+                            </div>
+                            <!-- Task items will be inserted here -->
+                        </div>
+                        <div class="dropdown-footer text-center py-2 border-top d-none" id="taskFooter">
+                            <a href="#" class="text-primary small" id="clearCompletedTasks">Clear completed</a>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Business Activo -->
+                <li class="nav-item me-3" id="activeBusinessInfo">
+                    <div class="d-flex align-items-center px-3 py-2 rounded" style="background: #f8f9fa; border: 1px solid #e2e8f0;">
+                        <div>
+                            <div id="businessNameToolbar" class="fw-bold" style="font-size: 0.9rem; color: #2d3748; line-height: 1.2;">Cargando...</div>
+                            <div id="businessRucToolbar" class="text-muted" style="font-size: 0.75rem; line-height: 1;">RUC: -</div>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Usuario -->
+                <li class="nav-item dropdown">
+                    <a class="py-0 nav-link d-flex align-items-center" href="#" id="navbarDropdown-user" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div id="userAvatarContainer">
+                            <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold;">
+                                {{ request.user.username|slice:":1"|upper }}
+                            </div>
+                        </div>
+                        <div class="caption ms-3 d-none d-md-block">
+                            <h6 class="mb-0 caption-title">{{ request.user.get_full_name|default:request.user.username }}</h6>
+                            <p class="mb-0 caption-sub-title">{{ request.user.userprofile.puesto|default:"Usuario" }}</p>
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown-user">
+                        <li><a class="dropdown-item" href="#" id="openUserProfile">Perfil</a></li>
+                        <li><a class="dropdown-item" href="#" id="openBusinessSelector">Negocios</a></li>
+                        <li><a class="dropdown-item" href="#" id="openBusinessConfig">Editar Negocio Activo</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/io/glogout/" id="logoutLink">Cerrar Sesión</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<style>
+/* Estilos personalizados para el toolbar */
+.iq-navbar {
+    position: fixed;
+    top: 0;
+    left: 70px; /* Ancho del sidebar colapsado */
+    right: 0;
+    z-index: 999;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: left 0.3s ease;
+}
+
+.iq-navbar.sidebar-expanded {
+    left: 260px; /* Ancho del sidebar expandido */
+}
+
+/* Ajustar padding del contenido principal para el toolbar fijo */
+.main-content {
+    padding-top: 70px; /* Altura del toolbar */
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .iq-navbar {
+        left: 0 !important;
+    }
+
+    .iq-navbar.sidebar-expanded {
+        left: 0 !important;
+    }
+
+    /* Ocultar info del negocio en móvil - se muestra en sidebar */
+    #activeBusinessInfo {
+        display: none !important;
+    }
+
+    /* Hacer el avatar y menú de usuario más compacto */
+    .nav-link.d-flex {
+        padding: 5px !important;
+    }
+
+    /* Botón hamburguesa para móvil */
+    .mobile-menu-toggle {
+        display: flex !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-menu-toggle {
+        display: none !important;
+    }
+}
+
+/* Task Notification Bell Styles */
+.task-notification-dropdown {
+    padding: 0;
+    border: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.task-notification-dropdown .dropdown-header {
+    background: #f8f9fa;
+}
+
+.task-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    transition: background 0.2s;
+}
+
+.task-item:hover {
+    background: #f8f9fa;
+}
+
+.task-item:last-child {
+    border-bottom: none;
+}
+
+.task-item .task-name {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.task-item .task-message {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.task-item .progress {
+    height: 6px;
+    border-radius: 3px;
+}
+
+.task-item .task-time {
+    font-size: 0.7rem;
+    color: #999;
+}
+
+.task-item.completed .task-name {
+    color: #28a745;
+}
+
+.task-item.error .task-name {
+    color: #dc3545;
+}
+
+.task-item .task-status-icon {
+    font-size: 1.2rem;
+}
+
+.task-item .task-status-icon.processing {
+    color: #007bff;
+    animation: pulse 1.5s infinite;
+}
+
+.task-item .task-status-icon.completed {
+    color: #28a745;
+}
+
+.task-item .task-status-icon.error {
+    color: #dc3545;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+#taskBellDropdown:hover {
+    color: #007bff;
+}
+
+/* Badge animation */
+#taskBadge {
+    font-size: 0.65rem;
+    padding: 0.25em 0.5em;
+}
+
+#taskBadge.animate {
+    animation: badgePulse 0.3s ease-in-out;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.3); }
+}
+</style>
+
+<script>
+// Task Bell Manager - Manages the task notification bell in the header
+class TaskBellManager {
+    constructor() {
+        this.tasks = new Map();
+        this.badge = document.getElementById('taskBadge');
+        this.countHeader = document.getElementById('taskCountHeader');
+        this.container = document.getElementById('taskListContainer');
+        this.noTasksMessage = document.getElementById('noTasksMessage');
+        this.taskFooter = document.getElementById('taskFooter');
+        this.clearBtn = document.getElementById('clearCompletedTasks');
+
+        this.init();
+    }
+
+    init() {
+        // Clear completed tasks button
+        if (this.clearBtn) {
+            this.clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.clearCompleted();
+            });
+        }
+
+        // Listen for WebSocket task events
+        if (typeof taskNotifications !== 'undefined') {
+            taskNotifications.on('task_update', (data) => this.handleTaskUpdate(data));
+            taskNotifications.on('task_complete', (data) => this.handleTaskComplete(data));
+            taskNotifications.on('task_error', (data) => this.handleTaskError(data));
+            taskNotifications.on('active_tasks', (data) => this.handleActiveTasks(data));
+        }
+    }Ok
+
+    // Handle active tasks received on WebSocket connect (for persistence across page refreshes)
+    handleActiveTasks(data) {
+        const { tasks } = data;
+        console.log(`TaskBell: Loading ${tasks.length} active tasks`);
+
+        tasks.forEach(task => {
+            // Add each task to the bell manager
+            const taskData = {
+                id: task.task_id,
+                name: task.name,
+                message: task.message,
+                progress: task.progress || 0,
+                status: task.status,
+                startTime: new Date(task.created_at),
+                updateTime: new Date(task.updated_at)
+            };
+
+            this.tasks.set(task.task_id, taskData);
+        });
+
+        this.renderTasks();
+        this.updateBadge();
+    }
+
+    // Add or update a task
+    addTask(taskId, taskName, message = 'Starting...', progress = 0) {
+        const task = {
+            id: taskId,
+            name: taskName,
+            message: message,
+            progress: progress,
+            status: 'processing',
+            startTime: new Date(),
+            updateTime: new Date()
+        };
+
+        this.tasks.set(taskId, task);
+
+        // Auto-subscribe to task updates via WebSocket
+        if (typeof taskNotifications !== 'undefined') {
+            taskNotifications.subscribe(taskId);
+        }
+
+        this.renderTasks();
+        this.updateBadge();
+
+        return taskId;
+    }
+
+    // Handle task update from WebSocket
+    handleTaskUpdate(data) {
+        const { task_id, message, progress, status } = data;
+
+        let task = this.tasks.get(task_id);
+
+        if (!task) {
+            // Create task if it doesn't exist
+            task = {
+                id: task_id,
+                name: `Task ${task_id.substring(0, 8)}...`,
+                message: message,
+                progress: progress || 0,
+                status: status || 'processing',
+                startTime: new Date(),
+                updateTime: new Date()
+            };
+            this.tasks.set(task_id, task);
+        } else {
+            task.message = message;
+            task.progress = progress || task.progress;
+            task.status = status || task.status;
+            task.updateTime = new Date();
+        }
+
+        this.renderTasks();
+        this.updateBadge();
+    }
+
+    // Handle task completion
+    handleTaskComplete(data) {
+        const { task_id, message, result } = data;
+
+        let task = this.tasks.get(task_id);
+
+        if (task) {
+            task.status = 'completed';
+            task.message = message;
+            task.progress = 100;
+            task.updateTime = new Date();
+            task.result = result;
+        } else {
+            task = {
+                id: task_id,
+                name: `Task ${task_id.substring(0, 8)}...`,
+                message: message,
+                progress: 100,
+                status: 'completed',
+                startTime: new Date(),
+                updateTime: new Date(),
+                result: result
+            };
+            this.tasks.set(task_id, task);
+        }
+
+        this.renderTasks();
+        this.updateBadge();
+
+        // Auto-remove completed tasks after 30 seconds
+        setTimeout(() => {
+            if (this.tasks.get(task_id)?.status === 'completed') {
+                this.removeTask(task_id);
+            }
+        }, 30000);
+    }
+
+    // Handle task error
+    handleTaskError(data) {
+        const { task_id, error, message } = data;
+
+        let task = this.tasks.get(task_id);
+
+        if (task) {
+            task.status = 'error';
+            task.message = message || error;
+            task.updateTime = new Date();
+            task.error = error;
+        } else {
+            task = {
+                id: task_id,
+                name: `Task ${task_id.substring(0, 8)}...`,
+                message: message || error,
+                progress: 0,
+                status: 'error',
+                startTime: new Date(),
+                updateTime: new Date(),
+                error: error
+            };
+            this.tasks.set(task_id, task);
+        }
+
+        this.renderTasks();
+        this.updateBadge();
+    }
+
+    // Remove a task
+    removeTask(taskId, dismissOnServer = true) {
+        this.tasks.delete(taskId);
+        this.renderTasks();
+        this.updateBadge();
+
+        // Dismiss on server so it doesn't reappear on page refresh
+        if (dismissOnServer) {
+            this.dismissTaskOnServer(taskId);
+        }
+    }
+
+    // Dismiss task on server
+    async dismissTaskOnServer(taskId) {
+        try {
+            const formData = new FormData();
+            formData.append('module', 'OptsIO');
+            formData.append('package', 'io_tasks');
+            formData.append('attr', 'IOTasks');
+            formData.append('mname', 'dismiss_task');
+            formData.append('task_id', taskId);
+
+            await axios.post('{% url "iom" %}', formData);
+            console.log(`Task ${taskId} dismissed on server`);
+        } catch (error) {
+            console.error(`Error dismissing task ${taskId}:`, error);
+        }
+    }
+
+    // Clear all completed tasks
+    clearCompleted() {
+        const taskIdsToRemove = [];
+
+        for (const [taskId, task] of this.tasks) {
+            if (task.status === 'completed' || task.status === 'error') {
+                taskIdsToRemove.push(taskId);
+                this.tasks.delete(taskId);
+            }
+        }
+
+        this.renderTasks();
+        this.updateBadge();
+
+        // Dismiss all on server
+        if (taskIdsToRemove.length > 0) {
+            this.dismissMultipleTasksOnServer(taskIdsToRemove);
+        }
+    }
+
+    // Dismiss multiple tasks on server
+    async dismissMultipleTasksOnServer(taskIds) {
+        try {
+            const formData = new FormData();
+            formData.append('module', 'OptsIO');
+            formData.append('package', 'io_tasks');
+            formData.append('attr', 'IOTasks');
+            formData.append('mname', 'dismiss_multiple_tasks');
+            formData.append('task_ids', jfy(taskIds));
+
+            await axios.post('{% url "iom" %}', formData);
+            console.log(`${taskIds.length} tasks dismissed on server`);
+        } catch (error) {
+            console.error('Error dismissing tasks:', error);
+        }
+    }
+
+    // Update badge count
+    updateBadge() {
+        const runningCount = Array.from(this.tasks.values()).filter(
+            t => t.status === 'processing'
+        ).length;
+
+        const totalCount = this.tasks.size;
+
+        if (runningCount > 0) {
+            this.badge.textContent = runningCount;
+            this.badge.classList.remove('d-none');
+            this.badge.classList.add('animate');
+            setTimeout(() => this.badge.classList.remove('animate'), 300);
+        } else {
+            this.badge.classList.add('d-none');
+        }
+
+        this.countHeader.textContent = totalCount;
+
+        // Show/hide footer
+        const hasCompletedOrError = Array.from(this.tasks.values()).some(
+            t => t.status === 'completed' || t.status === 'error'
+        );
+
+        if (hasCompletedOrError) {
+            this.taskFooter.classList.remove('d-none');
+        } else {
+            this.taskFooter.classList.add('d-none');
+        }
+    }
+
+    // Render all tasks
+    renderTasks() {
+        if (this.tasks.size === 0) {
+            this.noTasksMessage.classList.remove('d-none');
+            // Remove all task items
+            const taskItems = this.container.querySelectorAll('.task-item');
+            taskItems.forEach(item => item.remove());
+            return;
+        }
+
+        this.noTasksMessage.classList.add('d-none');
+
+        // Sort tasks: processing first, then by update time
+        const sortedTasks = Array.from(this.tasks.values()).sort((a, b) => {
+            if (a.status === 'processing' && b.status !== 'processing') return -1;
+            if (b.status === 'processing' && a.status !== 'processing') return 1;
+            return b.updateTime - a.updateTime;
+        });
+
+        // Clear existing task items
+        const existingItems = this.container.querySelectorAll('.task-item');
+        existingItems.forEach(item => item.remove());
+
+        // Render each task
+        sortedTasks.forEach(task => {
+            const taskElement = this.createTaskElement(task);
+            this.container.appendChild(taskElement);
+        });
+    }
+
+    // Create task HTML element
+    createTaskElement(task) {
+        const div = document.createElement('div');
+        div.className = `task-item ${task.status}`;
+        div.id = `task-bell-${task.id}`;
+
+        const iconClass = this.getStatusIcon(task.status);
+        const progressClass = this.getProgressClass(task.status);
+        const timeAgo = this.getTimeAgo(task.updateTime);
+
+        div.innerHTML = `
+            <div class="d-flex align-items-start">
+                <div class="task-status-icon ${task.status} me-2">
+                    <i class="mdi ${iconClass}"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="task-name">${task.name}</div>
+                    <div class="task-message">${task.message}</div>
+                    ${task.status === 'processing' ? `
+                        <div class="progress">
+                            <div class="progress-bar ${progressClass}" role="progressbar"
+                                 style="width: ${task.progress}%"
+                                 aria-valuenow="${task.progress}"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100"></div>
+                        </div>
+                    ` : ''}
+                    <div class="task-time mt-1">${timeAgo}</div>
+                </div>
+                ${task.status !== 'processing' ? `
+                    <button class="btn btn-sm btn-link text-muted p-0 ms-2" onclick="taskBell.removeTask('${task.id}')">
+                        <i class="mdi mdi-close"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+
+        return div;
+    }
+
+    // Get icon for task status
+    getStatusIcon(status) {
+        switch (status) {
+            case 'processing':
+                return 'mdi-loading mdi-spin';
+            case 'completed':
+                return 'mdi-check-circle';
+            case 'error':
+                return 'mdi-alert-circle';
+            default:
+                return 'mdi-circle-outline';
+        }
+    }
+
+    // Get progress bar class
+    getProgressClass(status) {
+        switch (status) {
+            case 'processing':
+                return 'bg-primary progress-bar-striped progress-bar-animated';
+            case 'completed':
+                return 'bg-success';
+            case 'error':
+                return 'bg-danger';
+            default:
+                return 'bg-secondary';
+        }
+    }
+
+    // Get human-readable time ago
+    getTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+
+        if (seconds < 60) return 'Just now';
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+        if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+        return `${Math.floor(seconds / 86400)}d ago`;
+    }
+
+    // Set task name (for when task is added before we know the name)
+    setTaskName(taskId, name) {
+        const task = this.tasks.get(taskId);
+        if (task) {
+            task.name = name;
+            this.renderTasks();
+        }
+    }
+}
+
+// Initialize Task Bell Manager
+let taskBell;
+
+// Manejar el logout y sincronización con sidebar
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Task Bell
+    taskBell = new TaskBellManager();
+
+    // Make it globally available
+    window.taskBell = taskBell;
+
+    const toolbar = document.getElementById('mainToolbar');
+
+    // Escuchar eventos del sidebar para ajustar el toolbar
+    window.addEventListener('sidebarToggle', function(e) {
+        if (e.detail.expanded) {
+            toolbar.classList.add('sidebar-expanded');
+        } else {
+            toolbar.classList.remove('sidebar-expanded');
+        }
+    });
+
+    // Mobile menu toggle
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    if (mobileMenuToggle) {
+        mobileMenuToggle.addEventListener('click', function() {
+            // Disparar evento para que el sidebar se abra
+            window.dispatchEvent(new CustomEvent('mobileMenuToggle'));
+        });
+    }
+
+    // Open User Profile
+    const openUserProfile = document.getElementById('openUserProfile');
+    if (openUserProfile) {
+        openUserProfile.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            const dattrs = {
+                title: 'Mi Perfil',
+                sui_rr: OptsIO.s4generate(),
+                offcanvasglobal: true
+            };
+
+            const tps = {
+                url: '{% url "dtmpl" %}',
+                dattrs: dattrs,
+                template: 'OptsIO/UserProfileUi.html',
+                raw: true
+            };
+
+            OptsIO.getTmpl(tps).then((rsp) => {
+                let data = rsp.data;
+                $('#offcanvasGlobalUiBody').html(data);
+                let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+                bsOffcanvas.show();
+                let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+                tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                    $('#offcanvasGlobalUiBody').html('');
+                    // Remove loader immediately when offcanvas closes
+                    var loader = qelem('.ldld.full');
+                    if (loader) {
+                        loader.style.display = 'none';
+                    }
+                });
+            });
+        });
+    }
+
+    // Open Business Selector (to change active business or add more)
+    const openBusinessSelector = document.getElementById('openBusinessSelector');
+    if (openBusinessSelector) {
+        openBusinessSelector.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (typeof window.openBusinessSelector === 'function') {
+                window.openBusinessSelector();
+            } else {
+                UiB.MsgError('Función no disponible');
+            }
+        });
+    }
+
+    // Open Business Configuration (edit active business)
+    const openBusinessConfig = document.getElementById('openBusinessConfig');
+    if (openBusinessConfig) {
+        openBusinessConfig.addEventListener('click', function(e) {
+            e.preventDefault();
+
+            // Get active business first
+            var fdata = new FormData();
+            fdata.append('module', 'OptsIO');
+            fdata.append('package', 'mng_registration');
+            fdata.append('attr', 'MRegistration');
+            fdata.append('mname', 'get_active_business');
+            fdata.append('dbcon', 'default');
+
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.business_id) {
+                    const dattrs = {
+                        title: 'Configuración del Negocio',
+                        sui_rr: OptsIO.s4generate(),
+                        offcanvasglobal: true
+                    };
+
+                    const tps = {
+                        model_app_name: 'Sifen',
+                        model_name: 'Business',
+                        pk: rsp.data.business_id,
+                        dbcon: 'default',
+                        url: '{% url "dtmpl" %}',
+                        dattrs: dattrs,
+                        template: 'OptsIO/BusinessUi.html',
+                        raw: true
+                    };
+
+                    OptsIO.getTmpl(tps).then((rsp) => {
+                        let data = rsp.data;
+                        $('#offcanvasGlobalUiBody').html(data);
+                        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+                        bsOffcanvas.show();
+                        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+                        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                            $('#offcanvasGlobalUiBody').html('');
+                            // Remove loader immediately when offcanvas closes
+                            var loader = qelem('.ldld.full');
+                            if (loader) {
+                                loader.style.display = 'none';
+                            }
+                        });
+                    });
+                } else {
+                    UiB.MsgError('No se pudo obtener el negocio activo');
+                }
+            }).catch((err) => {
+                log.error('Error getting active business: ' + jfy(err));
+                UiB.MsgError('Error al obtener el negocio activo');
+            });
+        });
+    }
+
+    // Logout
+    const logoutLink = document.getElementById('logoutLink');
+    if (logoutLink) {
+        logoutLink.addEventListener('click', async function(e) {
+            e.preventDefault();
+
+            try {
+                const formData = new FormData();
+
+                // Enviar petición de logout
+                const response = await axios.post('/io/glogout/', formData);
+
+                if (response.data.success) {
+                    // Logout exitoso, redireccionar al login
+                    window.location.href = '/io/glogin/';
+                }
+            } catch (error) {
+                console.error('Error en logout:', error);
+                // Aún así redireccionar al login
+                window.location.href = '/io/glogin/';
+            }
+        });
+    }
+});
+
+// Load active business information
+function loadActiveBusiness() {
+    var fdata = new FormData();
+    fdata.append('module', 'OptsIO');
+    fdata.append('package', 'mng_registration');
+    fdata.append('attr', 'MRegistration');
+    fdata.append('mname', 'get_active_business');
+    fdata.append('dbcon', 'default');
+
+    axios.post('/io/iom/', fdata, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then(function(rsp) {
+        if (rsp.data.business_id) {
+            // Update toolbar with business info
+            document.getElementById('businessNameToolbar').innerText = rsp.data.business_name || 'Sin nombre';
+            document.getElementById('businessRucToolbar').innerText = 'RUC: ' + (rsp.data.business_ruc || '-');
+        } else {
+            // No active business
+            document.getElementById('businessNameToolbar').innerText = 'Sin negocio activo';
+            document.getElementById('businessRucToolbar').innerText = 'Configure su negocio';
+        }
+    }).catch(function(err) {
+        console.error('Error loading active business:', err);
+        document.getElementById('businessNameToolbar').innerText = 'Error al cargar';
+        document.getElementById('businessRucToolbar').innerText = '';
+    });
+}
+
+// Load user photo
+function loadUserPhoto() {
+    var fdata = new FormData();
+    fdata.append('module', 'OptsIO');
+    fdata.append('package', 'io_serial');
+    fdata.append('attr', 'IoS');
+    fdata.append('mname', 'seModel');
+    fdata.append('model_app_name', 'OptsIO');
+    fdata.append('model_name', 'UserProfile');
+    fdata.append('dbcon', 'default');
+    fdata.append('mquery', jfy([
+        {'field': 'username', 'value': '{{ request.user.username }}'}
+    ]));
+    fdata.append('methods', jfy(['get_photo_url']));
+
+    axios.post('/io/iom/', fdata, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then(function(rsp) {
+        if (rsp.data.qs && rsp.data.qs.length > 0) {
+            var userProfile = rsp.data.qs[0];
+            var photoUrl = userProfile.get_photo_url;
+
+            if (photoUrl) {
+                // Replace avatar with photo
+                var avatarContainer = document.getElementById('userAvatarContainer');
+                avatarContainer.innerHTML = '<img src="' + photoUrl + '" alt="{{ request.user.username }}" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">';
+            }
+        }
+    }).catch(function(err) {
+        console.error('Error loading user photo:', err);
+    });
+}
+
+// Load active business on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadActiveBusiness();
+    loadUserPhoto();
+});
+</script>

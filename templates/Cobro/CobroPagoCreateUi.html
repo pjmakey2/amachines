@@ -1,0 +1,283 @@
+<div class="container-fluid p-3">
+    <h5 class="mb-3">Registrar Pago</h5>
+
+    <!-- Info de la factura -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_factura_numero" class="form-control" readonly>
+                <label>Factura</label>
+                <input type="hidden" id="pago_factura_id">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_cliente" class="form-control" readonly>
+                <label>Cliente</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_total_factura" class="form-control" readonly>
+                <label>Total Factura</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_saldo" class="form-control text-danger fw-bold" readonly>
+                <label>Saldo Pendiente</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_dias_vencido" class="form-control" readonly>
+                <label>Dias Vencido</label>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <h6>Datos del Pago</h6>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="number" id="pago_monto" class="form-control" step="1" min="1">
+                <label>Monto a Pagar *</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="date" id="pago_fecha" class="form-control">
+                <label>Fecha de Pago *</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <select id="pago_metodo" class="form-select">
+                    <option value="efectivo">Efectivo</option>
+                    <option value="transferencia">Transferencia Bancaria</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="tarjeta">Tarjeta de Credito/Debito</option>
+                    <option value="otro">Otro</option>
+                </select>
+                <label>Metodo de Pago</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_referencia" class="form-control" placeholder="Nro. de cheque, transferencia, etc.">
+                <label>Numero de Referencia</label>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_observaciones" class="form-control">
+                <label>Observaciones</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end mb-3">
+        <button type="button" class="btn btn-success" id="btn-guardar-pago">
+            <i class="mdi mdi-content-save"></i> Registrar Pago
+        </button>
+    </div>
+
+    <!-- Historial de pagos -->
+    <hr>
+    <h6>Historial de Pagos</h6>
+    <div id="historial_pagos_container">
+        <table class="table table-sm table-striped" id="tabla_historial_pagos">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Metodo</th>
+                    <th>Referencia</th>
+                    <th>Registrado</th>
+                    <th>Acc</th>
+                </tr>
+            </thead>
+            <tbody id="historial_pagos_body">
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th>Total Pagado</th>
+                    <th id="total_pagado_historial" colspan="5">Gs 0</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+// Inicializar fecha de hoy
+document.getElementById('pago_fecha').valueAsDate = new Date();
+
+// Cargar datos de la factura pasados por el offcanvas
+if (typeof window.cobroPagoData !== 'undefined') {
+    let factura = window.cobroPagoData;
+    $('#pago_factura_id').val(factura.id);
+    $('#pago_factura_numero').val(factura.doc_numero);
+    $('#pago_cliente').val(factura.pdv_razon_social);
+    $('#pago_total_factura').val('Gs ' + UiN.formatNumberU(factura.total_factura.toFixed(0)));
+    $('#pago_saldo').val('Gs ' + UiN.formatNumberU(factura.doc_saldo.toFixed(0)));
+    $('#pago_dias_vencido').val(factura.dias_vencido > 0 ? factura.dias_vencido + ' dias' : 'Al dia');
+    $('#pago_monto').attr('max', factura.doc_saldo);
+
+    cargarHistorialPagos(factura.id);
+}
+
+// Cargar historial de pagos
+function cargarHistorialPagos(facturaId) {
+    let gbe = new FormData();
+    gbe.append('module', 'Cobro');
+    gbe.append('package', 'mng_cobro');
+    gbe.append('attr', 'MCobro');
+    gbe.append('mname', 'get_historial_pagos');
+    gbe.append('dbcon', 'default');
+    gbe.append('factura_id', facturaId);
+
+    axios.post('/io/iom/', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.success) {
+            let pagos = rsp.data.pagos;
+            let tbody = $('#historial_pagos_body');
+            tbody.empty();
+
+            if (pagos.length === 0) {
+                tbody.append('<tr><td colspan="6" class="text-center text-muted">Sin pagos registrados</td></tr>');
+            } else {
+                pagos.forEach((p) => {
+                    tbody.append(`
+                        <tr>
+                            <td>${moment(p.fecha_pago).format('DD/MM/YY')}</td>
+                            <td>Gs ${UiN.formatNumberU(p.monto.toFixed(0))}</td>
+                            <td>${p.metodo_pago_display}</td>
+                            <td>${p.numero_referencia || '-'}</td>
+                            <td>${p.cargado_usuario} (${p.cargado_fecha})</td>
+                            <td>
+                                <i title="Eliminar pago" class="btn-eliminar-pago text-danger mdi mdi-delete cursor-pointer" data-pago-id="${p.id}"></i>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
+
+            $('#total_pagado_historial').text('Gs ' + UiN.formatNumberU(rsp.data.total_pagado.toFixed(0)));
+        }
+    });
+}
+
+// Registrar pago
+$('#btn-guardar-pago').on('click', function() {
+    let facturaId = $('#pago_factura_id').val();
+    let monto = $('#pago_monto').val();
+    let fechaPago = $('#pago_fecha').val();
+    let metodoPago = $('#pago_metodo').val();
+    let referencia = $('#pago_referencia').val();
+    let observaciones = $('#pago_observaciones').val();
+
+    if (!monto || parseFloat(monto) <= 0) {
+        UiB.MsgError('El monto debe ser mayor a 0');
+        return;
+    }
+
+    if (!fechaPago) {
+        UiB.MsgError('La fecha de pago es requerida');
+        return;
+    }
+
+    let gbe = new FormData();
+    gbe.append('module', 'Cobro');
+    gbe.append('package', 'mng_cobro');
+    gbe.append('attr', 'MCobro');
+    gbe.append('mname', 'registrar_pago');
+    gbe.append('dbcon', 'default');
+    gbe.append('factura_id', facturaId);
+    gbe.append('monto', monto);
+    gbe.append('fecha_pago', fechaPago);
+    gbe.append('metodo_pago', metodoPago);
+    gbe.append('numero_referencia', referencia);
+    gbe.append('observaciones', observaciones);
+
+    axios.post('/io/iom/', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.success) {
+            UiB.MsgSuccess(rsp.data.message);
+            cargarHistorialPagos(facturaId);
+
+            // Actualizar saldo en el formulario
+            $('#pago_saldo').val('Gs ' + UiN.formatNumberU(rsp.data.nuevo_saldo.toFixed(0)));
+            $('#pago_monto').val('').attr('max', rsp.data.nuevo_saldo);
+
+            // Refrescar tabla principal si existe
+            if (typeof window.cobroTableGuid !== 'undefined') {
+                $(`#${window.cobroTableGuid}`).DataTable().ajax.reload();
+            }
+
+            // Refrescar resumen si existe la funcion
+            if (typeof window.cargarResumenCobros === 'function') {
+                window.cargarResumenCobros();
+            }
+        } else if (rsp.data.error) {
+            UiB.MsgError(rsp.data.error);
+        }
+    });
+});
+
+// Eliminar pago
+$(document).on('click', '.btn-eliminar-pago', function() {
+    let pagoId = $(this).data('pago-id');
+    let facturaId = $('#pago_factura_id').val();
+
+    Swal.fire({
+        title: 'Eliminar pago?',
+        text: 'Esta accion restaurara el saldo de la factura',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Si, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            let gbe = new FormData();
+            gbe.append('module', 'Cobro');
+            gbe.append('package', 'mng_cobro');
+            gbe.append('attr', 'MCobro');
+            gbe.append('mname', 'eliminar_pago');
+            gbe.append('dbcon', 'default');
+            gbe.append('pago_id', pagoId);
+
+            axios.post('/io/iom/', gbe, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    UiB.MsgSuccess(rsp.data.message);
+                    cargarHistorialPagos(facturaId);
+
+                    // Refrescar tabla principal si existe
+                    if (typeof window.cobroTableGuid !== 'undefined') {
+                        $(`#${window.cobroTableGuid}`).DataTable().ajax.reload();
+                    }
+
+                    // Refrescar resumen si existe la funcion
+                    if (typeof window.cargarResumenCobros === 'function') {
+                        window.cargarResumenCobros();
+                    }
+                } else if (rsp.data.error) {
+                    UiB.MsgError(rsp.data.error);
+                }
+            });
+        }
+    });
+});
+</script>

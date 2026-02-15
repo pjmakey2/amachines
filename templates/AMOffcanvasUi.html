@@ -1,0 +1,150 @@
+{% load static %}
+<!-- Offcanvas Global (100% de pantalla) -->
+<div class="p-2 offcanvas offcanvas-end" tabindex="-1" id="offcanvasGlobalUi" aria-labelledby="offcanvasGlobalUiLabel" data-bs-backdrop="true" data-bs-keyboard="true" style="width: 100% !important;">
+    <div style="height: 10px;" class="offcanvas-header border-bottom bg-primary text-white">
+        <h5 class="offcanvas-title" id="offcanvasGlobalUiLabel">
+            <i class="mdi mdi-file-document-outline me-2"></i>
+        </h5>
+        <button id="btn-offcanvas-global-close" type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0 mx-1" id="offcanvasGlobalUiBody">
+        <!-- El contenido se cargará aquí dinámicamente -->
+    </div>
+</div>
+
+<!-- Offcanvas para Apps (se despliega desde arriba y ocupa toda la página) -->
+<div class="offcanvas offcanvas-top h-100" tabindex="-1" id="appOffcanvas" aria-labelledby="appOffcanvasLabel" data-bs-backdrop="true" data-bs-keyboard="true">
+    <div class="offcanvas-header border-bottom">
+        <h5 class="offcanvas-title" id="appOffcanvasLabel">
+            <i class="icon me-2"></i>
+            <span id="appOffcanvasTitle">App Title</span>
+        </h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-0" id="appOffcanvasContent">
+        <!-- El contenido de la app se cargará aquí dinámicamente -->
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para el offcanvas global (100% pantalla) */
+#offcanvasGlobalUi {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+#offcanvasGlobalUi .offcanvas-body {
+    overflow-y: auto;
+    background: #f5f7fa;
+    padding: 0 !important;
+}
+
+#offcanvasGlobalUi .offcanvas-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 1rem 1.5rem;
+}
+
+/* Estilos para el offcanvas de apps */
+#appOffcanvas {
+    height: 100vh !important;
+}
+
+#appOffcanvas .offcanvas-body {
+    overflow-y: auto;
+    background: #f5f7fa;
+}
+
+#appOffcanvas .offcanvas-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+}
+
+#appOffcanvas .offcanvas-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#appOffcanvas .offcanvas-title i {
+    font-size: 1.5rem;
+    vertical-align: middle;
+}
+</style>
+
+<script>
+// Función para abrir el offcanvas con contenido de una app
+function openAppInOffcanvas(title, templateUrl, icon = '', ajson = {}) {
+    // Actualizar el título
+    document.getElementById('appOffcanvasTitle').textContent = title;
+
+    // Actualizar el ícono si se proporciona
+    const iconElement = document.querySelector('#appOffcanvasLabel .icon');
+    if (icon) {
+        iconElement.className = 'icon me-2 ' + icon;
+    } else {
+        iconElement.className = 'icon me-2';
+    }
+
+    // Mostrar el offcanvas
+    const offcanvasElement = document.getElementById('appOffcanvas');
+    const offcanvas = new bootstrap.Offcanvas(offcanvasElement);
+    offcanvas.show();
+
+    // Cargar el contenido mediante dtmpl endpoint
+    const contentContainer = document.getElementById('appOffcanvasContent');
+    contentContainer.innerHTML = '<div class="d-flex justify-content-center align-items-center h-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+
+    // Preparar los datos para enviar
+    let fdata = new FormData();
+    fdata.append('template', templateUrl);
+
+    // Agregar ajson si se proporciona
+    if (ajson && Object.keys(ajson).length > 0) {
+        for (let key in ajson) {
+            fdata.append(key, ajson[key]);
+        }
+    }
+
+    // Llamar al endpoint dtmpl
+    axios.post('/io/dtmpl/', fdata)
+        .then(response => {
+            contentContainer.innerHTML = response.data;
+
+            // Ejecutar scripts dentro del contenido cargado
+            const scripts = contentContainer.getElementsByTagName('script');
+            for (let i = 0; i < scripts.length; i++) {
+                const script = document.createElement('script');
+                script.textContent = scripts[i].textContent;
+                document.body.appendChild(script);
+            }
+        })
+        .catch(error => {
+            console.error('Error al cargar el template:', error);
+            contentContainer.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center h-100">
+                    <div class="alert alert-danger" role="alert">
+                        <h4 class="alert-heading">Error al cargar la aplicación</h4>
+                        <p>No se pudo cargar el contenido. Por favor, intenta de nuevo.</p>
+                        <hr>
+                        <p class="mb-0">${error.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Cerrar con tecla ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const offcanvasElement = document.getElementById('appOffcanvas');
+        const offcanvas = bootstrap.Offcanvas.getInstance(offcanvasElement);
+        if (offcanvas) {
+            offcanvas.hide();
+        }
+    }
+});
+</script>

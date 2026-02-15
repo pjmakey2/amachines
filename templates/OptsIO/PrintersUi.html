@@ -1,0 +1,35 @@
+<h2 class="text text-left">Impresoras</h2>
+<div id="printers_table_container"></div>
+<script type="text/javascript">
+    Grid.datatables_wrapper({
+        url_exec: '{% url "iom" %}',
+        url_tmpl: '{% url "dtmpl" %}',
+        crud_tmpl: 'OptsIO/PrintersCreateUi.html',
+        title: '',
+        tselector: 'printers_table_container',
+        app_name: 'OptsIO',
+        model_name: 'Printers',
+        model_pk: 'id',
+        record_delete: true,
+        state_field: {},
+        dbcon: 'default',
+        t_opts: {
+            select: { style: 'single' }
+        },
+        columns: [
+            { fdis: true, gre: false, btyp: 'loc', idx: null, 
+              tit: '', 'cls': 'dtr-control', dtyp: 'checkbox', dfl: '', nord: false,
+            },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'name', tit: 'Nombre', dtyp: 'str' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'description', tit: 'Descripcion', dtyp: 'str' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'uri', tit: 'Uri', dtyp: 'str' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'port', tit: 'Puerto', dtyp: 'int' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'user', tit: 'Usuario', dtyp: 'str' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'password', tit: 'Password', dtyp: 'str', hide: true },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'save_user', tit: 'Usuario', dtyp: 'str' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'date_save', tit: 'Creacion', dtyp: 'date' },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'delete_user', tit: '', dtyp: 'str', hide: true },
+            { fdis: true, gre: true, btyp:'fdb', idx: 'date_delete', tit: '', dtyp: 'date', hide: true },
+        ],
+    })
+</script>

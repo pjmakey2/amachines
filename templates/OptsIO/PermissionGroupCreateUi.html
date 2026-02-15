@@ -1,0 +1,669 @@
+<style>
+ .select2-selection { height: 100px !important; }
+</style>
+
+<div id="usuarios_select2_dropdown_{{ rr }}">
+</div>
+
+<div class="u_permissiongroup">
+ <form id="group_form_{{ rr }}">
+ <input type="hidden" name="id" 
+{% if mobj %}
+ value="{{ mobj.pk }}" 
+{% endif %}
+>
+ <div class="row g-5 pb-3">
+ <div class="col-sm-3">
+ <label><i class="fs-2 mdi mdi-account-group-outline required"></i>Grupo</label>
+ <div class="input-group flex-nowrap fl_focus_highlight">
+ <input tabindex="0" required readonly disabled name="name" class="form-control form-control-lg" 
+{% if mobj %}
+ value="{{ mobj.name }}" 
+{% endif %}
+/>
+ </div>
+ </div>
+ <div class="col-sm-3">
+ <label><i class="fs-2 mdi mdi-account-group-outline required"></i>Modulo</label>
+ <div class="input-group flex-nowrap fl_focus_highlight">
+ <select tabindex="1" readonly disabled name="modules" class="form-select form-select-lg">
+ </select>
+ </div>
+ </div>
+ </div>
+ <div id="list_all_permissions_{{ rr }}" class="row g-3">
+ <div class="col-sm-6">
+ <div class="input-group flex-nowrap w-50 pb-3">
+ <label><i class="fs-2 mdi mdi-account-lock-open"></i>Permisos</label>
+ <input autocomplete="off" role="search" onprogress="" type="search" readonly disabled name="all_permission_search" size="5" value="" class="form-control form-control-sm">
+ </div>
+ <div id="all_permissions_{{ rr }}" class="input-group flex-nowrap fl_focus_highlight">
+ <select multiple tabindex="1" readonly disabled name="all_permissions" class="form-select form-select-lg fl_tall_select">
+ </select>
+ <button type="button" role="button" onclick="set_Permission()" class="btn btn-info"><i class="mdi mdi-arrow-expand-right"></i></button>
+ </div>
+ </div>
+ <div class="col-sm-6">
+ <div class="input-group flex-nowrap w-50 pb-3">
+ <label><i class="fs-2 mdi mdi-account-plus-outline required"></i>Permitido</label>
+ <input autocomplete="off" onprogress="" type="text" readonly disabled name="all_allowed_search" size="5" value="" class="form-control form-control-sm">
+ </div>
+ <div id="actual_permissions_{{ rr }}" class="input-group flex-nowrap fl_focus_highlight">
+ <button type="button" role="button" onclick="remove_Permission()" class="btn btn-danger"><i class="mdi mdi-arrow-expand-left"></i></button>
+ <select multiple tabindex="2" readonly disabled name="permissions" class="form-select form-select-lg fl_tall_select">
+ </select>
+ </div>
+ </div>
+ </div>
+ <div class="row g-3 my-1">
+ <div class="col-sm-6">
+ <div class="input-group flex-nowrap w-50 pb-3">
+ <label><i class="fs-2 mdi mdi-account-group-outline"></i>Usuarios</label>
+ <input onprogress="" type="text" readonly disabled name="all_user_search" size="5" value="" class="form-control form-control-sm">
+ </div>
+ <div class="input-group flex-nowrap fl_focus_highlight">
+ <select multiple class="form-select form-select-lg fl_tall_select" readonly disabled name="usuarios">
+</select>
+ <button type="button" role="button" onclick="set_User()" class="btn btn-info"><i class="mdi mdi-arrow-expand-right"></i></button>
+ </div>
+ </div>
+ <div class="col-sm-6">
+ <div class="input-group flex-nowrap w-50 pb-3">
+ <label><i class="fs-2 mdi mdi-account-group-outline"></i>En el grupo</label>
+ <input onprogress="" type="text" readonly disabled name="inthegroup_search" size="5" value="" class="form-control form-control-sm">
+ </div>
+ <div class="input-group flex-nowrap fl_focus_highlight">
+ <button type="button" role="button" onclick="remove_fromGroup()" class="btn btn-danger"><i class="mdi mdi-arrow-expand-left"></i></button>
+ <select multiple tabindex="2" readonly disabled name="allowed_users" class="form-select form-select-lg fl_tall_select">
+ </select>
+ </div>
+ </div>
+ </div>
+ 
+{% if not mobj %}
+ <div class="col-12 mb-3" id="form-group-btn-container">
+ <button tabindex="3" style="margin-top: 12px;" id="btn_guardar_group" type="submit" class="btn btn-info btn-lg fl_focus_highlight"> <i class="mdi mdi-content-save"></i> Guardar </button>
+ </div>
+ 
+{% else %}
+ <div class="col-12 mb-3" id="form-group-btn-container">
+ <button tabindex="3" style="margin-top: 12px;" id="btn_actualizar_group" type="submit" class="btn btn-info btn-lg fl_focus_highlight"> <i class="mdi mdi-content-save"></i> Modificar </button>
+ </div>
+ 
+{% endif %}
+ </form>
+
+</div>
+
+<script type="text/javascript">
+var ffdata_add = null;
+ar ffdata_rm = null;
+ar ffdata_user_add = null;
+ar ffdata_user_rm = null;
+et_Modules = () => {
+let gbe = new FormData();
+be.append('module','OptsIO');
+be.append('package','io_users');
+be.append('attr', 'IOUser');
+be.append('mname', 'get_modules')
+return axios.post('{% url "iom" %}', gbe, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+})
+.then((rsp)=> {
+data = rsp.data;
+elem('select[name=modules]').innerHTML = '<option value="">TODOS</option>
+';
+ata.modules.forEach((ii)=> {
+qelem('select[name=modules]').innerHTML += `<option value="${
+ii}">${
+ii}</option>
+`;
+)
+return })
+
+}
+get_Permissions = () => {
+let mbl = UiB.BlockLoaderSpecifyAjax( {
+dele: '#all_permissions_{{
+
+ rr }}', msg_block: '...' } )
+mbl.block();
+elem('select[name=all_permissions]').innerHTML = '';
+et ffdata = new FormData();
+fdata.append('module','OptsIO');
+fdata.append('package','io_users');
+fdata.append('attr', 'IOUser');
+fdata.append('mname', 'get_permissions')
+ffdata.append('fl_module', qelem('select[name=modules]').value)
+axios.post('{% url "iom" %}', ffdata, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+let rd = rsp.data;
+elem('select[name=all_permissions]').innerHTML = '';
+
+ for (idx in rd) {
+qelem('select[name=all_permissions]').innerHTML += ` <optgroup label="${
+idx}"> ` rd[idx].forEach((ii)=> {
+qelem('select[name=all_permissions]').innerHTML += `<option data-name="${
+ii.name}" data-codename="${
+ii.codename}" data-label="${
+ii.label}" value="${
+ii.id}">${
+ii.label}</option>
+`;
+)
+qelem('select[name=all_permissions]').innerHTML += '<optgroup>';
+ })
+.finally(()=> {
+mbl.destroy();
+bl.release();
+)
+
+}
+set_Permission = ()=> {
+{% if mobj %}
+
+let mbl = UiB.BlockLoaderSpecifyAjax( {
+dele: '#list_all_permissions_{{
+
+ rr }}', msg_block: '...' } )
+mbl.block();
+_DJANGO_TAG_3__
+
+ffdata_add = new FormData();
+fdata_add.append('module','OptsIO');
+fdata_add.append('package','io_users');
+fdata_add.append('attr', 'IOUser');
+fdata_add.append('mname', 'set_permission')
+ids = [];
+
+ for (var option of qelem('select[name=permissions]').options) {
+ids.push(option.value);
+
+for (var option of qelem('select[name=all_permissions]').options) {
+if (option.selected) {
+name = option.getAttribute('data-name');
+odename = option.getAttribute('data-codename');
+abel = option.getAttribute('data-label');
+d = option.value;
+fdata_add.append('id', id)
+console.log(ids, id, 'then ??')
+if (ids.indexOf(id) == -1) {
+qelem('select[name=permissions]').innerHTML += `<option data-name="${
+name}" data-codename="${
+codename}" data-label="${
+label}" value="${
+id}">${
+label}</option>
+`;
+ }
+}
+{% if mobj %}
+
+ffdata_add.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata_add, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+mbl.release();
+bl.destroy();
+et_permissions_group();
+)
+{
+
+% endif %}
+}
+remove_Permission = ()=> {
+{% if mobj %}
+
+let mbl = UiB.BlockLoaderSpecifyAjax( {
+dele: '#list_all_permissions_{{
+
+ rr }}', msg_block: '...' } )
+mbl.block();
+_DJANGO_TAG_7__
+
+ffdata_rm = new FormData();
+fdata_rm.append('module','OptsIO');
+fdata_rm.append('package','io_users');
+fdata_rm.append('attr', 'IOUser');
+fdata_rm.append('mname', 'remove_permission')
+let opts = [];
+for (var option of qelem('select[name=permissions]').options) {
+if (!option.selected) {
+name = option.getAttribute('data-name');
+odename = option.getAttribute('data-codename');
+abel = option.getAttribute('data-label');
+d = option.value;
+pts.push(`<option data-name="${
+name}" data-codename="${
+codename}" data-label="${
+label}" value="${
+id}">${
+label}</option>
+`);
+
+else {
+id = option.value;
+fdata_rm.append('id', id) }
+}
+qelem('select[name=permissions]').innerHTML = '';
+pts.forEach((ii)=> {
+qelem('select[name=permissions]').innerHTML += ii;
+)
+;
+_DJANGO_TAG_8__
+
+ffdata_rm.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata_rm, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+mbl.release();
+bl.destroy();
+et_permissions_group();
+('input[name=all_allowed_search]').val('');
+)
+{
+
+% endif %}
+}
+get_Users = () => {
+qelem('select[name=usuarios]').innerHTML = '';
+et ffdata = new FormData();
+fdata.append('module','OptsIO');
+fdata.append('package','io_serial');
+fdata.append('attr', 'IoS');
+fdata.append('mname', 'seModel')
+ffdata.append('model_app_name', 'FL_Structure');
+fdata.append('model_name', 'Usuarios');
+fdata.append('dbcon', 'fl');
+fdata.append('fields', jfy(['funcionariocodigo','funcionarionombre','funcionarioapellido']));
+fdata.append('mquery', jfy([ {'field': 'funcionarioestado', value: 1}, ]));
+xios.post('{% url "iom" %}', ffdata, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+let rd = rsp.data;
+d.qs.forEach((ii)=> {
+qelem('select[name=usuarios]').innerHTML += `<option data-firstname="${
+ii.funcionarionombre},${
+ii.funcionarioapellido}" value="${
+ii.funcionariocodigo}">${
+ii.funcionariocodigo} (${
+ii.funcionarionombre},${
+ii.funcionarioapellido})
+</option>
+`;
+)
+
+})
+}
+set_User = ()=> {
+ffdata_user_add = new FormData();
+fdata_user_add.append('module','OptsIO');
+fdata_user_add.append('package','io_users');
+fdata_user_add.append('attr', 'IOUser');
+fdata_user_add.append('mname', 'set_user')
+ids = [];
+
+ for (var option of qelem('select[name=allowed_users]').options) {
+ids.push(option.value);
+
+for (var option of qelem('select[name=usuarios]').options) {
+if (option.selected) {
+first_name = option.getAttribute('data-firstname');
+d = option.value;
+f (ids.indexOf(id) == -1) {
+id = option.value;
+fdata_user_add.append('id', id)
+qelem('select[name=allowed_users]').innerHTML += `<option data-firstname="${
+first_name}" value="${
+id}">${
+id} (${
+first_name})
+</option>
+`;
+ }
+}
+}
+remove_fromGroup = ()=> {
+ffdata_user_rm = new FormData();
+fdata_user_rm.append('module','OptsIO');
+fdata_user_rm.append('package','io_users');
+fdata_user_rm.append('attr', 'IOUser');
+fdata_user_rm.append('mname', 'remove_user')
+let opts = [];
+for (var option of qelem('select[name=allowed_users]').options) {
+if (!option.selected) {
+first_name = option.getAttribute('data-firstname');
+d = option.value;
+pts.push(`<option data-firstname="${
+first_name}" value="${
+id}">${
+id} (${
+first_name})
+</option>
+`);
+
+else {
+id = option.value;
+fdata_user_rm.append('id', id) }
+}
+qelem('select[name=allowed_users]').innerHTML = '';
+pts.forEach((ii)=> {
+qelem('select[name=allowed_users]').innerHTML += ii;
+)
+;
+
+{% if mobj %}
+
+get_permissions_group = () => {
+let mbl = UiB.BlockLoaderSpecifyAjax( {
+dele: '#actual_permissions_{{
+
+ rr }}', msg_block: '...' } )
+mbl.block();
+elem('select[name=permissions]').innerHTML = '';
+et ffdata = new FormData();
+fdata.append('module','OptsIO');
+fdata.append('package','io_users');
+fdata.append('attr', 'IOUser');
+fdata.append('mname', 'get_permissions_group')
+ffdata.append('group', "{{
+
+ mobj.name }}")
+ffdata.append('fl_module', qelem('select[name=modules]').value)
+axios.post('{% url "iom" %}', ffdata, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+let rd = rsp.data;
+elem('select[name=permissions]').innerHTML = '';
+
+ for (idx in rd) {
+qelem('select[name=permissions]').innerHTML += ` <optgroup label="${
+idx}"> ` rd[idx].forEach((ii)=> {
+qelem('select[name=permissions]').innerHTML += `<option data-name="${
+ii.name}" data-codename="${
+ii.codename}" data-label="${
+ii.label}" value="${
+ii.id}">${
+ii.label}</option>
+`;
+)
+qelem('select[name=permissions]').innerHTML += '<optgroup>';
+ })
+.finally(()=> {
+mbl.release();
+bl.destroy();
+)
+;
+
+get_group_user = () => {
+qelem('select[name=allowed_users]').innerHTML = '';
+et ffdata = new FormData();
+fdata.append('module','OptsIO');
+fdata.append('package','io_users');
+fdata.append('attr', 'IOUser');
+fdata.append('mname', 'get_group_user')
+ffdata.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+let rd = rsp.data;
+elem('select[name=allowed_users]').innerHTML = '';
+d.forEach((ii)=> {
+qelem('select[name=allowed_users]').innerHTML += `<option data-firstname="${
+ii.first_name }" value="${
+ii.username }">${
+ii.username } (${
+ii.first_name })
+</option>
+` })
+
+})
+}
+get_permissions_group();
+et_group_user();
+_DJANGO_TAG_14__
+
+form_search.search_select_multiple( {
+sel: 'select[name=all_permissions]', iel: 'input[name=all_permission_search]', search_attr: 'data-codename', } )
+form_search.search_select_multiple( {
+sel: 'select[name=permissions]', iel: 'input[name=all_allowed_search]', search_attr: 'data-codename', } )
+form_search.search_select_multiple( {
+sel: 'select[name=usuarios]', iel: 'input[name=all_user_search]', } )
+form_search.search_select_multiple( {
+sel: 'select[name=allowed_users]', iel: 'input[name=inthegroup_search]', } )
+get_Modules().then(()=> {
+get_Permissions();
+)
+;
+elem('select[name=modules]').addEventListener('change', (evt)=> {
+get_Permissions();
+et_permissions_group();
+)
+;
+et_Users();
+elem('input[name=name]').focus();
+_DJANGO_TAG_15__
+
+qelem('#group_form_{{
+
+ rr }}').addEventListener('submit', (evt)=> {
+evt.preventDefault();
+f (evt.target === qelem('input[name=all_permission_search]')) {
+return }
+permissions = [];
+
+ for (var option of qelem('select[name=permissions]').options) {
+permissions.push(option.value);
+
+if (permissions.lenght == 0) {
+UiB.MsgError('Debe seleccionar al menos un permiso');
+eturn;
+
+allowed_users = [];
+
+ for (var option of qelem('select[name=allowed_users]').options) {
+allowed_users.push(option.value);
+
+if (allowed_users.lenght == 0) {
+UiB.MsgError('Debe seleccionar al menos un usuario');
+eturn;
+
+var fdata = new FormData();
+data.append('module', 'OptsIO');
+data.append('package', 'io_maction');
+data.append('attr', 'IOMaction');
+data.append('mname', 'process_record');
+data.append('model_app_name', 'auth');
+data.append('model_name', 'Group');
+data.append('dbcon', 'default');
+et formData = new FormData(event.target);
+et edata = form_serials.form_to_json(formData);
+data['permissions'] = permissions;
+data['allowed_users'] = allowed_users;
+data.append('uc_fields', jfy(edata));
+data.append('b_vals', jfy([ { 'module': 'OptsIO', 'package': 'io_users', 'attr': 'IOUser', 'mname': 'check_grouppermission', 'cont': false, 'show_success': false }, ]))
+fdata.append('c_a', jfy([ { 'module': 'OptsIO', 'package': 'io_users', 'attr': 'IOUser', 'mname': 'create_grouppermission', 'cont': false, 'show_success': true }, ]))
+fdata.append('a_vals', jfy([]))
+console.log(edata);
+xios.post( '{% url "iom" %}', fdata, {
+headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+})
+.then((rsp)=> {
+UiB.BeMsgHandle({
+rsps: rsp.data, timer: 7000, 
+{% if modal_selector %}
+
+n_modal: '{{
+
+ modal_selector }}', 
+{% endif %}
+
+{% if offcanvasglobal %}
+
+offcanvasglobal: true 
+{% endif %}
+ })
+
+})
+.then(()=> {
+$('#{{
+
+t_guid}}').DataTable().ajax.reload();
+)
+.catch((err)=> {
+UiB.MsgError(err);
+)
+;
+)
+{
+
+% else %}
+qelem('#group_form_{{
+
+ rr }}').addEventListener('submit', (evt)=> {
+evt.preventDefault();
+iB.MsgSwall({
+msg: 'Esta seguro ?'})
+.then((result)=> {
+if (result.isConfirmed) {
+if (ffdata_add !== null) {
+ffdata_add.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata_add, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+UiB.BeMsgHandle({
+rsps: rsp.data, timer: 7000, 
+{% if modal_selector %}
+
+n_modal: '{{
+
+ modal_selector }}', 
+{% endif %}
+
+{% if offcanvasglobal %}
+
+offcanvasglobal: true 
+{% endif %}
+ })
+get_permissions_group();
+)
+.finally(()=> {
+ffdata_add = null;
+('#{{
+
+t_guid}}').DataTable().ajax.reload();
+)
+
+}
+if (ffdata_rm !== null ) {
+ffdata_rm.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata_rm, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+UiB.BeMsgHandle({
+rsps: rsp.data, timer: 7000, 
+{% if modal_selector %}
+
+n_modal: '{{
+
+ modal_selector }}', 
+{% endif %}
+
+{% if offcanvasglobal %}
+
+offcanvasglobal: true 
+{% endif %}
+ })
+get_permissions_group();
+)
+.finally(()=> {
+ffdata_rm = null;
+('#{{
+
+t_guid}}').DataTable().ajax.reload();
+)
+
+}
+if (ffdata_user_add !== null) {
+ffdata_user_add.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata_user_add, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+UiB.BeMsgHandle({
+rsps: rsp.data, timer: 7000, 
+{% if modal_selector %}
+
+n_modal: '{{
+
+ modal_selector }}', 
+{% endif %}
+
+{% if offcanvasglobal %}
+
+offcanvasglobal: true 
+{% endif %}
+ })
+get_group_user();
+)
+.finally(()=> {
+ffdata_user_add = null;
+('#{{
+
+t_guid}}').DataTable().ajax.reload();
+)
+
+}
+if (ffdata_user_rm !== null) {
+ffdata_user_rm.append('group', "{{
+
+ mobj.name }}")
+axios.post('{% url "iom" %}', ffdata_user_rm, {
+headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+} ).then( (rsp)=> {
+UiB.BeMsgHandle({
+rsps: rsp.data, timer: 7000, 
+{% if modal_selector %}
+
+n_modal: '{{
+
+ modal_selector }}', 
+{% endif %}
+
+{% if offcanvasglobal %}
+
+offcanvasglobal: true 
+{% endif %}
+ })
+get_group_user();
+)
+.finally(()=> {
+ffdata_user_rm = null;
+('#{{
+
+t_guid}}').DataTable().ajax.reload();
+)
+
+}
+}
+})
+
+})
+{
+
+% endif %}
+
+
+</script>
