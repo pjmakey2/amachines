@@ -69,6 +69,12 @@ class Command(BaseCommand):
             help='Password MySQL local (default: FL_MYSQL_PASSWORD)',
         )
         parser.add_argument(
+            '--exclude_tables',
+            type=str,
+            default='bitacora',
+            help='Tablas a excluir del dump, separadas por coma (default: bitacora)',
+        )
+        parser.add_argument(
             '--dry-run',
             action='store_true',
             help='Muestra lo que se haría sin hacer cambios',
@@ -228,6 +234,9 @@ class Command(BaseCommand):
         local_db = options['local_db']
         local_user = options.get('local_user') or os.environ.get('FL_MYSQL_USER', 'frontlin_user')
         local_pass = options.get('local_pass') or os.environ.get('FL_MYSQL_PASSWORD', '')
+        exclude_tables = set(
+            t.strip() for t in options.get('exclude_tables', '').split(',') if t.strip()
+        )
         dry_run = options.get('dry_run', False)
 
         if not remote_pass:
@@ -276,8 +285,11 @@ class Command(BaseCommand):
         try:
             cur = remote_conn.cursor()
             cur.execute("SHOW TABLES")
-            tables = [r[0] for r in cur.fetchall()]
-            self.stdout.write(f'   {len(tables)} tablas encontradas')
+            all_tables = [r[0] for r in cur.fetchall()]
+            tables = [t for t in all_tables if t not in exclude_tables]
+            self.stdout.write(f'   {len(all_tables)} tablas encontradas, {len(tables)} a migrar')
+            if exclude_tables:
+                self.stdout.write(f'   Excluidas: {", ".join(sorted(exclude_tables))}')
 
             with open(dump_file, 'w', encoding='utf-8') as f:
                 f.write("SET NAMES utf8;\n")
