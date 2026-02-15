@@ -831,6 +831,7 @@ print(json.dumps(results))
         """
         script = '''
 import os
+import sys
 import json
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Amachine.settings')
 os.environ['SETUP_RUNNING_MIGRATIONS'] = '1'
@@ -839,6 +840,7 @@ import django
 django.setup()
 
 from Sifen.models import TipoContribuyente, ActividadEconomica, Departamentos, Distrito, Ciudades
+from collections import defaultdict
 
 result = {
     'contribuyentes': [],
@@ -847,35 +849,56 @@ result = {
 }
 
 # Tipos de contribuyente
-for tc in TipoContribuyente.objects.all().order_by('codigo'):
-    result['contribuyentes'].append({
-        'codigo': tc.codigo,
-        'descripcion': tc.tipo  # campo correcto es 'tipo'
-    })
+try:
+    for tc in TipoContribuyente.objects.all().order_by('codigo'):
+        result['contribuyentes'].append({
+            'codigo': tc.codigo,
+            'descripcion': tc.tipo
+        })
+    sys.stderr.write(f"Contribuyentes: {len(result['contribuyentes'])}\\n")
+except Exception as e:
+    sys.stderr.write(f"Error contribuyentes: {e}\\n")
 
-# Actividades económicas (todas)
-for ae in ActividadEconomica.objects.all().order_by('codigo_actividad'):
-    result['actividades'].append({
-        'id': ae.id,
-        'codigo': ae.codigo_actividad,
-        'descripcion': ae.nombre_actividad[:100] if ae.nombre_actividad else ''
-    })
+# Actividades económicas
+try:
+    for ae in ActividadEconomica.objects.all().order_by('codigo_actividad'):
+        result['actividades'].append({
+            'id': ae.id,
+            'codigo': ae.codigo_actividad,
+            'descripcion': ae.nombre_actividad[:100] if ae.nombre_actividad else ''
+        })
+    sys.stderr.write(f"Actividades: {len(result['actividades'])}\\n")
+except Exception as e:
+    sys.stderr.write(f"Error actividades: {e}\\n")
 
-# Departamentos con ciudades (estructura: Departamento -> Distrito -> Ciudad)
-for dep in Departamentos.objects.all().order_by('nombre_departamento'):
-    ciudades = []
-    # Obtener ciudades a través de los distritos
-    for distrito in Distrito.objects.filter(dptoobj=dep):
-        for ciudad in Ciudades.objects.filter(distritoobj=distrito).order_by('nombre_ciudad'):
-            ciudades.append({
-                'id': ciudad.id,
-                'descripcion': ciudad.nombre_ciudad
-            })
-    result['departamentos'].append({
-        'codigo': dep.codigo_departamento,
-        'descripcion': dep.nombre_departamento,
-        'ciudades': ciudades
-    })
+# Departamentos con ciudades - query optimizada (evita N+1)
+try:
+    dep_count = Departamentos.objects.count()
+    sys.stderr.write(f"Departamentos count: {dep_count}\\n")
+
+    # Pre-cargar todas las ciudades agrupadas por departamento
+    # via: Ciudad -> Distrito -> Departamento
+    ciudades_por_dep = defaultdict(list)
+    for ciudad in Ciudades.objects.select_related('distritoobj__dptoobj').order_by('nombre_ciudad'):
+        dep_codigo = ciudad.distritoobj.dptoobj.codigo_departamento
+        ciudades_por_dep[dep_codigo].append({
+            'id': ciudad.id,
+            'descripcion': ciudad.nombre_ciudad
+        })
+
+    sys.stderr.write(f"Ciudades cargadas: {sum(len(v) for v in ciudades_por_dep.values())}\\n")
+
+    for dep in Departamentos.objects.all().order_by('nombre_departamento'):
+        result['departamentos'].append({
+            'codigo': dep.codigo_departamento,
+            'descripcion': dep.nombre_departamento,
+            'ciudades': ciudades_por_dep.get(dep.codigo_departamento, [])
+        })
+    sys.stderr.write(f"Departamentos: {len(result['departamentos'])}\\n")
+except Exception as e:
+    sys.stderr.write(f"Error departamentos: {e}\\n")
+    import traceback
+    traceback.print_exc(file=sys.stderr)
 
 print(json.dumps(result))
 '''
@@ -885,16 +908,28 @@ print(json.dumps(result))
                 cwd=str(self.base_dir),
                 capture_output=True,
                 text=True,
-                timeout=60
+                timeout=120
             )
+
+            if result.stderr:
+                logger.info(f"Subprocess stderr: {result.stderr}")
 
             if result.returncode == 0:
                 import json
-                return json.loads(result.stdout.strip())
+                data = json.loads(result.stdout.strip())
+                logger.info(
+                    f"Opciones cargadas: {len(data.get('contribuyentes', []))} contribuyentes, "
+                    f"{len(data.get('actividades', []))} actividades, "
+                    f"{len(data.get('departamentos', []))} departamentos"
+                )
+                return data
             else:
-                logger.error(f"Error obteniendo opciones: {result.stderr}")
+                logger.error(f"Error obteniendo opciones (rc={result.returncode}): {result.stderr}")
                 return {'contribuyentes': [], 'actividades': [], 'departamentos': []}
 
+        except subprocess.TimeoutExpired:
+            logger.error("Timeout (120s) obteniendo opciones de business")
+            return {'contribuyentes': [], 'actividades': [], 'departamentos': []}
         except Exception as e:
             logger.exception("Error en get_business_form_options")
             return {'contribuyentes': [], 'actividades': [], 'departamentos': []}
