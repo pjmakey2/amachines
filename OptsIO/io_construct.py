@@ -479,10 +479,10 @@ class FConstruc:
             rsp['df'] = df
         if pdopts.get('fillna') or pdopts.get('fillna') == 0:
             fill_value = pdopts.get('fillna')
-            numeric_cols = df.select_dtypes(include=['number']).columns
-            df[numeric_cols] = df[numeric_cols].fillna(fill_value)
-            str_cols = df.select_dtypes(include=['object']).columns
-            df[str_cols] = df[str_cols].fillna('')
+            dt_cols = df.select_dtypes(include=['datetime', 'datetimetz']).columns
+            for col in dt_cols:
+                df[col] = df[col].dt.strftime('%Y-%m-%d %H:%M:%S').fillna('')
+            df.fillna(fill_value, inplace=True)
             rsp['df'] = df
         return rsp
     
