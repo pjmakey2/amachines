@@ -1,5 +1,10 @@
-- 111166
-- 111164
-- 111168
-- 111182
-- 111179
+Crea estos usuarios por favor en el servidor asignados al mismo negocio que el usuario peter
+#CAJERO
+username = 111166, password = abc166
+username = 111164, password = abc164
+username = 111168, password = abc168
+username = 111182, password = abc182
+username = 111179, password = abc179
+#CONTABILIDAD
+username = 111222, password = abc222
+username = 111175, password = abc175

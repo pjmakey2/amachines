@@ -548,30 +548,13 @@ fi
 # =============================================================================
 header "10. Configurando Nginx"
 
-# Determinar puerto listen de nginx
-if [[ -n "$BIND_PORT_NGINX" ]]; then
-    NGINX_LISTEN="listen $BIND_PORT_NGINX;"
-    NGINX_LISTEN_SSL=""
-else
-    NGINX_LISTEN="listen 80;"
-    NGINX_LISTEN_SSL="listen 443 ssl;"
-fi
-
+# Puerto de escucha de nginx (default: 8000 si se especificó, sino 80)
+NGINX_PORT="${BIND_PORT_NGINX:-80}"
 NGINX_SERVER_NAME="${DOMINIO:-_}"
 NGINX_CHANGED=false
 
-NGINX_CONF="upstream ${PREFIX_SERVICES}_gunicorn {
-    server 127.0.0.1:${BIND_PORT_GUNICORN};
-}
-
-upstream ${PREFIX_SERVICES}_daphne {
-    server 127.0.0.1:${DAPHNE_PORT};
-}
-
-server {
-    ${NGINX_LISTEN}
-    server_name ${NGINX_SERVER_NAME};
-
+# Bloque de locations compartido (reutilizado en el server block principal)
+NGINX_LOCATIONS="
     client_max_body_size 20M;
 
     location /static/ {
@@ -612,21 +595,71 @@ server {
         proxy_set_header X-Forwarded-For \\\$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \\\$scheme;
         proxy_read_timeout 120;
-    }
+    }"
+
+# Construir config según si hay dominio (SSL) o no
+if [[ -n "$DOMINIO" ]]; then
+    # Con dominio: nginx escucha en NGINX_PORT con SSL + puerto 80 para redirect/certbot
+    NGINX_CONF="upstream ${PREFIX_SERVICES}_gunicorn {
+    server 127.0.0.1:${BIND_PORT_GUNICORN};
+}
+
+upstream ${PREFIX_SERVICES}_daphne {
+    server 127.0.0.1:${DAPHNE_PORT};
+}
+
+server {
+    listen ${NGINX_PORT} ssl;
+    server_name ${NGINX_SERVER_NAME};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMINIO}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMINIO}/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+${NGINX_LOCATIONS}
+}
+
+# Puerto 80: renovación certbot + redirect a HTTPS
+server {
+    listen 80;
+    server_name ${NGINX_SERVER_NAME};
+    return 301 https://\\\$host:${NGINX_PORT}\\\$request_uri;
 }"
+else
+    # Sin dominio: nginx escucha en NGINX_PORT sin SSL
+    NGINX_CONF="upstream ${PREFIX_SERVICES}_gunicorn {
+    server 127.0.0.1:${BIND_PORT_GUNICORN};
+}
+
+upstream ${PREFIX_SERVICES}_daphne {
+    server 127.0.0.1:${DAPHNE_PORT};
+}
+
+server {
+    listen ${NGINX_PORT};
+    server_name ${NGINX_SERVER_NAME};
+${NGINX_LOCATIONS}
+}"
+fi
 
 # Verificar si la config de nginx cambió
 NGINX_CHECK=$(ssh_run "
     NGINX_PATH='/etc/nginx/sites-available/${PREFIX_SERVICES}'
     if [ -f \"\$NGINX_PATH\" ]; then
-        echo 'exists'
+        CURRENT_MD5=\$(md5sum \"\$NGINX_PATH\" | cut -d' ' -f1)
+        NEW_MD5=\$(echo '$NGINX_CONF' | md5sum | cut -d' ' -f1)
+        if [ \"\$CURRENT_MD5\" = \"\$NEW_MD5\" ]; then
+            echo 'unchanged'
+        else
+            echo 'changed'
+        fi
     else
         echo 'missing'
     fi
 ")
 
-if [[ "$NGINX_CHECK" == "missing" ]]; then
-    info "Creando configuración nginx para ${NGINX_SERVER_NAME}..."
+if [[ "$NGINX_CHECK" == "missing" || "$NGINX_CHECK" == "changed" ]]; then
+    info "Creando/actualizando configuración nginx para ${NGINX_SERVER_NAME}..."
     ssh_run "echo '$NGINX_CONF' | sudo tee /etc/nginx/sites-available/${PREFIX_SERVICES} > /dev/null"
     ssh_run "
         sudo ln -sf /etc/nginx/sites-available/${PREFIX_SERVICES} /etc/nginx/sites-enabled/${PREFIX_SERVICES}
@@ -636,13 +669,13 @@ if [[ "$NGINX_CHECK" == "missing" ]]; then
     NGINX_CHANGED=true
     log "Nginx configurado"
 else
-    log "Nginx ya configurado (skip)"
+    log "Nginx sin cambios (skip)"
 fi
 
 # =============================================================================
 # 11. CERTIFICADO SSL (Let's Encrypt)
 # =============================================================================
-if [[ -n "$DOMINIO" && -z "$BIND_PORT_NGINX" ]]; then
+if [[ -n "$DOMINIO" ]]; then
     header "11. Configurando SSL con Let's Encrypt"
 
     # Verificar si ya existe un certificado válido para el dominio
@@ -656,22 +689,42 @@ if [[ -n "$DOMINIO" && -z "$BIND_PORT_NGINX" ]]; then
 
     if [[ "$CERT_EXISTS" == "missing" ]]; then
         info "Solicitando certificado para $DOMINIO..."
+
+        # Certbot necesita puerto 80 para validación HTTP-01.
+        # Crear config temporal en puerto 80 para obtener el certificado.
         ssh_run "
-            sudo certbot --nginx -d '$DOMINIO' --non-interactive --agree-tos \
-                --email admin@altamachines.com --redirect 2>&1 || \
-            echo 'WARN: Certbot falló. Verificar DNS y puertos 80/443.'
+            echo 'server { listen 80; server_name $DOMINIO; location / { return 200; } }' \
+                | sudo tee /etc/nginx/sites-available/${PREFIX_SERVICES}_certbot > /dev/null
+            sudo ln -sf /etc/nginx/sites-available/${PREFIX_SERVICES}_certbot /etc/nginx/sites-enabled/${PREFIX_SERVICES}_certbot
+            sudo nginx -t && sudo systemctl reload nginx
         "
-        log "SSL configurado"
+
+        # Obtener certificado (certonly, sin modificar nginx)
+        ssh_run "
+            sudo certbot certonly --nginx -d '$DOMINIO' --non-interactive --agree-tos \
+                --email admin@altamachines.com 2>&1 || \
+            echo 'WARN: Certbot falló. Verificar DNS y puerto 80.'
+        "
+
+        # Limpiar config temporal de certbot
+        ssh_run "
+            sudo rm -f /etc/nginx/sites-available/${PREFIX_SERVICES}_certbot
+            sudo rm -f /etc/nginx/sites-enabled/${PREFIX_SERVICES}_certbot
+        "
+
+        log "Certificado SSL obtenido"
     else
         log "Certificado SSL para $DOMINIO ya existe (skip)"
     fi
+
+    # Reescribir nginx config con SSL en el puerto correcto
+    # (La config del paso 10 ya incluye SSL si hay dominio,
+    # pero si el cert se acaba de generar, recargar nginx)
+    ssh_run "sudo nginx -t && sudo systemctl reload nginx"
+    log "Nginx recargado con SSL en puerto $NGINX_PORT"
 else
     header "11. SSL"
-    if [[ -n "$BIND_PORT_NGINX" ]]; then
-        warn "Omitido: usando puerto custom ($BIND_PORT_NGINX), SSL se configura manualmente"
-    else
-        warn "Omitido: no se especificó --dominio"
-    fi
+    warn "Omitido: no se especificó --dominio"
 fi
 
 # =============================================================================
