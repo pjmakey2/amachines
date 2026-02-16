@@ -478,7 +478,11 @@ class FConstruc:
             df.replace([np.inf, -np.inf], 0, inplace=True)
             rsp['df'] = df
         if pdopts.get('fillna') or pdopts.get('fillna') == 0:
-            df.fillna(pdopts.get('fillna'), inplace=True)
+            fill_value = pdopts.get('fillna')
+            numeric_cols = df.select_dtypes(include=['number']).columns
+            df[numeric_cols] = df[numeric_cols].fillna(fill_value)
+            str_cols = df.select_dtypes(include=['object']).columns
+            df[str_cols] = df[str_cols].fillna('')
             rsp['df'] = df
         return rsp
     
