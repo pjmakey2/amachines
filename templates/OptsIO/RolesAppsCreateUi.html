@@ -73,7 +73,9 @@
         headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
         first_selected: false,
         dropdownParent: $('#offcanvasGlobalUi'),
-        theme: 'bootstrap-5'
+        theme: 'bootstrap-5',
+        startRow = 0,
+        endRow = 500,
     }).then(() => {
         {% if mobj and mobj.rolesobj %}
             $('#form_rolesapps_{{ rr }} select[name=rolesobj_id]').val('{{ mobj.rolesobj.id }}').trigger('change');
@@ -95,7 +97,9 @@
         dropdownParent: $('#offcanvasGlobalUi'),
         theme: 'bootstrap-5',
         multiple: true,
-        closeOnSelect: false
+        closeOnSelect: false,
+        startRow = 0,
+        endRow = 500,
     }).then(() => {
         {% if mobj and mobj.appsobj %}
             // En modo edición, deshabilitar múltiple selección y mostrar solo el App actual

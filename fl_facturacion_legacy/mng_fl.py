@@ -515,6 +515,13 @@ class MFLFacturacion:
             facturas = self.mysql_client.get_todas_facturas(sucursal, limit, offset, filtros)
             total = self.mysql_client.count_facturas(sucursal, filtros)
 
+            # Buscar DocumentHeaders vinculados por ext_link (acuse_id)
+            acuse_ids = [str(f['acuse_id']) for f in facturas]
+            dh_map = {}
+            if acuse_ids:
+                dh_qs = DocumentHeader.objects.filter(ext_link__in=acuse_ids).values('ext_link', 'id')
+                dh_map = {str(dh['ext_link']): dh['id'] for dh in dh_qs}
+
             # Formatear para el frontend
             result = []
             for f in facturas:
@@ -547,6 +554,7 @@ class MFLFacturacion:
                     'facturado': f.get('facturaemitida') == 1,
                     'id_factura': f.get('id_factura', ''),
                     'observacion': f.get('obs', ''),
+                    'documentheader_id': dh_map.get(str(f['acuse_id'])),
                 })
 
             return {
@@ -878,7 +886,7 @@ class MFLFacturacion:
                 'pdv_direccion_entrega': factura.get('direccion', ''),
                 'pdv_telefono': factura.get('telefono', ''),
                 'pdv_celular': factura.get('celular') or '000000',
-                'pdv_email': factura.get('email') or 'nomail@nomail.com',
+                'pdv_email': correo_frontend or factura.get('email') or 'nomail@nomail.com',
                 'pdv_pais_cod': 'PRY',
                 'pdv_pais': 'Paraguay',
                 'pdv_dpto_cod': 1,
@@ -919,6 +927,82 @@ class MFLFacturacion:
             else:
                 uc_fields['doc_tipo_pago_cod'] = 1  # Efectivo
                 uc_fields['doc_tipo_pago'] = 'Efectivo'
+
+            # 3. Crear/Actualizar registro en Clientes (Sifen) con anclaje_cliente
+            try:
+                cliente_codigo = str(factura.get('clientecodigo', ''))
+                correo_cliente = correo_frontend or factura.get('email', '')
+
+                # Buscar si ya existe un cliente con este anclaje_cliente
+                cliente_sifen = Clientes.objects.using(dbcon).filter(anclaje_cliente=cliente_codigo).first()
+
+                cliente_sifen_ruc = Clientes.objects.using(dbcon).filter(pdv_ruc=ruc_cliente).first()
+
+                if cliente_sifen:
+                    # Actualizar registro existente
+                    updated = False
+                    if ruc_cliente and cliente_sifen.pdv_ruc != ruc_cliente:
+                        cliente_sifen.pdv_ruc = ruc_cliente
+                        cliente_sifen.pdv_ruc_dv = int(ruc_dv) if ruc_dv else 0
+                        logger.info(f"Actualizando RUC del cliente en Sifen: {ruc_cliente}")
+                        updated = True
+                    if nombre_cliente and cliente_sifen.pdv_nombrefactura != nombre_cliente:
+                        cliente_sifen.pdv_nombrefactura = nombre_cliente
+                        logger.info(f"Actualizando nombre del cliente en Sifen: {nombre_cliente}")
+                        updated = True
+                    if correo_cliente and cliente_sifen.pdv_email != correo_cliente:
+                        cliente_sifen.pdv_email = correo_cliente
+                        logger.info(f"Actualizando email del cliente en Sifen: {correo_cliente}")
+                        updated = True
+
+                    if updated:
+                        cliente_sifen.save(using=dbcon)
+                        logger.info(f"Cliente actualizado en Sifen: anclaje_cliente={cliente_codigo}")
+                elif cliente_sifen_ruc:
+                    # Actualizar registro existente
+                    updated = False
+                    cliente_sifen_ruc.anclaje_cliente=cliente_codigo
+                    if ruc_cliente and cliente_sifen_ruc.pdv_ruc != ruc_cliente:
+                        cliente_sifen_ruc.pdv_ruc = ruc_cliente
+                        cliente_sifen_ruc.pdv_ruc_dv = int(ruc_dv) if ruc_dv else 0
+                        logger.info(f"Actualizando RUC del cliente en Sifen: {ruc_cliente}")
+                        updated = True
+                    if nombre_cliente and cliente_sifen_ruc.pdv_nombrefactura != nombre_cliente:
+                        cliente_sifen_ruc.pdv_nombrefactura = nombre_cliente
+                        logger.info(f"Actualizando nombre del cliente en Sifen: {nombre_cliente}")
+                        updated = True
+                    if correo_cliente and cliente_sifen_ruc.pdv_email != correo_cliente:
+                        cliente_sifen_ruc.pdv_email = correo_cliente
+                        logger.info(f"Actualizando email del cliente en Sifen: {correo_cliente}")
+                        updated = True
+
+                    if updated:
+                        cliente_sifen_ruc.save(using=dbcon)
+                        logger.info(f"Cliente actualizado en Sifen: anclaje_cliente={cliente_codigo}")
+                else:
+                    # Crear nuevo registro
+                    # calculate_dv() retorna int, convertir si es necesario
+                    ruc_dv_int = int(ruc_dv) if ruc_dv else 0
+                    Clientes.objects.using(dbcon).create(
+                        anclaje_cliente=cliente_codigo,
+                        pdv_ruc=ruc_cliente or '',
+                        pdv_ruc_dv=ruc_dv_int,
+                        pdv_nombrefactura=nombre_cliente or '',
+                        pdv_nombrefantasia=nombre_cliente or '',
+                        pdv_email=correo_cliente or '',
+                        pdv_innominado=pdv_innominado,
+                        pdv_es_contribuyente=pdv_es_contribuyente,
+                        pdv_tipocontribuyente=pdv_tipocontribuyente,
+                        pdv_direccion_entrega=factura.get('direccion', ''),
+                        pdv_telefono=factura.get('telefono', ''),
+                        pdv_celular=factura.get('celular', ''),
+                        pdv_pais_cod='PRY',
+                        pdv_pais='Paraguay',
+                    )
+                    logger.info(f"Cliente creado en Sifen: anclaje_cliente={cliente_codigo}")
+            except Exception as e:
+                # No fallar la factura si hay error guardando el cliente
+                logger.error(f"Error guardando cliente en Sifen: {e}")
 
             # 4. Crear factura en SIFEN
             msifen = MSifen()
@@ -965,57 +1049,6 @@ class MFLFacturacion:
                 }
             )
             ek_pdf_file = pdf_result.get('ek_pdf_file', '')
-
-            # 8. Crear/Actualizar registro en Clientes (Sifen) con anclaje_cliente
-            try:
-                cliente_codigo = str(factura.get('clientecodigo', ''))
-                correo_cliente = correo_frontend or factura.get('email', '')
-
-                # Buscar si ya existe un cliente con este anclaje_cliente
-                cliente_sifen = Clientes.objects.using(dbcon).filter(anclaje_cliente=cliente_codigo).first()
-
-                if cliente_sifen:
-                    # Actualizar registro existente
-                    updated = False
-                    if ruc_cliente and cliente_sifen.pdv_ruc != ruc_cliente:
-                        cliente_sifen.pdv_ruc = ruc_cliente
-                        cliente_sifen.pdv_ruc_dv = int(ruc_dv) if ruc_dv else 0
-                        updated = True
-                    if nombre_cliente and cliente_sifen.pdv_nombrefactura != nombre_cliente:
-                        cliente_sifen.pdv_nombrefactura = nombre_cliente
-                        updated = True
-                    if correo_cliente and cliente_sifen.pdv_email != correo_cliente:
-                        cliente_sifen.pdv_email = correo_cliente
-                        updated = True
-
-                    if updated:
-                        cliente_sifen.save(using=dbcon)
-                        logger.info(f"Cliente actualizado en Sifen: anclaje_cliente={cliente_codigo}")
-                else:
-                    # Crear nuevo registro
-                    # calculate_dv() retorna int, convertir si es necesario
-                    ruc_dv_int = int(ruc_dv) if ruc_dv else 0
-
-                    Clientes.objects.using(dbcon).create(
-                        anclaje_cliente=cliente_codigo,
-                        pdv_ruc=ruc_cliente or '',
-                        pdv_ruc_dv=ruc_dv_int,
-                        pdv_nombrefactura=nombre_cliente or '',
-                        pdv_nombrefantasia=nombre_cliente or '',
-                        pdv_email=correo_cliente or '',
-                        pdv_innominado=pdv_innominado,
-                        pdv_es_contribuyente=pdv_es_contribuyente,
-                        pdv_tipocontribuyente=pdv_tipocontribuyente,
-                        pdv_direccion_entrega=factura.get('direccion', ''),
-                        pdv_telefono=factura.get('telefono', ''),
-                        pdv_celular=factura.get('celular', ''),
-                        pdv_pais_cod='PRY',
-                        pdv_pais='Paraguay',
-                    )
-                    logger.info(f"Cliente creado en Sifen: anclaje_cliente={cliente_codigo}")
-            except Exception as e:
-                # No fallar la factura si hay error guardando el cliente
-                logger.error(f"Error guardando cliente en Sifen: {e}")
 
             return {
                 'success': True,

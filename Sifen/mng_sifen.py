@@ -2167,7 +2167,8 @@ class MSifen:
         #uc_fields['doc_op'] = 'VTA'
         uc_fields['doc_estado'] = 'CREADO'
         uc_fields['source'] = 'MANUAL'
-        uc_fields['ext_link'] = 0
+        if not uc_fields['ext_link']:
+            uc_fields['ext_link'] = '0'
 
         # Business info
         uc_fields['bs'] = self.bsobj.name
@@ -2484,8 +2485,10 @@ class MSifen:
                 related_doc.save()
         docobj.save()
         clobj = Clientes.objects.filter(pdv_ruc=uc_fields['pdv_ruc']).first()
+        logging.info(f'Buscando cliente con RUC {uc_fields["pdv_ruc"]}, encontrado: {clobj}')
         if not clobj:
             # Create new Cliente
+            logging.info(f'Creando nuevo cliente con RUC {uc_fields["pdv_ruc"]}')
             Clientes.objects.create(
                 pdv_ruc=uc_fields['pdv_ruc'],
                 pdv_ruc_dv=uc_fields['pdv_ruc_dv'],
@@ -2526,6 +2529,7 @@ class MSifen:
             # if clobj.pdv_es_contribuyente != uc_fields.get('pdv_es_contribuyente', True):
             #     clobj.pdv_es_contribuyente = uc_fields.get('pdv_es_contribuyente', True)
             #     updated = True
+            logging.info(f'Cliente actualizado: con RUC {clobj.pdv_ruc}, cambios realizados: {updated}')
             if updated:
                 clobj.save()
         

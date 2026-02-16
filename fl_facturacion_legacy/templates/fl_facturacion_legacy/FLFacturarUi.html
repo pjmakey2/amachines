@@ -507,6 +507,15 @@
                     nombreCheck.style.display = 'inline';
                 }
 
+                if (response.data.pdv_email) {
+                    const correoInput = document.getElementById('fl_correo_factura');
+                    if (response.data.pdv_email.startsWith('nomail')) {
+                        correoInput.value = '';
+                    } else {
+                        correoInput.value = response.data.pdv_email;
+                        document.getElementById('fl_correo_check').style.display = 'inline';
+                    }
+                }
                 // Aplicar estilo verde al input
                 rucInput.classList.remove('is-invalid');
                 rucInput.classList.add('is-valid');

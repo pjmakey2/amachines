@@ -482,7 +482,16 @@ class FConstruc:
             dt_cols = df.select_dtypes(include=['datetime', 'datetimetz']).columns
             for col in dt_cols:
                 df[col] = df[col].dt.strftime('%Y-%m-%d %H:%M:%S').fillna('')
-            df.fillna(fill_value, inplace=True)
+            str_cols = df.select_dtypes(include=['string', 'object']).columns
+            if len(str_cols) > 0:
+                df[str_cols] = df[str_cols].fillna('')
+            num_cols = df.select_dtypes(include=['number']).columns
+            if len(num_cols) > 0:
+                df[num_cols] = df[num_cols].fillna(fill_value)
+            bool_cols = df.select_dtypes(include=['bool']).columns
+            remaining = df.columns.difference(dt_cols.union(str_cols).union(num_cols).union(bool_cols))
+            if len(remaining) > 0:
+                df[remaining] = df[remaining].fillna('')
             rsp['df'] = df
         return rsp
     

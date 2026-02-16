@@ -457,7 +457,7 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${REMOTE_PROJECT_DIR}
 Environment=PYENV_ROOT=${REMOTE_HOME}/.pyenv
-Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/bin:/bin
+Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=${REMOTE_PROJECT_DIR}/.env
 ExecStart=${PYENV_GUNICORN} Amachine.wsgi:application --bind 127.0.0.1:${BIND_PORT_GUNICORN} --workers ${GUNICORN_WORKERS} --timeout 120 --access-logfile ${REMOTE_PROJECT_DIR}/log/gunicorn_access.log --error-logfile ${REMOTE_PROJECT_DIR}/log/gunicorn_error.log
 ExecReload=/bin/kill -s HUP \$MAINPID
@@ -481,7 +481,7 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${REMOTE_PROJECT_DIR}
 Environment=PYENV_ROOT=${REMOTE_HOME}/.pyenv
-Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/bin:/bin
+Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=${REMOTE_PROJECT_DIR}/.env
 ExecStart=${PYENV_CELERY} -A Amachine multi start worker1 --pidfile=${REMOTE_PROJECT_DIR}/log/celery_%%n.pid --logfile=${REMOTE_PROJECT_DIR}/log/celery_%%n.log --loglevel=info --concurrency=2 --max-tasks-per-child=1000
 ExecStop=${PYENV_CELERY} -A Amachine multi stopwait worker1 --pidfile=${REMOTE_PROJECT_DIR}/log/celery_%%n.pid
@@ -505,7 +505,7 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${REMOTE_PROJECT_DIR}
 Environment=PYENV_ROOT=${REMOTE_HOME}/.pyenv
-Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/bin:/bin
+Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=${REMOTE_PROJECT_DIR}/.env
 ExecStart=${PYENV_CELERY} -A Amachine flower --port=5555 --broker_api=redis://127.0.0.1:6379/0 --basic_auth=admin:admin
 Restart=on-failure
@@ -527,7 +527,7 @@ User=${USER}
 Group=${USER}
 WorkingDirectory=${REMOTE_PROJECT_DIR}
 Environment=PYENV_ROOT=${REMOTE_HOME}/.pyenv
-Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/bin:/bin
+Environment=PATH=${REMOTE_HOME}/.pyenv/versions/${VIRTUALENV}/bin:${REMOTE_HOME}/.pyenv/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile=${REMOTE_PROJECT_DIR}/.env
 ExecStart=${PYENV_DAPHNE} -b 127.0.0.1 -p ${DAPHNE_PORT} Amachine.asgi:application
 Restart=on-failure
