@@ -1,4 +1,6 @@
 Crea estos usuarios por favor en el servidor asignados al mismo negocio que el usuario peter
+#ADM
+username = dustinrangel, password = abc7898
 #CAJERO
 username = 111166, password = abc166
 username = 111164, password = abc164

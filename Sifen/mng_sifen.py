@@ -2162,12 +2162,11 @@ class MSifen:
             uc_fields['pdv_es_contribuyente'] = False
             uc_fields['pdv_innominado'] = True
             
-            
-        
         #uc_fields['doc_op'] = 'VTA'
         uc_fields['doc_estado'] = 'CREADO'
         uc_fields['source'] = 'MANUAL'
-        if not uc_fields['ext_link']:
+        ext_link = uc_fields['ext_link']
+        if not ext_link:
             uc_fields['ext_link'] = '0'
 
         # Business info

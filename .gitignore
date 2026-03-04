@@ -51,6 +51,7 @@ virtualenv/
 .env
 .env.local
 .env.*.local
+.env_fl
 
 # Credentials and secrets
 docs/clave_produccion.jpeg
