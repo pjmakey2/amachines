@@ -1,0 +1,323 @@
+<style>
+    .oc-vencida {
+        background-color: #F709FFB2 !important;
+    }
+    .oc-pendiente {
+        background-color: #FCFF648A !important;
+    }
+    .oc-pagada {
+        background-color: #90EE9066 !important;
+    }
+</style>
+
+<div class="scroll pe-5 mt-2"
+    data-kt-scroll="true"
+    data-kt-scroll-height="auto"
+    data-kt-scroll-wrappers="#OCPagoGestion"
+    data-kt-scroll-offset="100px">
+    <div id="OCPagoGestion">
+        <h2 class="text text-left">Gestión de Pagos a Proveedores</h2>
+
+        <!-- Resumen -->
+        <div class="row mb-3" id="resumen_pagos_oc">
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6 class="card-title">Total a Pagar</h6>
+                        <h4 id="oc_total_pendiente">Gs 0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">OC Pendientes</h6>
+                        <h4 id="oc_cantidad_pendientes">0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Vencido</h6>
+                        <h4 id="oc_total_vencido">Gs 0</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">OC Vencidas</h6>
+                        <h4 id="oc_cantidad_vencidas">0</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros y Buscador -->
+        <div class="d-flex mb-3 flex-wrap align-items-center">
+            <div class="p-2">
+                <select id="filtro_estado_pago_oc" class="form-select">
+                    <option value="pendientes" selected>Pendientes</option>
+                    <option value="pagadas">Pagadas</option>
+                    <option value="todas">Todas</option>
+                </select>
+            </div>
+            <div class="p-2 flex-grow-1">
+                <input type="text" id="search_pago_oc" class="form-control" placeholder="Buscar por numero, proveedor o RUC...">
+            </div>
+            <div class="p-2">
+                <button id="btn-buscar-pago-oc" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Buscar</button>
+                <button id="btn-refresh-pago-oc" class="btn btn-secondary"><i class="mdi mdi-refresh"></i></button>
+            </div>
+        </div>
+
+        <!-- Tabla de OC pendientes -->
+        <div id="table_container_OCPago"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+// Variables globales
+var t_ofh_pago_oc = `dtable_${OptsIO.s4generate()}`;
+
+$(document).ready(function() {
+    cargarResumenPagosOC();
+    inicializarTablaPagosOC();
+});
+
+// Cargar resumen de pagos
+function cargarResumenPagosOC() {
+    let gbe = new FormData();
+    gbe.append('module', 'Egreso');
+    gbe.append('package', 'mng_oc');
+    gbe.append('attr', 'MOC');
+    gbe.append('mname', 'get_resumen_pagos_oc');
+    gbe.append('dbcon', 'default');
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.success) {
+            let r = rsp.data.resumen;
+            $('#oc_total_pendiente').text('Gs ' + UiN.formatNumberU(r.total_pendiente.toFixed(0)));
+            $('#oc_cantidad_pendientes').text(r.cantidad_facturas);
+            $('#oc_total_vencido').text('Gs ' + UiN.formatNumberU(r.total_vencido.toFixed(0)));
+            $('#oc_cantidad_vencidas').text(r.cantidad_vencidas);
+        }
+    });
+}
+
+function pago_oc_builder_be(data, settings) {
+    var tt = qelem(`#table_container_OCPago`);
+    tt.classList.add('overlay-container');
+    tt.classList.add('overlay');
+
+    var crdata = Object.assign({}, settings.ajax.initquery);
+    crdata.search = $('#search_pago_oc').val();
+    crdata.filtro_estado = $('#filtro_estado_pago_oc').val();
+
+    return Object.assign(data, crdata);
+}
+
+function inicializarTablaPagosOC() {
+    Grid.datatables_wrapper({
+        t_guid: t_ofh_pago_oc,
+        url_exec: '{% url "iom" %}',
+        url_tmpl: '{% url "dtmpl" %}',
+        with_crud: false,
+        with_gsearch: false,
+        title: '',
+        tselector: 'table_container_OCPago',
+        app_name: 'Egreso',
+        model_name: 'OrdenCompra',
+        cls_table: 'cell-border row-border table table-sm',
+        cls_thead: 'border-gray-900',
+        dbcon: 'default',
+        plength: 100,
+        custom_module: 'Egreso',
+        custom_package: 'mng_oc',
+        custom_attr: 'MOC',
+        custom_mname: 'get_ordenes_compra',
+        t_opts: {
+            select: { style: 'os' },
+            dom: 'it',
+            fixedHeader: false,
+            responsive: null,
+            scrollCollapse: true,
+            scrollX: true,
+            scrollY: 500,
+            paging: true,
+            order: [[3, 'desc']],
+            createdRow: function(row, data, dataIndex) {
+                if (data.oc_saldo <= 0.1) {
+                    row.classList.add('oc-pagada');
+                } else if (data.dias_vencido > 0) {
+                    row.classList.add('oc-vencida');
+                } else {
+                    row.classList.add('oc-pendiente');
+                }
+            },
+            rowId: function(row) {
+                return `tr_pago_oc_${row.id}`;
+            }
+        },
+        builder_be: pago_oc_builder_be,
+        columns: [
+            {
+                fdis: true, gre: false, btyp: 'loc', idx: 'oc_saldo', tit: 'Acc', dtyp: 'str', dfl: '', nord: false,
+                render: (data, type, row) => {
+                    let icons = '';
+                    if (row.oc_condicion_cod === 2 && row.cuotas && row.cuotas.length > 0) {
+                        icons += `<i title="Ver cuotas" class="tr-pago-oc-cuotas fs-extra-lg text text-secondary mdi mdi-format-list-numbered cursor-pointer me-2"></i>`;
+                    }
+                    if (data > 0.1) {
+                        icons += `<i title="Registrar pago" class="tr-pago-oc-pago fs-extra-lg text text-success mdi mdi-cash-plus cursor-pointer me-2"></i>`;
+                    }
+                    icons += `<i title="Ver historial de pagos" class="tr-pago-oc-historial fs-extra-lg text text-info mdi mdi-history cursor-pointer"></i>`;
+                    return icons;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_numero', tit: 'Número', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data) => String(data).padStart(7, '0')
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'oc_fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data) => moment(data).format('DD/MM/YY')
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_nombre', tit: 'Proveedor', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_ruc', tit: 'RUC', cls: 'align-left', dtyp: 'str', hide: false },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'oc_condicion_cod', tit: 'Cond.', cls: 'align-center', dtyp: 'str', hide: false,
+                render: (data) => data === 2 ? '<span class="badge bg-warning text-dark">Crédito</span>' : '<span class="badge bg-primary">Contado</span>'
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'total_oc', tit: 'Total', cls: 'align-right', dtyp: 'str', hide: false,
+                render: (data) => UiN.formatNumberU(data.toFixed(0))
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'total_pagado', tit: 'Pagado', cls: 'align-right', dtyp: 'str', hide: false,
+                render: (data) => UiN.formatNumberU(data.toFixed(0))
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'oc_saldo', tit: 'Saldo', cls: 'align-right text-danger fw-bold', dtyp: 'str', hide: false,
+                render: (data) => UiN.formatNumberU(data.toFixed(0))
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'dias_vencido', tit: 'Dias Venc.', cls: 'align-center', dtyp: 'int', hide: false,
+                render: (data) => data > 0 ? `<span class="badge bg-danger">${data}</span>` : '<span class="badge bg-success">Al día</span>'
+            },
+        ]
+    });
+
+    $(`#${t_ofh_pago_oc} tbody`).on('click', '.tr-pago-oc-cuotas', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_pago_oc}`).DataTable().row(row).data();
+        abrirCuotasOC(rowData);
+    });
+
+    $(`#${t_ofh_pago_oc} tbody`).on('click', '.tr-pago-oc-pago', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_pago_oc}`).DataTable().row(row).data();
+        abrirOffcanvasPagoOC(rowData);
+    });
+
+    $(`#${t_ofh_pago_oc} tbody`).on('click', '.tr-pago-oc-historial', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_pago_oc}`).DataTable().row(row).data();
+        abrirHistorialPagosOC(rowData);
+    });
+
+    $(`#${t_ofh_pago_oc}`).on('draw.dt', function() {
+        var tt = qelem(`#table_container_OCPago`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    });
+}
+
+function abrirOffcanvasPagoOC(oc) {
+    window.ocPagoData = oc;
+    let tps = {
+        model_app_name: 'Egreso',
+        model_name: 'OrdenCompraPago',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: {
+            title: 'Registrar Pago a Proveedor',
+            t_guid: t_ofh_pago_oc,
+            offcanvasglobal: true
+        },
+        template: 'Egreso/OrdenCompraPagoCreateUi.html',
+        raw: true,
+    };
+
+    OptsIO.getTmpl(tps).then((rsp) => {
+        $('#offcanvasGlobalUiBody').html(rsp.data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+        bsOffcanvas.show();
+
+        document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+            delete window.ocPagoData;
+        }, { once: true });
+        UiB.kILLLoaderAjax();
+    });
+}
+
+function abrirCuotasOC(oc) {
+    window.ocPagoData = oc;
+    let estadoColor = {'PENDIENTE': 'warning', 'PARCIAL': 'info', 'PAGADO': 'success'};
+    let rows = (oc.cuotas || []).map(c => {
+        let color = estadoColor[c.estado] || 'secondary';
+        return `<tr>
+            <td>${c.cuota_numero}</td>
+            <td>${moment(c.vencimiento).format('DD/MM/YY')}</td>
+            <td class="text-end">Gs ${UiN.formatNumberU(c.monto.toFixed(0))}</td>
+            <td class="text-end">Gs ${UiN.formatNumberU(c.monto_pagado.toFixed(0))}</td>
+            <td class="text-end fw-bold text-danger">Gs ${UiN.formatNumberU(c.saldo.toFixed(0))}</td>
+            <td><span class="badge bg-${color}">${c.estado}</span></td>
+        </tr>`;
+    }).join('');
+
+    let html = `
+        <div class="container-fluid p-3">
+            <h6 class="mb-2">Cuotas — OC ${String(oc.oc_numero).padStart(7,'0')} — ${oc.prov_nombre}</h6>
+            <table class="table table-sm table-striped">
+                <thead><tr>
+                    <th>#</th><th>Vencimiento</th><th class="text-end">Monto</th>
+                    <th class="text-end">Pagado</th><th class="text-end">Saldo</th>
+                    <th>Estado</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+
+    $('#offcanvasGlobalUiBody').html(html);
+    let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+    bsOffcanvas.show();
+
+    document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+        $('#offcanvasGlobalUiBody').html('');
+        delete window.ocPagoData;
+    }, { once: true });
+}
+
+function abrirHistorialPagosOC(oc) {
+    UiB.MsgInfo("Historial detallado disponible en la vista de edición de la OC.");
+}
+
+// Busqueda
+$('#btn-buscar-pago-oc').on('click', function() {
+    $(`#${t_ofh_pago_oc}`).DataTable().ajax.reload();
+});
+
+$('#btn-refresh-pago-oc').on('click', function() {
+    $('#search_pago_oc').val('');
+    cargarResumenPagosOC();
+    $(`#${t_ofh_pago_oc}`).DataTable().ajax.reload();
+});
+
+$('#filtro_estado_pago_oc').on('change', function() {
+    $(`#${t_ofh_pago_oc}`).DataTable().ajax.reload();
+});
+</script>

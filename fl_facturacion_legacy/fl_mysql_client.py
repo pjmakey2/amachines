@@ -289,7 +289,7 @@ class FLMySQLClient:
         """
         Busca acuses PENDIENTES por número o por nombre de cliente.
         Solo retorna acuses donde:
-        - estado = 1 (pendiente de pago)
+        - estado = 2 (pago confirmado, listo para facturar)
         - facturaemitida = 2 (no facturado aún)
 
         Args:
@@ -314,7 +314,7 @@ class FLMySQLClient:
                 FROM facturas f
                 LEFT JOIN clientes c ON f.clientecodigo = c.clientecodigo
                 WHERE (f.acuse_id = %s OR CAST(f.acuse_id AS CHAR) LIKE %s)
-                AND f.estado = 1
+                AND f.estado = 2
                 AND f.facturaemitida = 2
                 ORDER BY f.acuse_id DESC
                 LIMIT %s
@@ -351,7 +351,7 @@ class FLMySQLClient:
                 FROM facturas f
                 LEFT JOIN clientes c ON f.clientecodigo = c.clientecodigo
                 WHERE {condicion_where}
-                AND f.estado = 1
+                AND f.estado = 2
                 AND f.facturaemitida = 2
                 ORDER BY f.acuse_id DESC
                 LIMIT {limit}

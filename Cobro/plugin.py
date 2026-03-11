@@ -18,8 +18,8 @@ class Plugin(BasePlugin):
 
     name = "cobro"
     display_name = "Gestión de Cobros"
-    description = "Sistema de gestión de cobros y pagos de facturas a crédito"
-    version = "1.0.0"
+    description = "Sistema de gestión de cobros y pagos de facturas a crédito, con soporte para recibos de cobro parciales"
+    version = "1.1.0"
     author = "Alta Machines"
     is_core = False  # Plugin opcional
     dependencies = ['sifen']  # Depende del plugin SIFEN para acceso a facturas

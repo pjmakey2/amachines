@@ -56,7 +56,7 @@
         </div>
 
         <!-- Filtros y Buscador -->
-        <div class="d-flex mb-3">
+        <div class="d-flex mb-3 flex-wrap align-items-center">
             <div class="p-2">
                 <select id="filtro_estado_cobro" class="form-select">
                     <option value="pendientes" selected>Pendientes</option>
@@ -70,6 +70,12 @@
             <div class="p-2">
                 <button id="btn-buscar-cobro" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Buscar</button>
                 <button id="btn-refresh-cobro" class="btn btn-secondary"><i class="mdi mdi-refresh"></i></button>
+                <button id="btn-select-all-cobro" class="btn btn-outline-secondary"><i class="mdi mdi-check-all"></i> Sel. Todo</button>
+            </div>
+            <div class="p-2">
+                <button id="btn-generar-recibo" class="btn btn-success d-none">
+                    <i class="mdi mdi-file-document-outline"></i> Generar Recibo (<span id="recibo-count">0</span>)
+                </button>
             </div>
         </div>
 
@@ -165,7 +171,7 @@ function inicializarTablaCobros() {
             scrollX: true,
             scrollY: 500,
             paging: true,
-            order: [[2, 'desc']],
+            order: [[4, 'desc'], [3, 'desc']],
             createdRow: function(row, data, dataIndex) {
                 if (data.doc_saldo <= 0) {
                     row.classList.add('factura-pagada');
@@ -182,12 +188,22 @@ function inicializarTablaCobros() {
         builder_be: cobro_builder_be,
         columns: [
             {
+                fdis: true, gre: false, btyp: 'loc', idx: 'id', tit: '', dtyp: 'str', dfl: '', nord: true,
+                render: (data, type, row) => {
+                    return `<input type="checkbox" class="chk-cobro-row" data-id="${row.id}" data-ruc="${row.pdv_ruc}" data-saldo="${row.doc_saldo}" data-total="${row.total_factura}">`;
+                }
+            },
+            {
                 fdis: true, gre: false, btyp: 'loc', idx: 'doc_saldo', tit: 'Acc', dtyp: 'str', dfl: '', nord: false,
                 render: (data, type, row) => {
+                    let icons = '';
                     if (data > 0) {
-                        return `<i title="Registrar pago" class="tr-cobro-pago fs-extra-lg text text-success mdi mdi-cash-plus cursor-pointer"></i>`;
+                        icons += `<i title="Registrar pago" class="tr-cobro-pago fs-extra-lg text text-success mdi mdi-cash-plus cursor-pointer me-2"></i>`;
+                    } else {
+                        icons += `<i title="Ver historial de pagos" class="tr-cobro-historial fs-extra-lg text text-success mdi mdi-check-circle cursor-pointer me-2"></i>`;
                     }
-                    return `<i title="Pagado" class="fs-extra-lg text text-secondary mdi mdi-check-circle"></i>`;
+                    icons += `<i title="Ver recibos" class="tr-cobro-recibos fs-extra-lg text text-info mdi mdi-file-document-outline cursor-pointer"></i>`;
+                    return icons;
                 }
             },
             { fdis: true, gre: true, btyp: 'fdb', idx: 'id', tit: 'ID', cls: 'align-left', dtyp: 'str', hide: true },
@@ -227,11 +243,40 @@ function inicializarTablaCobros() {
         }
     });
 
+    // Event listener para ver historial de pagos (facturas pagadas)
+    $(`#${t_ofh_cobro} tbody`).on('click', '.tr-cobro-historial', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_cobro}`).DataTable().row(row).data();
+        abrirOffcanvasPago(rowData);
+    });
+
+    // Event listener para ver historial de recibos
+    $(`#${t_ofh_cobro} tbody`).on('click', '.tr-cobro-recibos', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_cobro}`).DataTable().row(row).data();
+        abrirReciboHistorial(rowData);
+    });
+
+    // Boton: seleccionar/deseleccionar todos los visibles
+    $('#btn-select-all-cobro').on('click', function() {
+        var checkboxes = $(`#${t_ofh_cobro} .chk-cobro-row`);
+        var allChecked = checkboxes.length > 0 && checkboxes.filter(':checked').length === checkboxes.length;
+        checkboxes.prop('checked', !allChecked);
+        checkReciboSelection();
+    });
+
+    // Checkbox: individual
+    $(`#${t_ofh_cobro} tbody`).on('change', '.chk-cobro-row', function() {
+        checkReciboSelection();
+    });
+
     // Quitar overlay cuando se dibuja la tabla
     $(`#${t_ofh_cobro}`).on('draw.dt', function() {
         var tt = qelem(`#table_container_Cobro`);
         tt.classList.remove('overlay-container');
         tt.classList.remove('overlay');
+        // Limpiar seleccion al redibujar
+        checkReciboSelection();
     });
 }
 
@@ -270,6 +315,122 @@ function abrirOffcanvasPago(factura) {
         UiB.kILLLoaderAjax();
     });
 }
+
+// Abrir offcanvas con historial de recibos de una factura
+function abrirReciboHistorial(factura) {
+    window.cobroReciboHistData = factura;
+
+    let tps = {
+        model_app_name: 'Cobro',
+        model_name: 'ReciboHistorial',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: {
+            title: 'Historial de Recibos',
+            t_guid: t_ofh_cobro,
+            offcanvasglobal: true
+        },
+        template: 'Cobro/ReciboHistorialUi.html',
+        raw: true,
+    };
+
+    OptsIO.getTmpl(tps).then((rsp) => {
+        let data = rsp.data;
+        $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+        bsOffcanvas.show();
+
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+            delete window.cobroReciboHistData;
+        }, { once: true });
+
+        UiB.kILLLoaderAjax();
+    });
+}
+
+// Validar seleccion de checkboxes para recibo
+function checkReciboSelection() {
+    var checked = $(`#${t_ofh_cobro} .chk-cobro-row:checked`);
+    var btn = $('#btn-generar-recibo');
+
+    if (checked.length === 0) {
+        btn.addClass('d-none');
+        return;
+    }
+
+    // Verificar que todos tengan el mismo RUC
+    var rucs = new Set();
+    checked.each(function() {
+        rucs.add($(this).data('ruc'));
+    });
+
+    if (rucs.size > 1) {
+        btn.addClass('d-none');
+        UiB.MsgError('Solo puede seleccionar facturas del mismo cliente');
+        // Desmarcar el ultimo checkbox seleccionado
+        checked.last().prop('checked', false);
+        return;
+    }
+
+    btn.removeClass('d-none');
+    $('#recibo-count').text(checked.length);
+}
+
+// Abrir offcanvas con resumen de recibo
+function abrirReciboResumen() {
+    var checked = $(`#${t_ofh_cobro} .chk-cobro-row:checked`);
+    var ids = [];
+    checked.each(function() {
+        ids.push($(this).data('id'));
+    });
+
+    if (!ids.length) return;
+
+    window.cobroReciboData = ids;
+
+    let tps = {
+        model_app_name: 'Cobro',
+        model_name: 'Recibo',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: {
+            title: 'Resumen de Recibo',
+            t_guid: t_ofh_cobro,
+            offcanvasglobal: true
+        },
+        template: 'Cobro/ReciboResumenUi.html',
+        raw: true,
+    };
+
+    OptsIO.getTmpl(tps).then((rsp) => {
+        let data = rsp.data;
+        $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+        bsOffcanvas.show();
+
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+            delete window.cobroReciboData;
+        }, { once: true });
+
+        UiB.kILLLoaderAjax();
+    });
+}
+
+// Limpiar seleccion de checkboxes
+function limpiarSeleccionRecibo() {
+    $(`#${t_ofh_cobro} .chk-cobro-row`).prop('checked', false);
+    $('#btn-generar-recibo').addClass('d-none');
+}
+window.limpiarSeleccionRecibo = limpiarSeleccionRecibo;
+
+// Boton generar recibo
+$('#btn-generar-recibo').on('click', function() {
+    abrirReciboResumen();
+});
 
 // Busqueda
 $('#btn-buscar-cobro').on('click', function() {

@@ -885,21 +885,34 @@
                 html: `<p>Factura electrónica generada exitosamente</p>
                        <p><strong>Número:</strong> ${response.data.numero_factura}</p>
                        <p><strong>CDC:</strong> <small>${response.data.cdc || 'Pendiente'}</small></p>`,
-                icon: 'success'
+                icon: 'success',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
             });
 
             // Descargar PDF si está disponible
             if (response.data.ek_pdf_file) {
-                let link = document.createElement('a');
-                link.href = response.data.ek_pdf_file;
-                link.target = '_blank';
-                link.click();
+                //let link = document.createElement('a');
+                //link.href = response.data.ek_pdf_file;
+                //link.target = '_blank';
+                //link.click();
+            }
+
+            // Navegar a la pantalla de administración de facturas
+            if (typeof window.launcherOpenApp === 'function') {
+                var appData = {
+                    app_name: 'fl_administrar_facturas',
+                    friendly_name: 'Administrar Facturas',
+                    url: 'fl_facturacion_legacy/FLFacturaHomeUi.html'
+                };
+                window.launcherOpenApp(appData);
             }
 
         } catch (error) {
             Swal.close();
             console.error('Error generando factura:', error);
-            Swal.fire('Error', 'Error al generar factura electrónica', 'error');
+            Swal.fire('Error', 'Error al generar_factura_sifenctura electrónica', 'error');
         }
     }
 

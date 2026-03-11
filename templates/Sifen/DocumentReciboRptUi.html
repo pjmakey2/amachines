@@ -1,4 +1,4 @@
-{% load static humanize %}
+{% load static humanize io_tags %}
 <style>
     #documentrecibo_{{ mobj.pk }} {
         font-family: "Open Sans", serif;
@@ -17,6 +17,13 @@
 </style>
 {% if from_consultar_documentrecibo %}
     <link href="{% static 'amui/amrpt.css' %}?{{ rr }}" rel="stylesheet" type="text/css" />
+    {% business_css_by_ruc ruc as custom_css_url %}
+    {% if custom_css_url %}
+    <link href="{{ custom_css_url }}?{{ rr }}" rel="stylesheet" type="text/css" />
+    {% endif %}
+{% else %}
+    {# Para PDF: inyectar CSS del negocio inline para que sobrescriba los estilos base #}
+    {% business_css_inline_by_ruc ruc %}
 {% endif %}
 <div class="">
     <div class="" id="documentrecibo_{{ mobj.pk }}">

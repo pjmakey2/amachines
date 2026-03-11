@@ -1,12 +1,16 @@
 import logging
+import arrow
 from decimal import Decimal
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from django.contrib.auth.models import User
 from django.http import QueryDict
 from django.db.models import Sum, Q
-from Sifen.models import DocumentHeader
+from num2words import num2words
+from Sifen.models import DocumentHeader, DocumentRecibo, DocumentReciboDetail, Cotizacion, Business, Enumbers
+from Sifen import ekuatia_serials
 from Cobro.models import Pago
+from OptsIO.models import UserProfile, UserBusiness
 
 logger = logging.getLogger(__name__)
 
@@ -255,4 +259,348 @@ class MCobro:
                 'total_vencido': float(total_vencido),
                 'cantidad_vencidas': facturas_vencidas.count()
             }
+        }
+
+    def get_resumen_recibo_cobro(self, *args, **kwargs) -> dict:
+        """
+        Prepara datos de facturas seleccionadas para el resumen pre-recibo.
+        Valida: mismo cliente, que no tengan recibo existente, que tengan pagos.
+        """
+        q = kwargs.get('qdict', {})
+        facturas_ids = q.getlist('facturas[]') if hasattr(q, 'getlist') else q.get('facturas', [])
+
+        if not facturas_ids:
+            return {'error': 'Debe seleccionar al menos una factura'}
+
+        fobjs = DocumentHeader.objects.filter(pk__in=facturas_ids)
+        if not fobjs.exists():
+            return {'error': 'No se encontraron las facturas seleccionadas'}
+
+        # Validar mismo cliente (pdv_ruc)
+        rucs = set(fobjs.values_list('pdv_ruc', flat=True))
+        if len(rucs) > 1:
+            return {'error': 'Todas las facturas deben ser del mismo cliente'}
+
+        # Validar que no sean facturas ya concluidas (saldo 0 con recibo existente)
+        concluidas = []
+        for f in fobjs:
+            if f.doc_saldo == 0 and DocumentReciboDetail.objects.filter(prof_number=f.prof_number, saldo=0).exists():
+                concluidas.append(f.doc_numero)
+        if concluidas:
+            return {'error': f'Las facturas {concluidas} ya estan concluidas con recibo generado'}
+
+        # Validar que todas tengan pagos registrados
+        sin_pagos = [f.doc_numero for f in fobjs if not f.pagos.exists()]
+        if sin_pagos:
+            return {'error': f'Las facturas {sin_pagos} no tienen pagos registrados'}
+
+        # Preparar datos y validar cobrado incremental
+        result = []
+        total_cobrado_all = Decimal('0')
+        total_saldo_all = Decimal('0')
+        total_factura_all = Decimal('0')
+        sin_cobro_nuevo = []
+
+        for f in fobjs:
+            total_factura = f.get_total_venta_gs()
+            saldo = f.doc_saldo or Decimal('0')
+
+            total_pagado_acum = total_factura - saldo
+            prev_cobrado = DocumentReciboDetail.objects.filter(
+                prof_number=f.prof_number
+            ).aggregate(total=Sum('cobrado'))['total'] or Decimal('0')
+            cobrado = total_pagado_acum - prev_cobrado
+
+            if cobrado <= 0:
+                sin_cobro_nuevo.append(str(f.doc_numero))
+
+            total_cobrado_all += cobrado
+            total_saldo_all += saldo
+            total_factura_all += total_factura
+
+            result.append({
+                'id': f.id,
+                'doc_numero': f.doc_numero,
+                'doc_fecha': f.doc_fecha.strftime('%Y-%m-%d') if f.doc_fecha else '',
+                'total_factura': float(total_factura),
+                'cobrado': float(cobrado),
+                'saldo': float(saldo),
+                'estado': 'PAGADO' if saldo == 0 else 'PARCIAL',
+            })
+
+        if sin_cobro_nuevo:
+            return {'error': f'Las facturas {", ".join(sin_cobro_nuevo)} no tienen pagos nuevos desde el ultimo recibo'}
+
+        fobj = fobjs[0]
+        return {
+            'success': True,
+            'cliente': {
+                'pdv_ruc': fobj.pdv_ruc,
+                'pdv_nombrefactura': fobj.pdv_nombrefactura,
+            },
+            'facturas': result,
+            'totales': {
+                'total_factura': float(total_factura_all),
+                'total_cobrado': float(total_cobrado_all),
+                'total_saldo': float(total_saldo_all),
+            }
+        }
+
+    def crear_recibo_cobro(self, *args, **kwargs) -> dict:
+        """
+        Crea un DocumentRecibo desde Cobros con soporte para pagos parciales.
+        Calcula cobrado = total - doc_saldo (incremental desde el ultimo recibo).
+        """
+        q = kwargs.get('qdict', {})
+        userobj = kwargs.get('userobj')
+        facturas_ids = q.getlist('facturas[]') if hasattr(q, 'getlist') else q.get('facturas', [])
+
+        if not facturas_ids:
+            return {'error': 'Debe seleccionar al menos una factura'}
+
+        today = datetime.today()
+        fobjs = DocumentHeader.objects.filter(pk__in=facturas_ids)
+
+        if not fobjs.exists():
+            return {'error': 'No se encontraron las facturas seleccionadas'}
+
+        # Validar mismo cliente
+        rucs = set(fobjs.values_list('pdv_ruc', flat=True))
+        if len(rucs) > 1:
+            return {'error': 'Todas las facturas deben ser del mismo cliente'}
+
+        # Validar que no sean facturas ya concluidas
+        for f in fobjs:
+            if f.doc_saldo == 0 and DocumentReciboDetail.objects.filter(prof_number=f.prof_number, saldo=0).exists():
+                return {'error': f'La factura {f.doc_numero} ya esta concluida con recibo generado'}
+
+        # Validar que todas tengan pagos registrados
+        sin_pagos = [f.doc_numero for f in fobjs if not f.pagos.exists()]
+        if sin_pagos:
+            return {'error': f'Las facturas {sin_pagos} no tienen pagos registrados'}
+
+        # Validar que haya pagos nuevos desde el ultimo recibo
+        for f in fobjs:
+            total_factura = f.get_total_venta_gs()
+            saldo = f.doc_saldo or Decimal('0')
+            total_pagado_acum = total_factura - saldo
+            prev_cobrado = DocumentReciboDetail.objects.filter(
+                prof_number=f.prof_number
+            ).aggregate(total=Sum('cobrado'))['total'] or Decimal('0')
+            if total_pagado_acum - prev_cobrado <= 0:
+                return {'error': f'La factura {f.doc_numero} no tiene pagos nuevos desde el ultimo recibo'}
+
+        fobj = fobjs[0]
+
+        # Obtener tasa de cambio
+        tasa_cambio = Decimal('1')
+        try:
+            cg = Cotizacion.objects.order_by('id').last()
+            if cg:
+                tasa_cambio = cg.dolar_venta
+        except Exception:
+            pass
+
+        # Obtener Business activo del usuario logueado
+        bobj = None
+        try:
+            profile = UserProfile.objects.filter(username=userobj.username).first()
+            if profile:
+                active_ub = UserBusiness.objects.filter(
+                    userprofileobj=profile,
+                    active=True
+                ).select_related('businessobj').first()
+                if active_ub:
+                    bobj = active_ub.businessobj
+        except Exception:
+            pass
+        if not bobj:
+            return {'error': 'No se encontró el negocio activo del usuario. Configure un negocio en su perfil.'}
+
+        # Obtener siguiente numero de recibo disponible (tipo RC)
+        eser = ekuatia_serials.Eserial()
+        timbrado_result = eser.get_available_timbrado(qdict={'ruc': bobj.ruc})
+        if timbrado_result.get('error'):
+            return {'error': f'No se encontro timbrado: {timbrado_result["error"]}'}
+        timbradoobj = timbrado_result['tobj']
+
+        enumobj = Enumbers.objects.filter(
+            expobj__timbradoobj__timbrado=timbradoobj['timbrado'],
+            expobj__establecimiento=fobj.doc_establecimiento,
+            tipo='RC',
+            estado='L'
+        ).order_by('numero').first()
+        if not enumobj:
+            return {'error': 'No hay numeros de recibo (RC) disponibles. Genere numeros en Gestion de Numeros.'}
+
+        doc_numero_rc = enumobj.numero
+        doc_expedicion_rc = enumobj.expobj.timbradoobj.eestablecimiento_set.get(
+            establecimiento=fobj.doc_establecimiento
+        ).expedicion
+        ek_serie = timbradoobj['serie']
+        ek_timbrado = timbradoobj['timbrado']
+        ek_timbrado_vigencia = timbradoobj['inicio']
+        ek_timbrado_vencimiento = timbradoobj['vencimiento']
+
+        # Crear el recibo
+        recobj = DocumentRecibo.objects.create(
+            bs=fobj.bs,
+            source='COBRO',
+            ext_link=0,
+            doc_moneda=fobj.doc_moneda,
+            doc_fecha=today,
+            doc_tipo='RC',
+            doc_tipo_cod=9,
+            doc_tipo_desc='RECIBOD',
+            doc_op='COBRO',
+            doc_numero=doc_numero_rc,
+            doc_expedicion=fobj.doc_expedicion,
+            doc_establecimiento=fobj.doc_establecimiento,
+            doc_establecimiento_ciudad=fobj.doc_establecimiento_ciudad,
+            doc_estado='INICIADO',
+            doc_vencimiento=arrow.get().shift(days=30).strftime('%Y-%m-%d'),
+            doc_total_factura=0,
+            doc_total_nc=0,
+            doc_cobrar=0,
+            doc_retencion=0,
+            doc_efectivo=0,
+            doc_cheque=0,
+            doc_cobrado=0,
+            pdv_innominado=fobj.pdv_innominado,
+            pdv_pais_cod=fobj.pdv_pais_cod,
+            pdv_pais=fobj.pdv_pais,
+            pdv_tipocontribuyente=fobj.pdv_tipocontribuyente,
+            pdv_es_contribuyente=fobj.pdv_es_contribuyente,
+            pdv_type_business=fobj.pdv_type_business,
+            pdv_codigo=fobj.pdv_codigo,
+            pdv_ruc=fobj.pdv_ruc,
+            pdv_ruc_dv=fobj.pdv_ruc_dv,
+            pdv_nombrefantasia=fobj.pdv_nombrefantasia,
+            pdv_nombrefactura=fobj.pdv_nombrefactura,
+            pdv_direccion_entrega=fobj.pdv_direccion_entrega,
+            pdv_dir_calle_sec=fobj.pdv_dir_calle_sec,
+            pdv_direccion_comple=fobj.pdv_direccion_comple,
+            pdv_numero_casa=fobj.pdv_numero_casa,
+            pdv_numero_casa_entrega=fobj.pdv_numero_casa_entrega,
+            pdv_dpto_cod=fobj.pdv_dpto_cod,
+            pdv_dpto_nombre=fobj.pdv_dpto_nombre,
+            pdv_distrito_cod=fobj.pdv_distrito_cod,
+            pdv_distrito_nombre=fobj.pdv_distrito_nombre,
+            pdv_ciudad_cod=fobj.pdv_ciudad_cod,
+            pdv_ciudad_nombre=fobj.pdv_ciudad_nombre,
+            pdv_telefono=fobj.pdv_telefono,
+            pdv_celular=fobj.pdv_celular,
+            pdv_email=fobj.pdv_email,
+            tasa_cambio=tasa_cambio,
+            observacion='Recibo generado desde Cobros',
+            cargado_fecha=today,
+            cargado_usuario=userobj.username if userobj else 'system',
+        )
+
+        total_cobrado = Decimal('0')
+        username = userobj.username if userobj else 'system'
+
+        for f in fobjs:
+            total_factura = f.get_total_venta_gs()
+            saldo = f.doc_saldo or Decimal('0')
+
+            total_pagado_acum = total_factura - saldo
+            prev_cobrado = DocumentReciboDetail.objects.filter(
+                prof_number=f.prof_number
+            ).aggregate(total=Sum('cobrado'))['total'] or Decimal('0')
+            cobrado = total_pagado_acum - prev_cobrado
+            total_cobrado += cobrado
+
+            retencion = f.retencionobj.retencion if f.retencionobj else 0
+            retencion_numero = f.retencionobj.retencion_numero if f.retencionobj else 0
+
+            recobj.documentrecibodetail_set.create(
+                tipo=f.doc_tipo,
+                prof_number=f.prof_number,
+                establecimiento=f.doc_establecimiento,
+                expedicion=f.doc_expedicion,
+                numero=f.doc_numero,
+                cobrado=cobrado,
+                total=total_factura,
+                saldo=saldo,
+                retencion_numero=retencion_numero,
+                retencion=retencion,
+                observacion='ND',
+                cargado_fecha=today,
+                cargado_usuario=username,
+            )
+
+            # Solo marcar CONCLUIDO si saldo es 0
+            if f.doc_saldo == 0:
+                f.doc_estado = 'CONCLUIDO'
+                f.save(update_fields=['doc_estado'])
+
+        # Actualizar totales del recibo
+        total_fe = recobj.documentrecibodetail_set.filter(tipo='FE').aggregate(
+            total=Sum('total')
+        ).get('total') or 0
+        recobj.doc_total_factura = total_fe
+        recobj.doc_cobrado = total_cobrado
+        recobj.doc_efectivo = total_cobrado
+        recobj.save()
+
+        # Marcar numero de recibo como usado
+        enumobj.estado = 'R'
+        enumobj.save(update_fields=['estado'])
+
+        logger.info(f'Recibo cobro creado: {recobj.id} - Numero {doc_numero_rc} - Cliente {fobj.pdv_ruc} - Total cobrado {total_cobrado}')
+
+        return {
+            'success': True,
+            'message': f'Recibo N° {doc_numero_rc} generado correctamente por Gs {total_cobrado:,.0f}',
+            'recibo_id': recobj.id,
+        }
+
+    def get_historial_recibos_factura(self, *args, **kwargs) -> dict:
+        """
+        Obtiene todos los recibos donde aparece una factura dada.
+        """
+        q = kwargs.get('qdict', {})
+        factura_id = q.get('factura_id')
+
+        if not factura_id:
+            return {'error': 'ID de factura requerido'}
+
+        try:
+            factura = DocumentHeader.objects.get(pk=factura_id)
+        except DocumentHeader.DoesNotExist:
+            return {'error': 'Factura no encontrada'}
+
+        detalles = DocumentReciboDetail.objects.filter(
+            prof_number=factura.prof_number
+        ).select_related('recobj').order_by('-recobj__doc_fecha')
+
+        recibos = []
+        for d in detalles:
+            rec = d.recobj
+            has_pdf = bool(rec.pdf_file) if rec.pdf_file else False
+            recibos.append({
+                'recibo_id': rec.id,
+                'doc_numero': rec.doc_numero,
+                'doc_fecha': rec.doc_fecha.strftime('%Y-%m-%d') if rec.doc_fecha else '',
+                'doc_estado': rec.doc_estado,
+                'source': rec.source,
+                'doc_cobrado': float(rec.doc_cobrado or 0),
+                'doc_total_factura': float(rec.doc_total_factura or 0),
+                'cobrado_detalle': float(d.cobrado or 0),
+                'total_detalle': float(d.total or 0),
+                'saldo_detalle': float(d.saldo or 0),
+                'has_pdf': has_pdf,
+                'pdf_url': rec.pdf_file.url if has_pdf else None,
+            })
+
+        return {
+            'success': True,
+            'factura': {
+                'doc_numero': factura.doc_numero,
+                'pdv_nombrefactura': factura.pdv_nombrefactura,
+                'pdv_ruc': factura.pdv_ruc,
+            },
+            'recibos': recibos,
+            'total_recibos': len(recibos),
         }

@@ -1,0 +1,322 @@
+<div class="ordencompra_ui_container container-fluid">
+    <div class="ordencompra_ui_msgs"></div>
+
+    <!-- Contadores -->
+    <div class="row mb-2 g-2">
+        <div class="col-auto">
+            <span class="badge bg-primary fs-6">
+                <i class="mdi mdi-file-document-multiple"></i> Total: <span id="cnt_oc_total">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-warning text-dark fs-6">
+                <i class="mdi mdi-clock-outline"></i> Creado: <span id="cnt_oc_creado">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-success fs-6">
+                <i class="mdi mdi-check-circle"></i> Aprobado: <span id="cnt_oc_aprobado">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-danger fs-6">
+                <i class="mdi mdi-cancel"></i> Anulado: <span id="cnt_oc_anulado">0</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="toolbar-buttons d-flex align-items-center gap-2">
+            <button id="btn_crear_oc" class="btn btn-primary">
+                <i class="mdi mdi-plus"></i> Nueva OC
+            </button>
+            <button id="btn_borrar_oc" class="btn btn-danger">
+                <i class="mdi mdi-delete"></i> Borrar
+            </button>
+            <select id="filtro_oc_estado" class="form-select" style="width: auto;">
+                <option value="">Todos los estados</option>
+                <option value="CREADO">Creado</option>
+                <option value="APROBADO">Aprobado</option>
+                <option value="ANULADO">Anulado</option>
+            </select>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_oc" class="form-control am_input" placeholder="Buscar...">
+        </div>
+    </div>
+
+    <div id="table_ordencompra_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_oc = [];
+
+    function cargarContadoresOC() {
+        var fdata = new FormData();
+        fdata.append('module', 'Egreso');
+        fdata.append('package', 'mng_oc');
+        fdata.append('attr', 'MOC');
+        fdata.append('mname', 'get_contadores_oc');
+        fdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then(function(rsp) {
+            if (rsp.data) {
+                document.getElementById('cnt_oc_total').textContent = rsp.data.total || 0;
+                document.getElementById('cnt_oc_creado').textContent = rsp.data.creado || 0;
+                document.getElementById('cnt_oc_aprobado').textContent = rsp.data.aprobado || 0;
+                document.getElementById('cnt_oc_anulado').textContent = rsp.data.anulado || 0;
+            }
+        });
+    }
+
+    ordencompra_home_be = function (data, settings) {
+        var tt = qelem(`#table_ordencompra_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        var crdata = Object.assign({}, settings.ajax.initquery);
+        var mquery = [];
+
+        var filtroEstado = document.getElementById('filtro_oc_estado').value;
+        if (filtroEstado !== '') {
+            mquery.push({'field': 'oc_estado', 'value': filtroEstado});
+        }
+
+        if (gmquery_oc.length > 0) {
+            mquery = [...mquery, ...gmquery_oc];
+        }
+        if (mquery.length > 0) {
+            crdata.mquery = jfy(mquery);
+        }
+        return Object.assign(data, crdata);
+    }
+
+    t_ordencompra = `dtable_${OptsIO.s4generate()}`;
+    dt_ordencompra_pc = Grid.datatables_wrapper({
+        t_guid: t_ordencompra,
+        url_exec: '{% url "iom" %}',
+        title: 'Ordenes de Compra',
+        tselector: 'table_ordencompra_ui',
+        app_name: 'Egreso',
+        model_name: 'OrdenCompra',
+        cls_table: 'cell-border row-border table table-sm',
+        cls_thead: 'border-gray-900',
+        mquery: [],
+        plength: 100,
+        builder_be: ordencompra_home_be,
+        t_opts: {
+            select: true,
+            fixedHeader: true,
+            responsive: null,
+            scrollCollapse: true,
+            scrollX: true,
+            scrollY: 600,
+            paging: true,
+            order: [[1, 'desc']],
+            rowId: function(row) {
+                return `tr_oc_${row.id}`;
+            }
+        },
+        columns: [
+            { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                render: (data, type, rowobj) => {
+                    return `
+                        <i title="Ver/Editar" class="tr-oc-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
+                        <i title="Descargar PDF" class="tr-oc-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                    `;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_numero', tit: 'Número', cls: 'align-left', dtyp: 'int', hide: false,
+                render: (data) => { return String(data).padStart(7, '0'); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false,
+                render: (data) => { return moment(data).format('DD/MM/YY'); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_estado', tit: 'Estado', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data) => {
+                    const cls = {'CREADO': 'bg-warning text-dark', 'APROBADO': 'bg-success', 'ANULADO': 'bg-danger'};
+                    return `<span class="badge ${cls[data] || 'bg-info'}">${data}</span>`;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_moneda', tit: 'Moneda', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_total', tit: 'Total', cls: 'align-right', dtyp: 'float', hide: false,
+                render: (data) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_pagado', tit: 'Pagado', cls: 'align-right text-success', dtyp: 'float', hide: false,
+                render: (data) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_saldo', tit: 'Saldo', cls: 'align-right text-danger fw-bold', dtyp: 'float', hide: false,
+                render: (data) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_estado_pago', tit: 'Est. Pago', cls: 'align-center', dtyp: 'str', hide: false,
+                render: (data) => {
+                    const cls = {'PENDIENTE': 'bg-danger', 'PARCIAL': 'bg-warning text-dark', 'PAGADO': 'bg-success'};
+                    return `<span class="badge ${cls[data] || 'bg-info'}">${data}</span>`;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_iva', tit: 'IVA', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_descuento', tit: 'Descuento', cls: 'align-right', dtyp: 'float', hide: true,
+                render: (data) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_condicion', tit: 'Condición', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_ruc', tit: 'RUC Prov.', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data, type, rowobj) => {
+                    if (rowobj.prov_ruc_dv) return `${data}-${rowobj.prov_ruc_dv}`;
+                    return data;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_ruc_dv', tit: 'DV', cls: 'align-left', dtyp: 'int', hide: true },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_nombre', tit: 'Proveedor', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_celular', tit: 'Celular', cls: 'align-left', dtyp: 'str', hide: true },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'prov_email', tit: 'Email', cls: 'align-left', dtyp: 'str', hide: true },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'oc_observacion', tit: 'Observación', cls: 'align-left', dtyp: 'str', hide: false },
+        ]
+    });
+
+    $(`#${t_ordencompra} tbody`).on('click', '.tr-oc-query', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_ordencompra}`).DataTable().row(elerow).data();
+        ordencompra_form(rowobj.id);
+    });
+
+    $(`#${t_ordencompra} tbody`).on('click', '.tr-oc-pdf', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_ordencompra}`).DataTable().row(elerow).data();
+
+        let fdata = new FormData();
+        fdata.append('module', 'Egreso');
+        fdata.append('package', 'mng_oc');
+        fdata.append('attr', 'MOC');
+        fdata.append('mname', 'generando_ordencompra');
+        fdata.append('id', rowobj.id);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_ordencompra_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                let link = document.createElement("a");
+                link.href = data.oc_pdf_file;
+                link.target = "_blank";
+                link.click();
+                UiB.MsgSuccess(data.success);
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            UiB.MsgError('Ocurrió un error al generar el PDF.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    });
+
+    qelem('#btn_crear_oc').addEventListener('click', function() {
+        ordencompra_form();
+    });
+
+    qelem('#btn_borrar_oc').addEventListener('click', function() {
+        let table = $(`#${t_ordencompra}`).DataTable();
+        let selectedRows = table.rows({ selected: true });
+        if (selectedRows.count() === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro para borrar.');
+            return;
+        }
+        let idsToDelete = selectedRows.data().toArray().map(row => row.id);
+        UiB.MsgSwall({
+            msg: `¿Estás seguro de que deseas borrar ${idsToDelete.length} registro(s)?`,
+            ttype: 'info'
+        }).then((result) => {
+            let gbe = new FormData();
+            gbe.append('module', 'Egreso');
+            gbe.append('package', 'mng_oc');
+            gbe.append('attr', 'MOC');
+            gbe.append('mname', 'delete_ordencompra');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(idsToDelete));
+            axios.post('{% url "iom" %}', gbe).then((rsp) => {
+                UiB.BeMsgHandle({
+                    rsps: rsp.data.msgs,
+                    timer: 2000,
+                    offcanvasglobal: true
+                });
+                $(`#${t_ordencompra}`).DataTable().ajax.reload();
+                cargarContadoresOC();
+            }).catch((err) => {
+                UiB.MsgError('Ocurrió un error al borrar los registros.');
+            });
+        });
+    });
+
+    ordencompra_form = (pk) => {
+        dattrs = {
+            title: 'Crear Orden de Compra',
+            t_guid: t_ordencompra,
+            sui_rr: '{{ rr }}',
+            from_OrdenCompraUi: true,
+            offcanvasglobal: true
+        }
+        tps = {
+            model_app_name: 'Egreso',
+            model_name: 'OrdenCompra',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Egreso/OrdenCompraCreateUi.html',
+            raw: true,
+        }
+        if (pk) {
+            tps['pk'] = pk;
+            dattrs['title'] = 'Editar Orden de Compra';
+        }
+        OptsIO.getTmpl(tps).then((rsp) => {
+            let data = rsp.data;
+            $('#offcanvasGlobalUiBody').html(data);
+            let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+            bsOffcanvas.show();
+            let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+            tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+                $('#offcanvasGlobalUiBody').html('');
+            });
+            UiB.kILLLoaderAjax();
+        });
+    }
+
+    qelem('#input_buscar_oc').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_oc = [];
+            if (qelem('#input_buscar_oc').value.trim() !== '') {
+                gmquery_oc.push({
+                    'field': 'or_oc_numero__icontains', 'value': qelem('#input_buscar_oc').value
+                });
+                gmquery_oc.push({
+                    'field': 'or_prov_nombre__icontains', 'value': qelem('#input_buscar_oc').value
+                });
+                gmquery_oc.push({
+                    'field': 'or_prov_ruc__icontains', 'value': qelem('#input_buscar_oc').value
+                });
+            }
+            $(`#${t_ordencompra}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_ordencompra}`).on('draw.dt', function() {
+        var tt = qelem(`#table_ordencompra_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    });
+
+    document.getElementById('filtro_oc_estado').addEventListener('change', function() {
+        $(`#${t_ordencompra}`).DataTable().ajax.reload();
+    });
+
+    cargarContadoresOC();
+</script>

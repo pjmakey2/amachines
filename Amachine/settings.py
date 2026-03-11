@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     'am_shopify',  # Shopify Integration
     'fl_facturacion_legacy',  # Frontliner Legacy Integration
     'Cobro',  # Gestión de Cobros
+    'Egreso',  # Gestión de Egresos (Órdenes de Compra)
     'django_extensions',
 ]
 

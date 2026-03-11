@@ -1542,17 +1542,27 @@ class MSifen:
         q: dict = kwargs.get('qdict', {})
         dbcon = q.get('dbcon')
         id = q.get('id')
+
+        docobj = DocumentRecibo.objects.using(dbcon).get(pk=id)
+
+        dattrs = {'media_path': True}
+
+        bobj = Business.objects.get(name=docobj.bs)
+        bobj_dict = model_to_dict(bobj, exclude=['contribuyenteobj', 'actividadecoobj'])
+        bobj_dict['contribuyente'] = bobj.contribuyenteobj.tipo
+        bobj_dict['ciudad'] = bobj.ciudadobj.nombre_ciudad
+        bobj_dict['denominacion'] = bobj.actividadecoobj.nombre_actividad
+        dattrs.update(bobj_dict)
+
         self.crear_documentrecibo_pdf(
             username=userobj.username,
             userobj=userobj,
             qdict={
                 'dbcon': dbcon,
                 'id': id,
-                'dattrs': to_json({
-                    'media_path': True
-                })
+                'dattrs': to_json(dattrs)
         })
-        docobj = DocumentRecibo.objects.using(dbcon).get(pk=id)
+        docobj.refresh_from_db()
         return {'success': f'Creacion PDF', 'documentrecibo_urls': docobj.documentrecibo_urls() }
     
     @tracktask

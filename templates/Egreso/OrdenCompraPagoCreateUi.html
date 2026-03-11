@@ -1,0 +1,242 @@
+<div class="container-fluid p-3">
+    <h5 class="mb-3">Registrar Pago a Proveedor</h5>
+
+    <!-- Info de la OC -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_oc_numero" class="form-control" readonly>
+                <label>Orden de Compra</label>
+                <input type="hidden" id="pago_oc_id">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_proveedor" class="form-control" readonly>
+                <label>Proveedor</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_total_oc" class="form-control" readonly>
+                <label>Total Orden</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_saldo_oc" class="form-control text-danger fw-bold" readonly>
+                <label>Saldo Pendiente</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_dias_vencido_oc" class="form-control" readonly>
+                <label>Días Vencido</label>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <h6>Datos del Pago</h6>
+
+    <!-- Cuota selector (solo para OC a crédito con cuotas) -->
+    <div class="row mb-3" id="row_cuota_selector" style="display:none">
+        <div class="col-12">
+            <div class="form-floating form-floating-sm">
+                <select id="pago_cuota_sel" class="form-select">
+                </select>
+                <label>Cuota a pagar</label>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="number" id="pago_monto_oc" class="form-control" step="1" min="1">
+                <label>Monto a Pagar *</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="date" id="pago_fecha_oc" class="form-control">
+                <label>Fecha de Pago *</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <select id="pago_metodo_oc" class="form-select">
+                    <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia Bancaria</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Tarjeta">Tarjeta</option>
+                    <option value="Otro">Otro</option>
+                </select>
+                <label>Método de Pago</label>
+            </div>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="pago_referencia_oc" class="form-control" placeholder="Nro. de comprobante, etc.">
+                <label>Número de Referencia</label>
+            </div>
+        </div>
+        <div class="col-md-6 d-flex align-items-center">
+            <button type="button" class="btn btn-success w-100" id="btn-guardar-pago-oc">
+                <i class="mdi mdi-content-save"></i> Registrar Pago
+            </button>
+        </div>
+    </div>
+
+    <!-- Historial de pagos -->
+    <hr>
+    <h6>Historial de Pagos Realizados</h6>
+    <div id="historial_pagos_oc_container">
+        <table class="table table-sm table-striped" id="tabla_historial_pagos_oc">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Monto</th>
+                    <th>Método</th>
+                    <th>Referencia</th>
+                    <th>Registrado por</th>
+                </tr>
+            </thead>
+            <tbody id="historial_pagos_oc_body">
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th class="text-end">Total Pagado:</th>
+                    <th id="total_pagado_oc_historial" colspan="4">Gs 0</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+document.getElementById('pago_fecha_oc').valueAsDate = new Date();
+
+if (typeof window.ocPagoData !== 'undefined') {
+    let oc = window.ocPagoData;
+    $('#pago_oc_id').val(oc.id);
+    $('#pago_oc_numero').val(String(oc.oc_numero).padStart(7, '0'));
+    $('#pago_proveedor').val(oc.prov_nombre);
+    $('#pago_total_oc').val('Gs ' + UiN.formatNumberU(oc.total_oc.toFixed(0)));
+    $('#pago_saldo_oc').val('Gs ' + UiN.formatNumberU(oc.oc_saldo.toFixed(0)));
+    $('#pago_dias_vencido_oc').val(oc.dias_vencido > 0 ? oc.dias_vencido + ' días' : 'Al día');
+
+    if (oc.oc_condicion_cod === 2 && oc.cuotas && oc.cuotas.length > 0) {
+        let proximaCuota = oc.cuotas.find(c => c.estado !== 'PAGADO');
+        if (proximaCuota) {
+            let sel = $('#pago_cuota_sel');
+            sel.append(`<option value="${proximaCuota.id}" data-saldo="${proximaCuota.saldo}" selected>Cuota ${proximaCuota.cuota_numero} — Venc. ${moment(proximaCuota.vencimiento).format('DD/MM/YY')} — Saldo Gs ${UiN.formatNumberU(proximaCuota.saldo.toFixed(0))}</option>`);
+            $('#row_cuota_selector').show();
+            $('#pago_monto_oc').val(proximaCuota.saldo).attr('max', proximaCuota.saldo);
+        } else {
+            $('#pago_monto_oc').val(oc.oc_saldo).attr('max', oc.oc_saldo);
+        }
+    } else {
+        $('#pago_monto_oc').val(oc.oc_saldo).attr('max', oc.oc_saldo);
+    }
+
+    cargarHistorialPagosOC(oc.id);
+}
+
+function cargarHistorialPagosOC(ocId) {
+    let gbe = new FormData();
+    gbe.append('module', 'Egreso');
+    gbe.append('package', 'mng_oc');
+    gbe.append('attr', 'MOC');
+    gbe.append('mname', 'get_historial_pagos_oc');
+    gbe.append('dbcon', 'default');
+    gbe.append('oc_id', ocId);
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.success) {
+            let pagos = rsp.data.pagos;
+            let tbody = $('#historial_pagos_oc_body');
+            tbody.empty();
+
+            if (pagos.length === 0) {
+                tbody.append('<tr><td colspan="5" class="text-center text-muted">Sin pagos registrados</td></tr>');
+            } else {
+                pagos.forEach((p) => {
+                    tbody.append(`
+                        <tr>
+                            <td>${moment(p.fecha_pago).format('DD/MM/YY')}</td>
+                            <td>Gs ${UiN.formatNumberU(p.monto.toFixed(0))}</td>
+                            <td>${p.metodo_pago}</td>
+                            <td>${p.referencia || '-'}</td>
+                            <td>${p.cargado_usuario}</td>
+                        </tr>
+                    `);
+                });
+            }
+            $('#total_pagado_oc_historial').text('Gs ' + UiN.formatNumberU(rsp.data.total_pagado.toFixed(0)));
+        }
+    });
+}
+
+$('#btn-guardar-pago-oc').on('click', function() {
+    let ocId = $('#pago_oc_id').val();
+    let monto = $('#pago_monto_oc').val();
+    let fechaPago = $('#pago_fecha_oc').val();
+    let metodoPago = $('#pago_metodo_oc').val();
+    let referencia = $('#pago_referencia_oc').val();
+
+    if (!monto || parseFloat(monto) <= 0) {
+        UiB.MsgError('El monto debe ser mayor a 0');
+        return;
+    }
+
+    let gbe = new FormData();
+    gbe.append('module', 'Egreso');
+    gbe.append('package', 'mng_oc');
+    gbe.append('attr', 'MOC');
+    gbe.append('mname', 'register_payment');
+    gbe.append('dbcon', 'default');
+
+    let cuotaId = $('#pago_cuota_sel').val() || null;
+    let uc_fields = {
+        id: ocId,
+        monto_pago: monto,
+        fecha_pago: fechaPago,
+        metodo_pago: metodoPago,
+        numero_referencia: referencia,
+        cuota_id: cuotaId
+    };
+    gbe.append('uc_fields', JSON.stringify(uc_fields));
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+        if (d.success) {
+            let bsOff = bootstrap.Offcanvas.getInstance('#offcanvasGlobalUi');
+            if (bsOff) {
+                document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                    UiB.MsgSuccess(d.success);
+                    if (typeof t_ofh_pago_oc !== 'undefined') {
+                        $(`#${t_ofh_pago_oc}`).DataTable().ajax.reload();
+                    }
+                    if (typeof cargarResumenPagosOC === 'function') {
+                        cargarResumenPagosOC();
+                    }
+                }, { once: true });
+                bsOff.hide();
+            } else {
+                UiB.MsgSuccess(d.success);
+            }
+        } else if (d.error) {
+            UiB.MsgError(d.error);
+        }
+    });
+});
+</script>

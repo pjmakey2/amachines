@@ -1,0 +1,138 @@
+<div class="container-fluid p-3">
+    <h5 class="mb-3">Historial de Recibos</h5>
+
+    <!-- Info de la factura -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="hist_rec_factura" class="form-control" readonly>
+                <label>Factura</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="hist_rec_cliente" class="form-control" readonly>
+                <label>Cliente</label>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="hist_rec_ruc" class="form-control" readonly>
+                <label>RUC</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de recibos -->
+    <div class="table-responsive">
+        <table class="table table-sm table-striped" id="tabla_historial_recibos">
+            <thead>
+                <tr>
+                    <th>Recibo</th>
+                    <th>Fecha</th>
+                    <th>Origen</th>
+                    <th class="text-end">Cobrado</th>
+                    <th class="text-end">Saldo</th>
+                    <th>Estado</th>
+                    <th class="text-center">PDF</th>
+                </tr>
+            </thead>
+            <tbody id="hist_rec_body">
+                <tr><td colspan="7" class="text-center text-muted">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    let facturaData = window.cobroReciboHistData;
+    if (!facturaData) {
+        $('#hist_rec_body').html('<tr><td colspan="7" class="text-center text-danger">No hay datos de factura</td></tr>');
+        return;
+    }
+
+    let gbe = new FormData();
+    gbe.append('module', 'Cobro');
+    gbe.append('package', 'mng_cobro');
+    gbe.append('attr', 'MCobro');
+    gbe.append('mname', 'get_historial_recibos_factura');
+    gbe.append('dbcon', 'default');
+    gbe.append('factura_id', facturaData.id);
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.error) {
+            $('#hist_rec_body').html(`<tr><td colspan="7" class="text-center text-danger">${rsp.data.error}</td></tr>`);
+            return;
+        }
+
+        if (rsp.data.success) {
+            let d = rsp.data;
+            $('#hist_rec_factura').val(d.factura.doc_numero);
+            $('#hist_rec_cliente').val(d.factura.pdv_nombrefactura);
+            $('#hist_rec_ruc').val(d.factura.pdv_ruc);
+
+            let tbody = $('#hist_rec_body');
+            tbody.empty();
+
+            if (d.recibos.length === 0) {
+                tbody.append('<tr><td colspan="7" class="text-center text-muted">No hay recibos generados para esta factura</td></tr>');
+                return;
+            }
+
+            d.recibos.forEach((r) => {
+                let pdfBtn = `<i title="Generar PDF" class="btn-recibo-pdf text-danger mdi mdi-file-pdf-box fs-extra-lg cursor-pointer" data-recibo-id="${r.recibo_id}"></i>`;
+
+                tbody.append(`
+                    <tr>
+                        <td>${r.doc_numero || '-'}</td>
+                        <td>${moment(r.doc_fecha).format('DD/MM/YY')}</td>
+                        <td><span class="badge bg-${r.source === 'COBRO' ? 'info' : 'secondary'}">${r.source}</span></td>
+                        <td class="text-end">Gs ${UiN.formatNumberU(r.cobrado_detalle.toFixed(0))}</td>
+                        <td class="text-end">Gs ${UiN.formatNumberU(r.saldo_detalle.toFixed(0))}</td>
+                        <td><span class="badge bg-${r.doc_estado === 'CONCLUIDO' ? 'success' : 'warning'}">${r.doc_estado}</span></td>
+                        <td class="text-center">${pdfBtn}</td>
+                    </tr>
+                `);
+            });
+        }
+    });
+})();
+
+// Generar/ver PDF del recibo
+$(document).on('click', '.btn-recibo-pdf', function() {
+    let reciboId = $(this).data('recibo-id');
+    let btn = $(this);
+
+    btn.removeClass('mdi-file-pdf-box').addClass('mdi-loading mdi-spin');
+
+    let gbe = new FormData();
+    gbe.append('module', 'Sifen');
+    gbe.append('package', 'mng_sifen');
+    gbe.append('attr', 'MSifen');
+    gbe.append('mname', 'generando_documentrecibo');
+    gbe.append('id', reciboId);
+    gbe.append('dbcon', 'default');
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        let data = rsp.data;
+        if (data.success) {
+            let pdfUrl = data.documentrecibo_urls.recibo_pdf_file;
+            let link = document.createElement('a');
+            link.href = pdfUrl;
+            link.target = '_blank';
+            link.click();
+        } else if (data.error) {
+            UiB.MsgError(data.error);
+        }
+    }).catch((err) => {
+        UiB.MsgError('Error al generar el PDF del recibo');
+    }).finally(() => {
+        btn.removeClass('mdi-loading mdi-spin').addClass('mdi-file-pdf-box');
+    });
+});
+</script>

@@ -88,6 +88,8 @@
                                     <option value="NC">NC</option>
                                     <option value="ND">ND</option>
                                     <option value="AF">AF</option>
+                                    <option value="RC">RC - Recibo</option>
+                                    <option value="NRE">NRE - Nota de Remisión</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -177,6 +179,8 @@
                                     <option value="NC">NC</option>
                                     <option value="ND">ND</option>
                                     <option value="AF">AF</option>
+                                    <option value="RC">RC - Recibo</option>
+                                    <option value="NRE">NRE - Nota de Remisión</option>
                                 </select>
                             </div>
                             <div class="col-md-2">
@@ -204,7 +208,7 @@
 
                         <div class="mb-3">
                             <button type="button" class="btn btn-outline-primary btn-sm" id="btn_add_all_create">
-                                <i class="mdi mdi-plus-box-multiple"></i> Agregar FE, NC, ND, AF
+                                <i class="mdi mdi-plus-box-multiple"></i> Agregar FE, NC, ND, AF, RC, NRE
                             </button>
                         </div>
 
@@ -309,7 +313,7 @@
         }).then((rsp) => {
             let current = rsp.data.current || {};
             let html = '';
-            ['FE', 'NC', 'ND', 'AF'].forEach(tipo => {
+            ['FE', 'NC', 'ND', 'AF', 'RC', 'NRE'].forEach(tipo => {
                 let c = current[tipo] || {};
                 if (c.exists) {
                     html += `
@@ -421,7 +425,7 @@
         let nstart = parseInt(qelem('input[name=create_range_nstart]').value) || 1;
         let nend = parseInt(qelem('input[name=create_range_nend]').value) || 1000;
 
-        ['FE', 'NC', 'ND', 'AF'].forEach(tipo => {
+        ['FE', 'NC', 'ND', 'AF', 'RC', 'NRE'].forEach(tipo => {
             if (!createRanges.find(r => r.tipo === tipo)) {
                 createRanges.push({ tipo, expd, serie, nstart, nend });
             }

@@ -1,0 +1,1046 @@
+{% load static humanize %}
+<div class="ui_ordencompra">
+    <form id="form_ordencompra_{{ rr }}" class="form_ordencompra">
+        {% if mobj %}
+            <input type="hidden" name="id" value="{{ mobj.pk }}">
+        {% endif %}
+
+        <!-- Row 1: Proveedor RUC, DV, Nombre -->
+        <div class="row mt-2">
+            <div class="msg_prov_ruc"></div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required type="text" name="prov_ruc" class="form-control"
+                        placeholder="RUC" oninput="form_validation.just_number(event)"
+                        {% if mobj %} value="{{ mobj.prov_ruc }}" {% endif %}
+                    />
+                    <label>RUC Proveedor</label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="number" name="prov_ruc_dv" class="form-control"
+                        placeholder="DV"
+                        {% if mobj %} value="{{ mobj.prov_ruc_dv }}" {% endif %}
+                    />
+                    <label>DV</label>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        required type="text" name="prov_nombre" class="form-control"
+                        placeholder="Nombre Proveedor"
+                        {% if mobj %} value="{{ mobj.prov_nombre }}" {% endif %}
+                    />
+                    <label>Nombre Proveedor</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Celular, Email, Moneda, Condicion, Tipo Negocio -->
+        <div class="row mt-2">
+            <div class="col-md-1">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="text" name="prov_celular" class="form-control"
+                        placeholder="Celular"
+                        value="{% if mobj %}{{ mobj.prov_celular }}{% else %}000000{% endif %}"
+                    />
+                    <label>Celular</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="email" name="prov_email" class="form-control"
+                        placeholder="Email"
+                        {% if mobj %} value="{{ mobj.prov_email }}" {% endif %}
+                    />
+                    <label>Email</label>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <div class="form-floating form-floating-sm">
+                    <select required name="oc_moneda" class="form-select">
+                        <option value="GS" {% if not mobj.oc_moneda %} selected {% endif %} {% if mobj.oc_moneda == 'GS' %}selected{% endif %}>GS</option>
+                        <option value="USD" {% if mobj.oc_moneda == 'USD' %}selected{% endif %}>USD</option>
+                    </select>
+                    <label>Moneda</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <select required name="oc_condicion_cod" class="form-select">
+                        <option {% if not mobj %} selected {% endif %} {% if mobj.oc_condicion_cod == 1 %}selected{% endif %} value="1">Contado</option>
+                        <option {% if mobj.oc_condicion_cod == 2 %}selected{% endif %} value="2">Crédito</option>
+                    </select>
+                    <label>Condición</label>
+                </div>
+            </div>
+            <div id="oc_vencimiento_container" class="col-md-2 d-none">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="date" name="oc_vencimiento" class="form-control"
+                        placeholder="Vto"
+                        {% if mobj %} value="{{ mobj.oc_vencimiento|date:'Y-m-d' }}" {% endif %}
+                    />
+                    <label>Vto</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <select name="prov_type_business" class="form-select">
+                        <option value="B2B" {% if not mobj or mobj.prov_type_business == 'B2B' %}selected{% endif %}>B2B - Empresa</option>
+                        <option value="B2C" {% if mobj.prov_type_business == 'B2C' %}selected{% endif %}>B2C - Consumidor</option>
+                    </select>
+                    <label>Tipo Negocio</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Direccion, Observacion -->
+        <div class="row mt-2">
+            <div class="col-md-4">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="text" name="prov_direccion" class="form-control"
+                        placeholder="Dirección"
+                        {% if mobj %} value="{{ mobj.prov_direccion }}" {% endif %}
+                    />
+                    <label>Dirección</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating form-floating-sm">
+                    <input
+                        type="text" name="oc_observacion" class="form-control"
+                        placeholder="Observación"
+                        {% if mobj %} value="{{ mobj.oc_observacion }}" {% endif %}
+                    />
+                    <label>Observación</label>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-2">
+
+        <!-- Cuotas de Crédito (Sólo visible si es Crédito) -->
+        <div id="oc_cuotas_container" class="bg-light p-2 rounded mb-3 d-none border border-warning">
+            <h6 class="mb-2 text-warning"><i class="mdi mdi-calendar-clock"></i> Plan de Pagos (Cuotas)</h6>
+
+            <!-- Herramienta de Generación Automática -->
+            <div class="row g-2 align-items-center mb-3 pb-2 border-bottom border-warning">
+                <div class="col-md-2">
+                    <div class="form-floating form-floating-sm">
+                        <input type="number" id="gen_cuota_cantidad" name="oc_cantidad_cuotas" class="form-control" value="{% if mobj %}{{ mobj.oc_cantidad_cuotas|default:0 }}{% else %}1{% endif %}" min="1" />
+                        <label>Cantidad Cuotas</label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-floating form-floating-sm">
+                        <input type="text" id="gen_cuota_interes" name="oc_interes_pct" class="form-control text-end" value="{% if mobj %}{{ mobj.oc_interes_pct|default:0 }}{% else %}0{% endif %}" />
+                        <label>Interés Total (%)</label>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-warning btn-sm w-100" id="btn_generar_cuotas">
+                        <i class="mdi mdi-magic-staff"></i> Generar Automáticamente
+                    </button>
+                </div>
+            </div>
+
+            <!-- Carga Manual -->
+            <div class="row g-1 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label mb-0 small">Vencimiento</label>
+                    <input type="date" id="cuota_vencimiento" class="form-control form-control-sm" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-0 small">Monto Cuota</label>
+                    <input type="text" id="cuota_monto" class="form-control form-control-sm text-end" placeholder="0" />
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-outline-warning btn-sm w-100 btn_agregar_cuota">
+                        <i class="mdi mdi-plus"></i> Agregar Manual
+                    </button>
+                </div>
+                <div class="col-md-4 text-end align-self-center">
+                    <small class="text-muted">Total a cubrir: <span id="monto_a_distribuir" class="fw-bold text-dark">0</span></small>
+                </div>
+            </div>
+
+            <div class="table-responsive mt-2">
+                <table class="table table-sm table-bordered table_cuotas_oc mb-0">
+                    <thead class="table-warning">
+                        <tr>
+                            <th style="width: 50px">Nro</th>
+                            <th>Vencimiento</th>
+                            <th class="text-end">Monto</th>
+                            <th class="text-center" style="width: 80px">ACC</th>
+                        </tr>
+                    </thead>
+                    <tbody class="tbody_cuotas_oc"></tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="2" class="text-end">Suma Cuotas:</th>
+                            <th class="text-end"><span id="total_cuotas_sum">0</span></th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detail Lines Section -->
+        <div class="d-flex gap-1 align-items-end">
+            <div>
+                <label class="form-label mb-1">Unidad</label>
+                <select name="detail_prod_unidad_medida_desc" class="form-select" style="width: 120px;"></select>
+            </div>
+            <div>
+                <label class="form-label mb-1">Descripción</label>
+                <select name="detail_prod_descripcion" class="form-select" style="width: 300px;"></select>
+            </div>
+            <div>
+                <label class="form-label mb-1">PU</label>
+                <input type="text" name="detail_precio_unitario" class="form-control" placeholder="0" style="width: 180px;" />
+            </div>
+            <div>
+                <label class="form-label mb-1">Cantidad</label>
+                <input type="text" name="detail_cantidad" class="form-control" placeholder="0" style="width: 90px;" />
+            </div>
+            <div>
+                <label class="form-label mb-1">Desc. %</label>
+                <input type="text" name="detail_descuento_pct" class="form-control" placeholder="0" style="width: 80px;" />
+            </div>
+            <div>
+                <button type="button" class="btn btn-success btn-sm btn_agregar_linea_oc">
+                    <i class="mdi mdi-plus"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Descuento Global -->
+        <div class="row mt-2">
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <input type="text" name="oc_descuento_global_pct" class="form-control" placeholder="0" value="0" />
+                    <label>Descuento Global %</label>
+                </div>
+            </div>
+            <div class="col-md-10">
+                <small class="text-muted">Porcentaje de descuento global aplicado a cada ítem.</small>
+            </div>
+        </div>
+
+        <!-- Tax Distribution (only for manual products) -->
+        <div class="row mt-2 div_tax_distribution_oc" style="display:none;">
+            <div class="col-md-12 mb-2">
+                <small class="text-info"><strong>Distribución de Impuestos:</strong> La suma debe ser 100%. Solo se puede usar Gravada 5% + Exenta O Gravada 10% + Exenta.</small>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="detail_exenta" class="form-control" placeholder="0" value="0" />
+                    <label>Exenta (%)</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="detail_g5" class="form-control" placeholder="0" value="0" />
+                    <label>Gravada 5% (%)</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="detail_g10" class="form-control" placeholder="100" value="100" />
+                    <label>Gravada 10% (%)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Table -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <table class="table table-striped table-bordered table_details_oc">
+                    <thead class="table-dark thead_details_oc"></thead>
+                    <tbody class="tbody_details_oc"></tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="9" class="text-end">Total:</th>
+                            <th class="total_details_oc">0.00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        {% if mobj %}
+        <!-- Historial de Pagos -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h6 class="text-success"><i class="mdi mdi-cash-check"></i> Historial de Pagos Realizados</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-success">
+                            <tr>
+                                <th>Fecha Pago</th>
+                                <th>Método</th>
+                                <th>Referencia</th>
+                                <th class="text-end">Monto</th>
+                                <th>Registrado por</th>
+                            </tr>
+                        </thead>
+                        <tbody class="tbody_pagos_oc">
+                            {% for pago in mobj.pagos.all %}
+                            <tr>
+                                <td>{{ pago.fecha_pago|date:"d/m/Y" }}</td>
+                                <td>{{ pago.metodo_pago }}</td>
+                                <td>{{ pago.referencia|default:"-" }}</td>
+                                <td class="text-end">{{ pago.monto|floatformat:0|intcomma }}</td>
+                                <td>{{ pago.cargado_usuario }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted italic">No hay pagos registrados aún</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% if mobj.oc_pagado > 0 %}
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end">Total Pagado:</th>
+                                <th class="text-end text-success">{{ mobj.oc_pagado|floatformat:0|intcomma }}</th>
+                                <th></th>
+                            </tr>
+                            <tr>
+                                <th colspan="3" class="text-end">Saldo Pendiente:</th>
+                                <th class="text-end text-danger">{{ mobj.oc_saldo|floatformat:0|intcomma }}</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Submit Button -->
+        <div class="row mt-4">
+            <div class="col-md-2 text-start">
+                <button id="btn_guardar_oc" class="btn btn-lg btn-primary" type="submit">
+                    {% if mobj %} Actualizar {% else %} Guardar {% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar OC {{ mobj.pk }}{% else %}Crear Orden de Compra{% endif %}`;
+
+    var oc_details = [];
+    var oc_cuotas = [];
+    var oc_editingIndex = null;
+
+    function getDecimalPlacesOC() {
+        let moneda = qelem('#form_ordencompra_{{ rr }} select[name="oc_moneda"]').value;
+        return moneda === 'USD' ? 2 : 0;
+    }
+
+    function formatMoneyOC(value, decimals = null) {
+        if (decimals === null) decimals = getDecimalPlacesOC();
+        let num = parseFloat(value) || 0;
+        return num.toLocaleString('es-PY', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+    }
+
+    function initializeInputMasksOC() {
+        let decimals = getDecimalPlacesOC();
+        let maskOptions = {
+            alias: 'numeric', groupSeparator: '.', radixPoint: ',',
+            autoGroup: true, digits: decimals, digitsOptional: false,
+            rightAlign: true, allowMinus: false, removeMaskOnSubmit: true, autoUnmask: true
+        };
+        Inputmask(maskOptions).mask(qelem('#form_ordencompra_{{ rr }} input[name=detail_precio_unitario]'));
+        Inputmask({...maskOptions}).mask(qelem('#form_ordencompra_{{ rr }} input[name=detail_cantidad]'));
+        Inputmask(maskOptions).mask(qelem('#form_ordencompra_{{ rr }} input[id=cuota_monto]'));
+
+        let pctMask = {
+            alias: 'numeric', groupSeparator: '', radixPoint: '.', digits: 2,
+            digitsOptional: true, rightAlign: true, allowMinus: false,
+            min: 0, max: 100, removeMaskOnSubmit: true, autoUnmask: true
+        };
+        Inputmask(pctMask).mask(qelem('#form_ordencompra_{{ rr }} input[name=detail_descuento_pct]'));
+        Inputmask(pctMask).mask(qelem('#form_ordencompra_{{ rr }} input[name=oc_descuento_global_pct]'));
+    }
+
+    qelem('#form_ordencompra_{{ rr }} select[name="oc_moneda"]').addEventListener('change', function() {
+        initializeInputMasksOC();
+        renderDetailsTableOC();
+    });
+
+    qelem('#form_ordencompra_{{ rr }} input[name=oc_descuento_global_pct]').addEventListener('change', function() { renderDetailsTableOC(); });
+    qelem('#form_ordencompra_{{ rr }} input[name=oc_descuento_global_pct]').addEventListener('blur', function() { renderDetailsTableOC(); });
+
+    // Show/hide vencimiento based on condicion
+    qelem('#form_ordencompra_{{ rr }} select[name=oc_condicion_cod]').addEventListener('change', function() {
+        let container = qelem('#oc_vencimiento_container');
+        if (this.value === '2') {
+            container.classList.remove('d-none');
+        } else {
+            container.classList.add('d-none');
+        }
+    });
+    {% if mobj and mobj.oc_condicion_cod == 2 %}
+        qelem('#oc_vencimiento_container').classList.remove('d-none');
+    {% endif %}
+
+    initializeInputMasksOC();
+
+    // Initialize select2 for product description with tags
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]',
+        width: '400px',
+        app_name: 'Sifen',
+        model_name: 'Producto',
+        field_display: ['descripcion'],
+        field_id: ['prod_cod'],
+        sterm: ['descripcion', 'prod_cod'],
+        db_fields: ['prod_cod', 'descripcion', 'precio', 'exenta', 'g5', 'g10', 'medidaobj__medida_cod', 'medidaobj__medida'],
+        dbcon: 'default',
+        tags: true,
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5',
+        placeholder: 'Seleccione o escriba descripción'
+    });
+
+    var percentMaskOC = {
+        alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true,
+        digits: 2, digitsOptional: false, rightAlign: true, allowMinus: false,
+        removeMaskOnSubmit: true, autoUnmask: true, min: 0, max: 100
+    };
+    Inputmask(percentMaskOC).mask(qelem('#form_ordencompra_{{ rr }} input[name=detail_exenta]'));
+    Inputmask(percentMaskOC).mask(qelem('#form_ordencompra_{{ rr }} input[name=detail_g5]'));
+    Inputmask(percentMaskOC).mask(qelem('#form_ordencompra_{{ rr }} input[name=detail_g10]'));
+
+    var oc_selectedProductData = null;
+
+    $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]').on('select2:select', function(e) {
+        var data = e.params.data;
+        if (data.element && data.element.dataset && data.element.dataset.prod_cod) {
+            oc_selectedProductData = {
+                prod_cod: data.element.dataset.prod_cod || data.id,
+                precio: parseFloat(data.element.dataset.precio || 0),
+                exenta: parseFloat(data.element.dataset.exenta || 0),
+                g5: parseFloat(data.element.dataset.g5 || 0),
+                g10: parseFloat(data.element.dataset.g10 || 0),
+                medida_cod: data.element.dataset.medida_cod || '77',
+                medida: data.element.dataset.medida || 'UNI'
+            };
+            if (oc_selectedProductData.precio > 0) {
+                qelem('#form_ordencompra_{{ rr }} input[name=detail_precio_unitario]').value = oc_selectedProductData.precio;
+            }
+            if (oc_selectedProductData.medida_cod) {
+                $('#form_ordencompra_{{ rr }} select[name=detail_prod_unidad_medida_desc]').val(oc_selectedProductData.medida_cod).trigger('change');
+            }
+            qelem('#form_ordencompra_{{ rr }} .div_tax_distribution_oc').style.display = 'none';
+        } else {
+            oc_selectedProductData = null;
+            qelem('#form_ordencompra_{{ rr }} .div_tax_distribution_oc').style.display = 'flex';
+        }
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_precio_unitario]').focus();
+    });
+
+    $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]').on('select2:clear', function() {
+        oc_selectedProductData = null;
+        qelem('#form_ordencompra_{{ rr }} .div_tax_distribution_oc').style.display = 'flex';
+    });
+
+    // Populate Unidad Medida select
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_ordencompra_{{ rr }} select[name=detail_prod_unidad_medida_desc]',
+        app_name: 'Sifen',
+        model_name: 'Medida',
+        field_display: ['medida'],
+        field_id: ['medida_cod'],
+        db_fields: ['medida', 'medida_cod'],
+        dbcon: 'default',
+        theme: 'bootstrap-5',
+        width: '120px',
+        allowClear: true,
+        placeholder: 'Seleccione unidad',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        endRow: 10000,
+        headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') },
+    }).then(() => {
+        $('#form_ordencompra_{{ rr }} select[name=detail_prod_unidad_medida_desc]').val('77').trigger('change');
+    });
+
+    // Cuotas Management
+    $('#form_ordencompra_{{ rr }} select[name="oc_condicion_cod"]').on('change', function(evt) {
+        let cond = $(evt.target).val();
+        if (cond === '2' || cond === 2) {
+            $('#oc_cuotas_container').removeClass('d-none');
+            $('#oc_vencimiento_container').removeClass('d-none');
+        } else {
+            $('#oc_cuotas_container').addClass('d-none');
+            $('#oc_vencimiento_container').addClass('d-none');
+            oc_cuotas = [];
+            renderCuotasOC();
+        }
+    });
+
+    function renderCuotasOC() {
+        let form = qelem('#form_ordencompra_{{ rr }}');
+        let tbody = form.querySelector('.tbody_cuotas_oc');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        let sumMonto = 0;
+
+        // Re-calculate Total OC from items
+        let totalOc = 0;
+        let decimals = getDecimalPlacesOC();
+        let descuentoGlobalPct = parseFloat(form.querySelector('input[name=oc_descuento_global_pct]').value) || 0;
+        let interesPct = parseFloat(qelem('#gen_cuota_interes').value) || 0;
+
+        oc_details.forEach((d) => {
+            let bruto = parseFloat(d.precio_unitario) * parseFloat(d.cantidad);
+            let descItemPct = parseFloat(d.per_descuento || 0);
+            let dItemMonto = bruto * (descItemPct / 100);
+            let dGlobalMonto = (bruto - dItemMonto) * (descuentoGlobalPct / 100);
+            totalOc += (bruto - dItemMonto - dGlobalMonto);
+        });
+
+        totalOc = totalOc * (1 + (interesPct / 100));
+
+        oc_cuotas.forEach((c, idx) => {
+            sumMonto += parseFloat(c.monto);
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-center">${idx + 1}</td>
+                    <td>${moment(c.vencimiento).format('DD/MM/YYYY')}</td>
+                    <td class="text-end">${formatMoneyOC(c.monto)}</td>
+                    <td class="text-center text-muted">
+                        <i class="mdi mdi-lock" title="Bloqueado" style="opacity: 0.5;"></i>
+                    </td>
+                </tr>
+            `;
+        });
+
+        let totalCuotasElem = form.querySelector('#total_cuotas_sum');
+        if (totalCuotasElem) totalCuotasElem.textContent = formatMoneyOC(sumMonto);
+
+        let faltante = totalOc - sumMonto;
+        let distElem = form.querySelector('#monto_a_distribuir');
+        if (distElem) {
+            distElem.textContent = formatMoneyOC(faltante);
+            distElem.className = Math.abs(faltante) < 0.1 ? 'fw-bold text-success' : (faltante < 0 ? 'fw-bold text-danger' : 'fw-bold text-dark');
+        }
+
+        // Autopopulate remaining amount in input
+        let cuotaMontoInput = form.querySelector('#cuota_monto');
+        if (cuotaMontoInput) {
+            if (faltante > 0.1) {
+                cuotaMontoInput.value = formatMoneyOC(faltante);
+            } else {
+                cuotaMontoInput.value = '';
+            }
+        }
+    }
+
+    // Listeners for auto-generation fields
+    qelem('#gen_cuota_interes').addEventListener('change', function() {
+        renderCuotasOC();
+    });
+
+    qelem('#btn_generar_cuotas').addEventListener('click', function() {
+        let cantidad = parseInt(qelem('#gen_cuota_cantidad').value) || 1;
+        let interesPct = parseFloat(qelem('#gen_cuota_interes').value) || 0;
+
+        let totalOc = 0;
+        let descuentoGlobalPct = parseFloat(qelem('#form_ordencompra_{{ rr }} input[name=oc_descuento_global_pct]').value) || 0;
+        oc_details.forEach((d) => {
+            let bruto = parseFloat(d.precio_unitario) * parseFloat(d.cantidad);
+            let descItem = bruto * (parseFloat(d.per_descuento || 0) / 100);
+            let descGlob = (bruto - descItem) * (descuentoGlobalPct / 100);
+            totalOc += (bruto - descItem - descGlob);
+        });
+
+        if (totalOc <= 0) {
+            UiB.MsgError("Debe agregar líneas de detalle con monto mayor a 0 primero.");
+            return;
+        }
+
+        let totalConInteres = totalOc * (1 + (interesPct / 100));
+        let montoCuota = totalConInteres / cantidad;
+
+        // Evitar múltiples decimales complejos
+        montoCuota = Math.round(montoCuota * 100) / 100;
+
+        oc_cuotas = [];
+        let curDate = new Date();
+        let remaining = totalConInteres;
+
+        for (let i = 0; i < cantidad; i++) {
+            curDate.setDate(curDate.getDate() + 30);
+
+            let cuotaActual = (i === cantidad - 1) ? remaining : montoCuota;
+            // Redondear para la última cuota si hay diferencias
+            cuotaActual = Math.round(cuotaActual * 100) / 100;
+
+            oc_cuotas.push({
+                vencimiento: curDate.toISOString().split('T')[0],
+                monto: cuotaActual
+            });
+            remaining -= cuotaActual;
+        }
+
+        renderCuotasOC();
+    });
+
+    qelem('#form_ordencompra_{{ rr }} .btn_agregar_cuota').addEventListener('click', function() {
+        let vencimiento = qelem('#cuota_vencimiento').value;
+        let monto = parseFloat(qelem('#cuota_monto').value);
+
+        if (!vencimiento) {
+            UiB.MsgError("Debe seleccionar una fecha de vencimiento para la cuota.");
+            return;
+        }
+        if (!monto || monto <= 0) {
+            UiB.MsgError("El monto de la cuota debe ser mayor a 0.");
+            return;
+        }
+
+        oc_cuotas.push({
+            vencimiento: vencimiento,
+            monto: monto
+        });
+
+        // Set next cuota date (+30 days) automatically
+        let nextDate = new Date(vencimiento);
+        nextDate.setDate(nextDate.getDate() + 30);
+        qelem('#cuota_vencimiento').value = nextDate.toISOString().split('T')[0];
+
+        renderCuotasOC();
+    });
+
+    // Render details table
+    function renderDetailsTableOC() {
+        var form = qelem('#form_ordencompra_{{ rr }}');
+        var thead = form.querySelector('.thead_details_oc');
+        var tbody = form.querySelector('.tbody_details_oc');
+        var tfoot = form.querySelector('table.table_details_oc tfoot');
+
+        tbody.innerHTML = '';
+        var totalBruto = 0, totalDescItem = 0, totalDescGlobal = 0, totalNeto = 0;
+        var totalExenta = 0, totalGravada5 = 0, totalIva5 = 0, totalGravada10 = 0, totalIva10 = 0;
+        var decimals = getDecimalPlacesOC();
+        var descuentoGlobalPct = parseFloat(form.querySelector('input[name=oc_descuento_global_pct]').value) || 0;
+
+        thead.innerHTML = `<tr><th>UNID</th><th>DESC</th><th>PU</th><th>CANT</th><th>D.Item</th><th>D.Glob</th><th>EXENTA</th><th>G 10%</th><th>I 10%</th><th>Subtotal</th><th>AC</th></tr>`;
+
+        oc_details.forEach((detail, index) => {
+            var bruto = parseFloat(detail.precio_unitario) * parseFloat(detail.cantidad);
+            var descItemPct = parseFloat(detail.per_descuento || 0);
+            var descItem = bruto * (descItemPct / 100);
+            var descGlob = (bruto - descItem) * (descuentoGlobalPct / 100);
+            var neto = bruto - descItem - descGlob;
+            if (neto < 0) neto = 0;
+
+            totalBruto += bruto;
+            totalDescItem += descItem;
+            totalDescGlobal += descGlob;
+            totalNeto += neto;
+            totalExenta += parseFloat(detail.exenta || 0);
+            totalGravada5 += parseFloat(detail.gravada_5 || 0);
+            totalIva5 += parseFloat(detail.iva_5 || 0);
+            totalGravada10 += parseFloat(detail.gravada_10 || 0);
+            totalIva10 += parseFloat(detail.iva_10 || 0);
+
+            var descItemStr = descItem > 0 ? `${formatMoneyOC(descItem, decimals)}(${descItemPct.toFixed(2)}%)` : '-';
+            var descGlobStr = descGlob > 0 ? `${formatMoneyOC(descGlob, decimals)}(${descuentoGlobalPct.toFixed(2)}%)` : '-';
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${detail.prod_unidad_medida_desc_text || detail.prod_unidad_medida_desc}</td>
+                    <td>${detail.prod_descripcion}</td>
+                    <td class="text-end">${formatMoneyOC(detail.precio_unitario, decimals)}</td>
+                    <td class="text-end">${formatMoneyOC(detail.cantidad, decimals)}</td>
+                    <td class="text-end">${descItemStr}</td>
+                    <td class="text-end">${descGlobStr}</td>
+                    <td class="text-end">${formatMoneyOC(detail.exenta || 0, decimals)}</td>
+                    <td class="text-end">${formatMoneyOC(detail.gravada_10 || 0, decimals)}</td>
+                    <td class="text-end">${formatMoneyOC(detail.iva_10 || 0, decimals)}</td>
+                    <td class="text-end">${formatMoneyOC(neto, decimals)}</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-warning" onclick="editDetailOC(${index})"><i class="mdi mdi-pencil"></i></button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteDetailOC(${index})"><i class="mdi mdi-delete"></i></button>
+                    </td>
+                </tr>`;
+        });
+
+        if (tfoot) {
+            tfoot.innerHTML = `
+                <tr>
+                    <th colspan="4" class="text-end">Total:</th>
+                    <th class="text-end">${formatMoneyOC(totalDescItem, decimals)}</th>
+                    <th class="text-end">${formatMoneyOC(totalDescGlobal, decimals)}</th>
+                    <th class="text-end">${formatMoneyOC(totalExenta, decimals)}</th>
+                    <th class="text-end">${formatMoneyOC(totalGravada10, decimals)}</th>
+                    <th class="text-end">${formatMoneyOC(totalIva10, decimals)}</th>
+                    <th class="text-end total_details_oc">${formatMoneyOC(totalNeto, decimals)}</th>
+                    <th></th>
+                </tr>`;
+        }
+
+        renderCuotasOC();
+    }
+
+    // Add/update detail line
+    qelem('#form_ordencompra_{{ rr }} .btn_agregar_linea_oc').addEventListener('click', function() {
+        let unidadCode = qelem('#form_ordencompra_{{ rr }} select[name=detail_prod_unidad_medida_desc]').value.trim();
+        let unidadText = $('#form_ordencompra_{{ rr }} select[name=detail_prod_unidad_medida_desc] option:selected').text().trim() || 'UNI';
+        let descripcionSelect = $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]').val();
+        let descripcionText = $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion] option:selected').text().trim();
+        let precio = qelem('#form_ordencompra_{{ rr }} input[name=detail_precio_unitario]').value;
+        let cantidad = qelem('#form_ordencompra_{{ rr }} input[name=detail_cantidad]').value;
+        let descuentoPct = parseFloat(qelem('#form_ordencompra_{{ rr }} input[name=detail_descuento_pct]').value) || 0;
+
+        if (!unidadCode || !descripcionSelect || !precio || !cantidad) {
+            UiB.MsgError('Por favor, complete todos los campos de la línea de detalle.');
+            return;
+        }
+        if (descuentoPct < 0 || descuentoPct > 100) {
+            UiB.MsgError('El porcentaje de descuento debe estar entre 0 y 100.');
+            return;
+        }
+
+        let bruto = parseFloat(precio) * parseFloat(cantidad);
+        let descuento = bruto * (descuentoPct / 100);
+
+        let detail = {
+            prod_unidad_medida_desc: unidadCode,
+            prod_unidad_medida_desc_text: unidadText,
+            prod_descripcion: descripcionText || descripcionSelect,
+            precio_unitario: parseFloat(precio),
+            cantidad: parseFloat(cantidad),
+            descuento: descuento,
+            per_descuento: descuentoPct
+        };
+
+        let prodobj;
+        if (oc_selectedProductData) {
+            detail.prod_cod = oc_selectedProductData.prod_cod;
+            detail.is_from_model = true;
+            let porcentaje_iva = oc_selectedProductData.g10 > 0 ? 10 : (oc_selectedProductData.g5 > 0 ? 5 : 0);
+            prodobj = {
+                exenta: oc_selectedProductData.exenta,
+                g5: oc_selectedProductData.g5,
+                g10: oc_selectedProductData.g10,
+                porcentaje_iva__porcentaje: porcentaje_iva
+            };
+        } else {
+            let exenta = parseFloat(qelem('#form_ordencompra_{{ rr }} input[name=detail_exenta]').value) || 0;
+            let g5 = parseFloat(qelem('#form_ordencompra_{{ rr }} input[name=detail_g5]').value) || 0;
+            let g10 = parseFloat(qelem('#form_ordencompra_{{ rr }} input[name=detail_g10]').value) || 0;
+            let total = exenta + g5 + g10;
+            if (Math.abs(total - 100) > 0.01) {
+                UiB.MsgError(`La suma de porcentajes debe ser 100%. Actualmente es ${total.toFixed(2)}%`);
+                return;
+            }
+            if (g5 > 0 && g10 > 0) {
+                UiB.MsgError('No se puede combinar Gravada 5% con Gravada 10%.');
+                return;
+            }
+            detail.prod_cod = 1850;
+            detail.is_from_model = false;
+            let porcentaje_iva = g10 > 0 ? 10 : (g5 > 0 ? 5 : 0);
+            prodobj = { exenta: exenta, g5: g5, g10: g10, porcentaje_iva__porcentaje: porcentaje_iva };
+        }
+
+        let pcalc = ivn.calculate_price(prodobj, parseFloat(precio), parseFloat(cantidad));
+        detail.exenta = pcalc.exenta;
+        detail.iva_5 = pcalc.iva_5;
+        detail.gravada_5 = pcalc.gravada_5;
+        detail.base_gravada_5 = pcalc.base_gravada_5;
+        detail.iva_10 = pcalc.iva_10;
+        detail.gravada_10 = pcalc.gravada_10;
+        detail.base_gravada_10 = pcalc.base_gravada_10;
+        detail.exenta_pct = prodobj.exenta;
+        detail.g5_pct = prodobj.g5;
+        detail.g10_pct = prodobj.g10;
+
+        if (oc_editingIndex !== null) {
+            oc_details[oc_editingIndex] = detail;
+            oc_editingIndex = null;
+            qelem('#form_ordencompra_{{ rr }} .btn_agregar_linea_oc').innerHTML = '<i class="mdi mdi-plus"></i>';
+        } else {
+            oc_details.push(detail);
+        }
+
+        $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]').val(null).trigger('change');
+        oc_selectedProductData = null;
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_precio_unitario]').value = '';
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_cantidad]').value = '';
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_descuento_pct]').value = '0';
+        qelem('#form_ordencompra_{{ rr }} .div_tax_distribution_oc').style.display = 'none';
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_exenta]').value = '0';
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_g5]').value = '0';
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_g10]').value = '100';
+        renderDetailsTableOC();
+    });
+
+    window.editDetailOC = function(index) {
+        let detail = oc_details[index];
+        qelem('#form_ordencompra_{{ rr }} select[name=detail_prod_unidad_medida_desc]').value = detail.prod_unidad_medida_desc;
+        if (detail.prod_cod && detail.prod_cod !== 1850) {
+            let option = new Option(detail.prod_descripcion, detail.prod_cod, true, true);
+            $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]').append(option).trigger('change');
+            oc_selectedProductData = { prod_cod: detail.prod_cod, precio: detail.precio_unitario, exenta: detail.exenta_pct || 0, g5: detail.g5_pct || 0, g10: detail.g10_pct || 0 };
+            qelem('#form_ordencompra_{{ rr }} .div_tax_distribution_oc').style.display = 'none';
+        } else {
+            let option = new Option(detail.prod_descripcion, detail.prod_descripcion, true, true);
+            $('#form_ordencompra_{{ rr }} select[name=detail_prod_descripcion]').append(option).trigger('change');
+            oc_selectedProductData = null;
+            qelem('#form_ordencompra_{{ rr }} .div_tax_distribution_oc').style.display = 'flex';
+            qelem('#form_ordencompra_{{ rr }} input[name=detail_exenta]').value = detail.exenta_pct || 0;
+            qelem('#form_ordencompra_{{ rr }} input[name=detail_g5]').value = detail.g5_pct || 0;
+            qelem('#form_ordencompra_{{ rr }} input[name=detail_g10]').value = detail.g10_pct || 100;
+        }
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_precio_unitario]').value = detail.precio_unitario;
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_cantidad]').value = detail.cantidad;
+        qelem('#form_ordencompra_{{ rr }} input[name=detail_descuento_pct]').value = detail.per_descuento || 0;
+        oc_editingIndex = index;
+        qelem('#form_ordencompra_{{ rr }} .btn_agregar_linea_oc').innerHTML = '<i class="mdi mdi-pencil"></i> Actualizar Línea';
+    };
+
+    window.deleteDetailOC = function(index) {
+        UiB.MsgSwall({ msg: '¿Eliminar esta línea?', ttype: 'warning' }).then(() => {
+            oc_details.splice(index, 1);
+            renderDetailsTableOC();
+        });
+    };
+
+    // Save function
+    save_ordencompra = (target) => {
+        if (oc_details.length === 0) {
+            UiB.MsgError('Debe agregar al menos una línea de detalle.');
+            return;
+        }
+
+        var fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'OrdenCompra');
+        fdata.append('dbcon', 'default');
+
+        let formData = new FormData(target);
+        let edata = form_serials.form_to_json(formData);
+
+        delete edata['detail_prod_unidad_medida_desc'];
+        delete edata['detail_prod_descripcion'];
+        delete edata['detail_precio_unitario'];
+        delete edata['detail_cantidad'];
+        delete edata['detail_descuento_pct'];
+        delete edata['detail_exenta'];
+        delete edata['detail_g5'];
+        delete edata['detail_g10'];
+
+        let descGlobalPct = parseFloat(edata['oc_descuento_global_pct'] || 0);
+        delete edata['oc_descuento_global_pct'];
+
+        let detailsForBackend = oc_details.map(d => {
+            let bruto = d.precio_unitario * d.cantidad;
+            let descGlobalItem = bruto * (descGlobalPct / 100);
+            return {
+                prod_cod: d.prod_cod,
+                prod_descripcion: d.prod_descripcion,
+                prod_unidad_medida_desc: d.prod_unidad_medida_desc,
+                prod_unidad_medida_desc_text: d.prod_unidad_medida_desc_text,
+                precio_unitario: d.precio_unitario,
+                cantidad: d.cantidad,
+                is_from_model: d.is_from_model,
+                exenta: d.exenta_pct,
+                g5: d.g5_pct,
+                g10: d.g10_pct,
+                descuento: d.descuento || 0,
+                per_descuento: d.per_descuento || 0,
+                descuento_global_item: descGlobalItem
+            };
+        });
+
+        let totalDescGlobal = detailsForBackend.reduce((sum, d) => sum + d.descuento_global_item, 0);
+        edata['oc_descuento_global'] = totalDescGlobal;
+        edata['details'] = detailsForBackend;
+
+        let cond = parseInt(edata['oc_condicion_cod'] || 1);
+        if (cond === 2) {
+            if (oc_cuotas.length === 0) {
+                UiB.MsgError('Debe agregar al menos una cuota si la condición es a Crédito.');
+                return;
+            }
+            let totalCuotas = oc_cuotas.reduce((acc, c) => acc + parseFloat(c.monto), 0);
+            let totalOc = 0;
+            oc_details.forEach((d) => {
+                let bruto = parseFloat(d.precio_unitario) * parseFloat(d.cantidad);
+                let descItem = bruto * (parseFloat(d.per_descuento || 0) / 100);
+                let descGlob = (bruto - descItem) * (descGlobalPct / 100);
+                totalOc += (bruto - descItem - descGlob);
+            });
+
+            let interesPct = parseFloat(edata['oc_interes_pct'] || 0);
+            let totalConInteres = totalOc * (1 + (interesPct / 100));
+
+            if (Math.abs(totalConInteres - totalCuotas) > 1) {
+                UiB.MsgError(`El total de las cuotas (${formatMoneyOC(totalCuotas)}) debe coincidir con el total de la orden con intereses (${formatMoneyOC(totalConInteres)}).`);
+                return;
+            }
+            edata['cuotas'] = oc_cuotas;
+        }
+
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{
+            'module': 'Egreso',
+            'package': 'mng_oc',
+            'attr': 'MOC',
+            'mname': 'create_ordencompra',
+            'cont': false,
+            'show_success': true
+        }]));
+        fdata.append('a_vals', jfy([]));
+
+        document.querySelector('#form_ordencompra_{{ rr }}').classList.add('overlay-container');
+        document.querySelector('#form_ordencompra_{{ rr }}').classList.add('overlay');
+
+        return axios.post('{% url "iom" %}', fdata, {
+            headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') }
+        }).then((rsp) => {
+            let msgs = rsp.data.msgs;
+            if (!rsp.data.hasOwnProperty('msgs')) msgs = [rsp.data];
+            let got_error = false;
+            msgs.forEach((ee) => { if (ee.error) got_error = true; });
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) {
+                $('#{{t_guid}}').DataTable().ajax.reload();
+            }
+        }).catch((err) => {
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_ordencompra_{{ rr }}');
+            if (ft) { ft.classList.remove('overlay-container'); ft.classList.remove('overlay'); }
+        });
+    }
+
+    qelem('#form_ordencompra_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_ordencompra(event.target);
+    });
+
+    // RUC validation
+    $(`#form_ordencompra_{{ rr }} input[name="prov_ruc"]`).on('focusout', function() {
+        let $form = $(`#form_ordencompra_{{ rr }}`);
+        $form.find('.msg_prov_ruc').text('');
+        let ruc = $(this).val().trim();
+        if (!ruc) return;
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'validate_ruc');
+        fdata.append('ruc', ruc);
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                $form.find('input[name=prov_ruc_dv]').val(data.pdv_ruc_dv);
+                $form.find('input[name=prov_nombre]').val(data.pdv_nombrefactura);
+
+                if (data.pdv_email) $form.find('input[name=prov_email]').val(data.pdv_email);
+                if (data.pdv_celular) $form.find('input[name=prov_celular]').val(data.pdv_celular);
+                if (data.pdv_type_business) $form.find('select[name=prov_type_business]').val(data.pdv_type_business);
+                if (data.pdv_direccion_entrega) $form.find('input[name=prov_direccion]').val(data.pdv_direccion_entrega);
+
+                $form.find('.msg_prov_ruc').addClass('text-success').removeClass('text-danger').text('RUC válido y datos cargados.');
+
+                // Focus to Direction as manually adjusted by user
+                $form.find('input[name=prov_direccion]').focus();
+            } else {
+                $form.find('.msg_prov_ruc').html(`<div class="alert alert-warning py-1">${data.error}</div>`);
+                $form.find('input[name=prov_nombre]').focus();
+                $form.find('input[name=prov_email]').val('');
+                $form.find('input[name=prov_celular]').val('');
+                $form.find('select[name=prov_type_business]').val('B2C');
+            }
+        }).catch(() => {});
+    });
+
+    // Load existing details when editing
+    {% if mobj %}
+    (function loadOCDetails() {
+        let fdata = new FormData();
+        fdata.append('module', 'Egreso');
+        fdata.append('package', 'mng_oc');
+        fdata.append('attr', 'MOC');
+        fdata.append('mname', 'get_ordencompra_details');
+        fdata.append('header_id', '{{ mobj.pk }}');
+        fdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success && data.details) {
+                data.details.forEach(d => {
+                    oc_details.push({
+                        prod_cod: d.prod_cod,
+                        prod_unidad_medida_desc: d.prod_unidad_medida_desc,
+                        prod_unidad_medida_desc_text: d.prod_unidad_medida_desc_text,
+                        prod_descripcion: d.prod_descripcion,
+                        precio_unitario: d.precio_unitario,
+                        cantidad: d.cantidad,
+                        is_from_model: d.is_from_model,
+                        exenta: d.exenta,
+                        iva_5: d.iva_5,
+                        gravada_5: d.gravada_5,
+                        base_gravada_5: d.base_gravada_5,
+                        iva_10: d.iva_10,
+                        gravada_10: d.gravada_10,
+                        base_gravada_10: d.base_gravada_10,
+                        exenta_pct: d.exenta_pct,
+                        g5_pct: d.g5_pct,
+                        g10_pct: d.g10_pct,
+                        descuento: d.descuento,
+                        per_descuento: d.per_descuento
+                    });
+                });
+
+                if (data.cuotas && data.cuotas.length > 0) {
+                    oc_cuotas = data.cuotas;
+                }
+
+                if (data.oc_descuento_global_pct) {
+                    qelem('#form_ordencompra_{{ rr }} input[name=oc_descuento_global_pct]').value = data.oc_descuento_global_pct.toFixed(2);
+                }
+                renderDetailsTableOC();
+
+                let cond = qelem('#form_ordencompra_{{ rr }} select[name="oc_condicion_cod"]').value;
+                if (cond === '2' || cond === 2) {
+                    $('#oc_cuotas_container').removeClass('d-none');
+                }
+            }
+        });
+    })();
+    {% endif %}
+</script>
