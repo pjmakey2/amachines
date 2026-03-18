@@ -21,7 +21,7 @@
                         <option value=""></option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-6" id="fl_acuse_seleccionado_div" style="display: none;">
                     <label class="form-label fw-bold">Acuse Seleccionado</label>
                     <div class="input-group">
                         <span class="input-group-text">Nro.</span>
@@ -386,11 +386,13 @@
         // Evento al seleccionar acuse
         $('#fl_select_acuse').on('select2:select', function(e) {
             const data = e.params.data;
+            document.getElementById('fl_acuse_seleccionado_div').style.display = 'block';
             cargarAcuse(data.id);
         });
 
         // Evento al limpiar selección
         $('#fl_select_acuse').on('select2:clear', function(e) {
+            document.getElementById('fl_acuse_seleccionado_div').style.display = 'none';
             nuevaFactura();
         });
     }
@@ -900,13 +902,15 @@
             }
 
             // Navegar a la pantalla de administración de facturas
+            var appData = {
+                app_name: 'fl_administrar_facturas',
+                friendly_name: 'Administrar Facturas',
+                url: 'fl_facturacion_legacy/FLFacturaHomeUi.html'
+            };
             if (typeof window.launcherOpenApp === 'function') {
-                var appData = {
-                    app_name: 'fl_administrar_facturas',
-                    friendly_name: 'Administrar Facturas',
-                    url: 'fl_facturacion_legacy/FLFacturaHomeUi.html'
-                };
                 window.launcherOpenApp(appData);
+            } else if (typeof window.sidebarOpenApp === 'function') {
+                window.sidebarOpenApp(appData);
             }
 
         } catch (error) {
