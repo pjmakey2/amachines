@@ -443,14 +443,17 @@
     }
 
     function irAConfirmarPago(acuseId) {
-        // Navegar a la pantalla de facturar con el acuse preseleccionado (para confirmar pago)
+        const appData = {
+            app_name: 'fl_facturar',
+            friendly_name: 'Confirmar Pago',
+            url: 'fl_facturacion_legacy/FLFacturarUi.html',
+            dattrs: { acuse_id: acuseId }
+        };
+
         if (typeof window.launcherOpenApp === 'function') {
-            window.launcherOpenApp({
-                url: 'fl_facturacion_legacy/FLFacturarUi.html',
-                friendly_name: 'Confirmar Pago',
-                icon: 'mdi mdi-cash'
-            });
-            sessionStorage.setItem('fl_acuse_id_facturar', acuseId);
+            window.launcherOpenApp(appData);
+        } else if (typeof window.sidebarOpenApp === 'function') {
+            window.sidebarOpenApp(appData);
         } else {
             window.location.href = `/dtmpl/?template=fl_facturacion_legacy/FLFacturarUi.html&acuse_id=${acuseId}`;
         }
@@ -656,20 +659,19 @@
     }
 
     function irAFacturar(acuseId) {
-        // Navegar a la pantalla de facturar con el acuse preseleccionado
-        const url = `/dtmpl/?template=fl_facturacion_legacy/FLFacturarUi.html&acuse_id=${acuseId}`;
+        const appData = {
+            app_name: 'fl_facturar',
+            friendly_name: 'Facturar',
+            url: 'fl_facturacion_legacy/FLFacturarUi.html',
+            dattrs: { acuse_id: acuseId }
+        };
 
-        // Si estamos en SPA, usar la función de navegación
         if (typeof window.launcherOpenApp === 'function') {
-            window.launcherOpenApp({
-                url: 'fl_facturacion_legacy/FLFacturarUi.html',
-                friendly_name: 'Facturar',
-                icon: 'mdi mdi-receipt'
-            });
-            // Guardar el acuse_id para que lo lea la otra pantalla
-            sessionStorage.setItem('fl_acuse_id_facturar', acuseId);
+            window.launcherOpenApp(appData);
+        } else if (typeof window.sidebarOpenApp === 'function') {
+            window.sidebarOpenApp(appData);
         } else {
-            window.location.href = url;
+            window.location.href = `/dtmpl/?template=fl_facturacion_legacy/FLFacturarUi.html&acuse_id=${acuseId}`;
         }
     }
 })();

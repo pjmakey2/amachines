@@ -1032,6 +1032,9 @@
         try {
             var params = new URLSearchParams();
             params.append('tmpl', app.url);
+            if (app.dattrs) {
+                params.append('dattrs', JSON.stringify(app.dattrs));
+            }
 
             var response = await axios.get('/io/dtmpl/?' + params.toString());
 

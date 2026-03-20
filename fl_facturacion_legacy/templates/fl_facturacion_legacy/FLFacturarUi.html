@@ -15,7 +15,7 @@
         <div class="card-body">
             <!-- Búsqueda de Acuse con Select2 -->
             <div class="row mb-2">
-                <div class="col-md-6">
+                <div class="col-md-6" id="fl_buscar_acuse_div">
                     <label class="form-label fw-bold">Cliente o Nro. Acuse</label>
                     <select id="fl_select_acuse" class="form-control" style="width: 100%;">
                         <option value=""></option>
@@ -37,7 +37,7 @@
             <div class="row mb-2" id="fl_seccion_cliente" style="display: none;">
                 <div class="col-md-2">
                     <label class="form-label fw-bold" id="fl_label_ruc">
-                        RUC para Factura
+                        RUC Factura
                         <i id="fl_ruc_check" class="mdi mdi-check-circle text-success ms-1" style="display: none;" title="RUC validado en SIFEN"></i>
                         <i id="fl_ruc_error" class="mdi mdi-alert-circle text-danger ms-1" style="display: none;" title="RUC no encontrado en SIFEN"></i>
                         <span id="fl_ruc_loading" class="spinner-border spinner-border-sm text-primary ms-1" style="display: none;"></span>
@@ -58,6 +58,15 @@
                         <i id="fl_correo_check" class="mdi mdi-check-circle text-success ms-1" style="display: none;" title="Correo obtenido de SIFEN"></i>
                     </label>
                     <input required type="text" id="fl_correo_factura" class="form-control" placeholder="Correo Electrónico">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">
+                        <input type="checkbox" id="fl_doc_por_ws" class="form-check-input me-1">
+                        Enviar por WhatsApp
+                    </label>
+                    <div id="fl_celular_ws_div" style="display: none;">
+                        <input type="text" id="fl_celular_ws" class="form-control" placeholder="Ej: 981855299">
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label fw-bold">Establecimiento</label>
@@ -266,11 +275,16 @@
         inicializarSelect2();
         setupEventListeners();
 
-        // Verificar si viene un acuse_id desde otra pantalla
-        const urlParams = new URLSearchParams(window.location.search);
-        let acuseId = urlParams.get('acuse_id');
+        // Verificar si viene un acuse_id desde dattrs (SPA via launcher/sidebar)
+        let acuseId = '{{ acuse_id|default:"" }}' || null;
 
-        // También verificar en sessionStorage (para navegación SPA)
+        // Fallback: URL params (modo no-SPA)
+        if (!acuseId) {
+            const urlParams = new URLSearchParams(window.location.search);
+            acuseId = urlParams.get('acuse_id');
+        }
+
+        // Fallback: sessionStorage (compatibilidad)
         if (!acuseId) {
             acuseId = sessionStorage.getItem('fl_acuse_id_facturar');
             if (acuseId) {
@@ -320,6 +334,13 @@
         document.querySelectorAll('.fl-pago-usd').forEach(input => {
             Inputmask(maskUsd).mask(input);
         });
+
+        // Máscara para celular Paraguay: 9 dígitos comenzando con 9
+        Inputmask({
+            mask: '999999999',
+            placeholder: '_',
+            showMaskOnHover: false
+        }).mask(document.getElementById('fl_celular_ws'));
     }
 
     // Helper para obtener valor numérico de input con máscara
@@ -401,6 +422,19 @@
         // Inputs de pago
         document.querySelectorAll('.fl-pago-input').forEach(input => {
             input.addEventListener('input', calcularTotales);
+        });
+
+        // Checkbox WhatsApp: mostrar/ocultar campo celular
+        document.getElementById('fl_doc_por_ws').addEventListener('change', function() {
+            const celularDiv = document.getElementById('fl_celular_ws_div');
+            const celularInput = document.getElementById('fl_celular_ws');
+            if (this.checked) {
+                celularDiv.style.display = 'block';
+                celularInput.required = true;
+            } else {
+                celularDiv.style.display = 'none';
+                celularInput.required = false;
+            }
         });
 
         // Listener para cambio de condición de venta
@@ -518,6 +552,24 @@
                         document.getElementById('fl_correo_check').style.display = 'inline';
                     }
                 }
+
+                // Poblar celular y checkbox WhatsApp
+                const docPorWs = response.data.doc_por_ws || false;
+                const chkWs = document.getElementById('fl_doc_por_ws');
+                const celularWsDiv = document.getElementById('fl_celular_ws_div');
+                const celularWsInput = document.getElementById('fl_celular_ws');
+                chkWs.checked = docPorWs;
+                if (docPorWs) {
+                    celularWsDiv.style.display = 'block';
+                    celularWsInput.required = true;
+                } else {
+                    celularWsDiv.style.display = 'none';
+                    celularWsInput.required = false;
+                }
+                if (response.data.pdv_celular && response.data.pdv_celular !== '000000') {
+                    celularWsInput.value = response.data.pdv_celular;
+                }
+
                 // Aplicar estilo verde al input
                 rucInput.classList.remove('is-invalid');
                 rucInput.classList.add('is-valid');
@@ -579,6 +631,10 @@
 
     function mostrarDatosAcuse(data) {
         const f = data.factura;
+
+        // Ocultar buscador y mostrar acuse seleccionado
+        document.getElementById('fl_buscar_acuse_div').style.display = 'none';
+        document.getElementById('fl_acuse_seleccionado_div').style.display = 'block';
 
         // Mostrar datos básicos
         document.getElementById('fl_acuse_id').value = f.acuse_id;
@@ -823,6 +879,22 @@
             return;
         }
 
+        // Validar celular WhatsApp si está marcado
+        const docPorWs = document.getElementById('fl_doc_por_ws').checked;
+        const celularWs = document.getElementById('fl_celular_ws').value.replace(/_/g, '').trim();
+        if (docPorWs) {
+            if (!celularWs || celularWs.length < 9) {
+                Swal.fire('Aviso', 'Ingrese el número de celular para envío por WhatsApp (9 dígitos)', 'warning');
+                document.getElementById('fl_celular_ws').focus();
+                return;
+            }
+            if (!/^9\d{8}$/.test(celularWs)) {
+                Swal.fire('Aviso', 'El celular debe comenzar con 9 y tener 9 dígitos (ej: 981855299)', 'warning');
+                document.getElementById('fl_celular_ws').focus();
+                return;
+            }
+        }
+
         const result = await Swal.fire({
             title: '¿Generar Factura Electrónica?',
             html: `<p>Se generará una factura electrónica SIFEN para el acuse <strong>#${facturaActual.acuse_id}</strong></p>
@@ -858,6 +930,8 @@
             fdata.append('establecimiento', document.getElementById('fl_establecimiento').value);
             fdata.append('doc_cre_tipo_cod', document.getElementById('fl_doc_cre_tipo_cod').value);
             fdata.append('doc_vencimiento', document.getElementById('fl_doc_vencimiento').value);
+            fdata.append('doc_por_ws', docPorWs ? 'true' : 'false');
+            fdata.append('celular_ws', celularWs);
 
             const response = await axios.post('/io/iom/', fdata, {
                 headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
@@ -900,7 +974,6 @@
                 //link.target = '_blank';
                 //link.click();
             }
-
             // Navegar a la pantalla de administración de facturas
             var appData = {
                 app_name: 'fl_administrar_facturas',
@@ -912,7 +985,6 @@
             } else if (typeof window.sidebarOpenApp === 'function') {
                 window.sidebarOpenApp(appData);
             }
-
         } catch (error) {
             Swal.close();
             console.error('Error generando factura:', error);
@@ -925,6 +997,10 @@
         facturaActual = null;
         pagoConfirmado = false;
         ultimoRucValidado = '';
+
+        // Restaurar buscador y ocultar acuse seleccionado
+        document.getElementById('fl_buscar_acuse_div').style.display = 'block';
+        document.getElementById('fl_acuse_seleccionado_div').style.display = 'none';
 
         // Limpiar título del cliente
         document.getElementById('fl_titulo_cliente').style.display = 'none';

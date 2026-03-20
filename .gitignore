@@ -65,6 +65,9 @@ docs/clave_produccion.jpeg
 *.sqlite
 *.sqlite3
 
+# Dumps de base de datos (pueden contener datos sensibles)
+dumps/*.sql
+
 # Logs
 *.log
 logs/

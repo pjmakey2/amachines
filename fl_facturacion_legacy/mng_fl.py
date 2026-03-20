@@ -6,6 +6,7 @@ integrándose con SIFEN para facturación electrónica.
 """
 
 import logging
+import requests
 from decimal import Decimal
 from datetime import datetime
 from typing import Dict, List, Optional, Any
@@ -149,12 +150,13 @@ class MFLFacturacion:
         termino = q.get('q', '').strip()
         page = int(q.get('page', 1) or 1)
 
-        if len(termino) < 2:
-            return {'items': [], 'total_count': 0}
-
         try:
             limit = 30
-            facturas = self.mysql_client.buscar_acuses_para_facturar(termino, limit=limit + 1)
+            if len(termino) < 2:
+                # Sin búsqueda: traer los últimos 30 acuses pendientes
+                facturas = self.mysql_client.get_facturas_pendientes(limit=limit)
+            else:
+                facturas = self.mysql_client.buscar_acuses_para_facturar(termino, limit=limit + 1)
 
             # Formatear para Select2
             items = []
@@ -786,6 +788,8 @@ class MFLFacturacion:
             ruc_frontend = q.get('ruc_factura', '').strip()
             nombre_frontend = q.get('nombre_factura', '').strip()
             correo_frontend = q.get('correo_factura', '').strip()
+            doc_por_ws = q.get('doc_por_ws') in (True, 'true', '1', 'on')
+            celular_ws = q.get('celular_ws', '').strip()
 
             # Usar valores del frontend si están disponibles
             if ruc_frontend:
@@ -944,44 +948,47 @@ class MFLFacturacion:
                     if ruc_cliente and cliente_sifen.pdv_ruc != ruc_cliente:
                         cliente_sifen.pdv_ruc = ruc_cliente
                         cliente_sifen.pdv_ruc_dv = int(ruc_dv) if ruc_dv else 0
-                        logger.info(f"Actualizando RUC del cliente en Sifen: {ruc_cliente}")
                         updated = True
                     if nombre_cliente and cliente_sifen.pdv_nombrefactura != nombre_cliente:
                         cliente_sifen.pdv_nombrefactura = nombre_cliente
-                        logger.info(f"Actualizando nombre del cliente en Sifen: {nombre_cliente}")
                         updated = True
                     if correo_cliente and cliente_sifen.pdv_email != correo_cliente:
                         cliente_sifen.pdv_email = correo_cliente
-                        logger.info(f"Actualizando email del cliente en Sifen: {correo_cliente}")
                         updated = True
-
+                    if celular_ws and cliente_sifen.pdv_celular != celular_ws:
+                        cliente_sifen.pdv_celular = celular_ws
+                        updated = True
+                    if cliente_sifen.doc_por_ws != doc_por_ws:
+                        cliente_sifen.doc_por_ws = doc_por_ws
+                        updated = True
                     if updated:
                         cliente_sifen.save(using=dbcon)
                         logger.info(f"Cliente actualizado en Sifen: anclaje_cliente={cliente_codigo}")
                 elif cliente_sifen_ruc:
                     # Actualizar registro existente
                     updated = False
-                    cliente_sifen_ruc.anclaje_cliente=cliente_codigo
+                    cliente_sifen_ruc.anclaje_cliente = cliente_codigo
                     if ruc_cliente and cliente_sifen_ruc.pdv_ruc != ruc_cliente:
                         cliente_sifen_ruc.pdv_ruc = ruc_cliente
                         cliente_sifen_ruc.pdv_ruc_dv = int(ruc_dv) if ruc_dv else 0
-                        logger.info(f"Actualizando RUC del cliente en Sifen: {ruc_cliente}")
                         updated = True
                     if nombre_cliente and cliente_sifen_ruc.pdv_nombrefactura != nombre_cliente:
                         cliente_sifen_ruc.pdv_nombrefactura = nombre_cliente
-                        logger.info(f"Actualizando nombre del cliente en Sifen: {nombre_cliente}")
                         updated = True
                     if correo_cliente and cliente_sifen_ruc.pdv_email != correo_cliente:
                         cliente_sifen_ruc.pdv_email = correo_cliente
-                        logger.info(f"Actualizando email del cliente en Sifen: {correo_cliente}")
                         updated = True
-
+                    if celular_ws and cliente_sifen_ruc.pdv_celular != celular_ws:
+                        cliente_sifen_ruc.pdv_celular = celular_ws
+                        updated = True
+                    if cliente_sifen_ruc.doc_por_ws != doc_por_ws:
+                        cliente_sifen_ruc.doc_por_ws = doc_por_ws
+                        updated = True
                     if updated:
                         cliente_sifen_ruc.save(using=dbcon)
                         logger.info(f"Cliente actualizado en Sifen: anclaje_cliente={cliente_codigo}")
                 else:
                     # Crear nuevo registro
-                    # calculate_dv() retorna int, convertir si es necesario
                     ruc_dv_int = int(ruc_dv) if ruc_dv else 0
                     Clientes.objects.using(dbcon).create(
                         anclaje_cliente=cliente_codigo,
@@ -995,7 +1002,8 @@ class MFLFacturacion:
                         pdv_tipocontribuyente=pdv_tipocontribuyente,
                         pdv_direccion_entrega=factura.get('direccion', ''),
                         pdv_telefono=factura.get('telefono', ''),
-                        pdv_celular=factura.get('celular', ''),
+                        pdv_celular=celular_ws or factura.get('celular', ''),
+                        doc_por_ws=doc_por_ws,
                         pdv_pais_cod='PRY',
                         pdv_pais='Paraguay',
                     )
@@ -1050,6 +1058,11 @@ class MFLFacturacion:
             )
             ek_pdf_file = pdf_result.get('ek_pdf_file', '')
 
+            # Enviar por WhatsApp si el cliente lo solicitó y hay celular y PDF
+            if doc_por_ws and celular_ws and ek_pdf_file:
+                pdf_url = f"{settings.FDOMAIN}{ek_pdf_file}"
+                self.enviar_factura_whatsapp(celular_ws, nombre_cliente, pdf_url)
+
             return {
                 'success': True,
                 'message': 'Factura generada correctamente',
@@ -1065,6 +1078,41 @@ class MFLFacturacion:
             import traceback
             traceback.print_exc()
             return {'error': f'Error generando factura: {str(e)}'}
+
+    def enviar_factura_whatsapp(self, celular: str, nombre_cliente: str, pdf_url: str) -> dict:
+        """Envía la factura por WhatsApp usando thinkchat."""
+        try:
+            # Normalizar número: asegurarse que tenga prefijo 595
+            numero = celular.strip().replace(' ', '').replace('-', '')
+            if not numero.startswith('595'):
+                numero = '595' + numero
+
+            payload = {
+                'action': 'send_template',
+                'from': '595992733111',
+                'to': numero,
+                'template_id': '1480190397116993',
+                'template_params': [nombre_cliente],
+                'template_media': pdf_url,
+                'extras': {
+                    'inbound_bot': 4
+                }
+            }
+
+            response = requests.post(
+                'https://thinkchat.whatsapp.net.py/thinkcomm-x/api/v2/',
+                json=payload,
+                headers={
+                    'Authorization': 'Bearer tk-1dbc29d73f836a627814fae293f88b533b83397507abad912054114a269-'
+                },
+                timeout=15
+            )
+            response.raise_for_status()
+            logger.info(f"Factura enviada por WhatsApp a {numero}: {response.status_code}")
+            return {'success': True}
+        except Exception as e:
+            logger.error(f"Error enviando factura por WhatsApp a {celular}: {e}")
+            return {'error': str(e)}
 
     # =========================================================================
     # UTILIDADES

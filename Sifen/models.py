@@ -1063,6 +1063,7 @@ class Clientes(models.Model):
     pdv_telefono = models.CharField(max_length=30, null=True)
     pdv_celular = models.CharField(max_length=30, null=True)
     pdv_email = models.CharField(max_length=120, null=True)
+    doc_por_ws = models.BooleanField(default=False)
     cargado_usuario = models.CharField(max_length=120, null=True)
     cargado_fecha = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     anclaje_cliente = models.CharField(max_length=200, blank=True, null=True)

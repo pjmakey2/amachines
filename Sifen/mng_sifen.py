@@ -2806,6 +2806,7 @@ class MSifen:
                 'pdv_email': clobj.pdv_email,
                 'pdv_type_business': clobj.pdv_type_business,
                 'pdv_tipocontribuyente': clobj.pdv_tipocontribuyente,
+                'doc_por_ws': clobj.doc_por_ws,
             }
         rsp = eser.qr_ruc(ruc, business=self.bsobj)
         if rsp.get('dmsgres') != 'RUC encontrado':
