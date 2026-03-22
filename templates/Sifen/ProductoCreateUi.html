@@ -14,7 +14,7 @@
                     <input type="number" name="prod_cod" class="form-control" placeholder="Código del producto"
                            value="{% if mobj %}{{ mobj.prod_cod }}{% endif %}" {% if mobj %}readonly{% endif %} required />
                 </div>
-                <small class="text-muted">{% if not mobj %}Se generará automáticamente si se deja vacío{% endif %}</small>
+                <small class="text-muted">{% if not mobj %}Calculado automáticamente sobre el último código cargado{% endif %}</small>
             </div>
             <div class="col-md-6">
                 <label>EAN / Código de Barras</label>
@@ -139,8 +139,8 @@
             <div class="col-md-4">
                 <label>Exenta (%)</label>
                 <div class="input-group flex-nowrap am_focus_highlight mb-3">
-                    <input type="text" name="exenta" class="form-control" placeholder="0"
-                           value="{% if mobj %}{{ mobj.exenta }}{% else %}0{% endif %}"
+                    <input type="decimal" step="0.01" name="exenta" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.exenta|floatformat:2 }}{% else %}0{% endif %}"
                            id="input_exenta_{{ rr }}" />
                     <span class="input-group-text">%</span>
                 </div>
@@ -148,8 +148,8 @@
             <div class="col-md-4">
                 <label>Gravada 5% (%)</label>
                 <div class="input-group flex-nowrap am_focus_highlight mb-3">
-                    <input type="text" name="g5" class="form-control" placeholder="0"
-                           value="{% if mobj %}{{ mobj.g5 }}{% else %}0{% endif %}"
+                    <input type="decimal" step="0.01" name="g5" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.g5|floatformat:2 }}{% else %}0{% endif %}"
                            id="input_g5_{{ rr }}" />
                     <span class="input-group-text">%</span>
                 </div>
@@ -157,8 +157,8 @@
             <div class="col-md-4">
                 <label>Gravada 10% (%)</label>
                 <div class="input-group flex-nowrap am_focus_highlight mb-3">
-                    <input type="text" name="g10" class="form-control" placeholder="0"
-                           value="{% if mobj %}{{ mobj.g10 }}{% else %}100{% endif %}"
+                    <input type="decimal" step="0.01" name="g10" class="form-control" placeholder="0"
+                           value="{% if mobj %}{{ mobj.g10|floatformat:2 }}{% else %}100{% endif %}"
                            id="input_g10_{{ rr }}" />
                     <span class="input-group-text">%</span>
                 </div>
@@ -218,25 +218,6 @@
         Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=costo]'));
         Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=stock]'));
 
-        // Apply mask to percentages
-        let percentMaskOptions = {
-            alias: 'numeric',
-            groupSeparator: ',',
-            radixPoint: '.',
-            autoGroup: true,
-            digits: 2,
-            digitsOptional: false,
-            rightAlign: true,
-            allowMinus: false,
-            removeMaskOnSubmit: true,
-            autoUnmask: true,
-            min: 0,
-            max: 100
-        };
-
-        Inputmask(percentMaskOptions).mask(qelem('#input_exenta_{{ rr }}'));
-        Inputmask(percentMaskOptions).mask(qelem('#input_g5_{{ rr }}'));
-        Inputmask(percentMaskOptions).mask(qelem('#input_g10_{{ rr }}'));
     }
 
     // Initialize masks on load
@@ -496,4 +477,25 @@
         log.info(`#form_producto_{{ rr }} Submitting form`);
         save_producto(event.target);
     })
+
+    {% if not mobj %}
+        // Calcular próximo prod_cod desde el backend
+        let tdata_prod_cod = new FormData();
+        tdata_prod_cod.append('module', 'OptsIO');
+        tdata_prod_cod.append('package', 'io_serial');
+        tdata_prod_cod.append('attr', 'IoS');
+        tdata_prod_cod.append('mname', 'seModel');
+        tdata_prod_cod.append('model_app_name', 'Sifen');
+        tdata_prod_cod.append('model_name', 'Producto');
+        tdata_prod_cod.append('fields', jfy(['prod_cod']));
+        tdata_prod_cod.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', tdata_prod_cod, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let qs = rsp.data.qs || [];
+            let maxCod = qs.reduce((max, item) => Math.max(max, parseInt(item.prod_cod) || 0), 99);
+            qelem('#form_producto_{{ rr }} input[name=prod_cod]').value = maxCod >= 99 ? maxCod + 1 : 100;
+        });
+    {% endif %}
 </script>

@@ -147,6 +147,104 @@
             </div>
         </div>
 
+        <!-- Sucursales FL -->
+        {% load io_tags %}
+        {% if mobj %}{% with fl_suc_asignadas=mobj|user_fl_sucursales %}
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <i class="mdi mdi-store"></i> Sucursales FL
+                <small class="ms-2">(Sin selección = acceso a todas)</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="1" id="fl_suc_1_{{ rr }}" {% if 1 in fl_suc_asignadas %}checked{% endif %}>
+                            <label class="form-check-label" for="fl_suc_1_{{ rr }}">1 - CENTRAL</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="2" id="fl_suc_2_{{ rr }}" {% if 2 in fl_suc_asignadas %}checked{% endif %}>
+                            <label class="form-check-label" for="fl_suc_2_{{ rr }}">2 - MICROCENTRO</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="3" id="fl_suc_3_{{ rr }}" {% if 3 in fl_suc_asignadas %}checked{% endif %}>
+                            <label class="form-check-label" for="fl_suc_3_{{ rr }}">3 - CARMELITAS</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="4" id="fl_suc_4_{{ rr }}" {% if 4 in fl_suc_asignadas %}checked{% endif %}>
+                            <label class="form-check-label" for="fl_suc_4_{{ rr }}">4 - AG ESPAÑA</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="5" id="fl_suc_5_{{ rr }}" {% if 5 in fl_suc_asignadas %}checked{% endif %}>
+                            <label class="form-check-label" for="fl_suc_5_{{ rr }}">5 - INTERIOR</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="6" id="fl_suc_6_{{ rr }}" {% if 6 in fl_suc_asignadas %}checked{% endif %}>
+                            <label class="form-check-label" for="fl_suc_6_{{ rr }}">6 - FDO. DE LA MORA SUR</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endwith %}{% else %}
+        <div class="card mb-3">
+            <div class="card-header bg-success text-white">
+                <i class="mdi mdi-store"></i> Sucursales FL
+                <small class="ms-2">(Sin selección = acceso a todas)</small>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="1" id="fl_suc_1_{{ rr }}">
+                            <label class="form-check-label" for="fl_suc_1_{{ rr }}">1 - CENTRAL</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="2" id="fl_suc_2_{{ rr }}">
+                            <label class="form-check-label" for="fl_suc_2_{{ rr }}">2 - MICROCENTRO</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="3" id="fl_suc_3_{{ rr }}">
+                            <label class="form-check-label" for="fl_suc_3_{{ rr }}">3 - CARMELITAS</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="4" id="fl_suc_4_{{ rr }}">
+                            <label class="form-check-label" for="fl_suc_4_{{ rr }}">4 - AG ESPAÑA</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="5" id="fl_suc_5_{{ rr }}">
+                            <label class="form-check-label" for="fl_suc_5_{{ rr }}">5 - INTERIOR</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mt-2">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input fl-sucursal-check" value="6" id="fl_suc_6_{{ rr }}">
+                            <label class="form-check-label" for="fl_suc_6_{{ rr }}">6 - FDO. DE LA MORA SUR</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Foto de Perfil -->
         <div class="card mb-3">
             <div class="card-header bg-secondary text-white">
@@ -249,6 +347,12 @@
                 edata[idx] = vv
             }
         })
+        // Sucursales FL seleccionadas
+        let fl_sucursales = [];
+        document.querySelectorAll('#form_user_{{ rr }} .fl-sucursal-check:checked').forEach(cb => {
+            fl_sucursales.push(parseInt(cb.value));
+        });
+        edata['fl_sucursales'] = fl_sucursales;
         log.info(`#form_user_{{ rr }} edata to be sent: ` + JSON.stringify(edata, null, 2));
         fdata.append('uc_fields', jfy(edata));
         log.info(`#form_user_{{ rr }} b_vals to be sent: ` + JSON.stringify([], null, 2));

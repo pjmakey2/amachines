@@ -18,6 +18,7 @@ from OptsIO import io_json
 from Sifen.mng_sifen import MSifen
 from Sifen.models import DocumentHeader, Clientes
 from Sifen import mng_gmdata
+from fl_facturacion_legacy.models import UserFLSucursal
 
 from .fl_mysql_client import FLMySQLClient
 
@@ -41,6 +42,24 @@ class MFLFacturacion:
         self.mysql_client = FLMySQLClient()
         self.gdata = mng_gmdata.Gdata()
 
+    def get_sucursales_usuario(self, **kwargs) -> Optional[List[int]]:
+        """
+        Retorna la lista de sucursales FL asignadas al usuario.
+        Si no tiene ninguna asignada, retorna None (puede ver todas).
+        """
+        userobj = kwargs.get('userobj') or self.userobj
+        if not userobj:
+            return None
+        try:
+            from OptsIO.models import UserProfile
+            profile = UserProfile.objects.get(username=userobj.username)
+            sucursales = list(
+                UserFLSucursal.objects.filter(userprofileobj=profile).values_list('sucursal', flat=True)
+            )
+            return sucursales if sucursales else None
+        except Exception:
+            return None
+
     # =========================================================================
     # CLIENTES
     # =========================================================================
@@ -60,7 +79,7 @@ class MFLFacturacion:
             return {'error': 'Ingrese al menos 2 caracteres para buscar'}
 
         try:
-            sucursal = int(q.get('sucursal')) if q.get('sucursal') else None
+            sucursal = int(q.get('sucursal')) if q.get('sucursal') else self.get_sucursales_usuario(**kwargs)
             clientes = self.mysql_client.buscar_clientes(termino, sucursal)
 
             # Formatear para el frontend
@@ -108,7 +127,8 @@ class MFLFacturacion:
             limit = 30
             offset = (page - 1) * limit
 
-            clientes = self.mysql_client.buscar_clientes(termino, limit=limit + 1)
+            sucursales = self.get_sucursales_usuario(**kwargs)
+            clientes = self.mysql_client.buscar_clientes(termino, sucursal=sucursales, limit=limit + 1)
 
             # Formatear para Select2
             items = []
@@ -152,11 +172,11 @@ class MFLFacturacion:
 
         try:
             limit = 30
+            sucursales = self.get_sucursales_usuario(**kwargs)
             if len(termino) < 2:
-                # Sin búsqueda: traer los últimos 30 acuses pendientes
-                facturas = self.mysql_client.get_facturas_pendientes(limit=limit)
+                facturas = self.mysql_client.get_facturas_pendientes(sucursal=sucursales, limit=limit)
             else:
-                facturas = self.mysql_client.buscar_acuses_para_facturar(termino, limit=limit + 1)
+                facturas = self.mysql_client.buscar_acuses_para_facturar(termino, sucursales=sucursales, limit=limit + 1)
 
             # Formatear para Select2
             items = []
@@ -168,8 +188,6 @@ class MFLFacturacion:
                 estado_txt = ""
                 if f.get('facturaemitida') == 1:
                     estado_txt = "[FACTURADO]"
-                elif f.get('estado') == 2:
-                    estado_txt = "[Pago OK]"
                 else:
                     estado_txt = "[Pendiente]"
 
@@ -476,6 +494,7 @@ class MFLFacturacion:
                     'cliente_codigo': f.get('clientecodigo'),
                     'cliente_nombre': nombre_cliente,
                     'cliente_ruc': f.get('ruc', ''),
+                    'sucursal': f.get('sucursal'),
                     'monto_usd': float(f.get('montousd', 0) or 0),
                     'monto_gs': float(f.get('montogs', 0) or 0),
                     'estado': 'Pendiente' if f.get('facturaemitida') == 2 else 'Facturado',
@@ -496,6 +515,7 @@ class MFLFacturacion:
 
         try:
             sucursal = int(q.get('sucursal')) if q.get('sucursal') else None
+            sucursales_usuario = self.get_sucursales_usuario(**kwargs)
             limit = int(q.get('limit', 100))
             offset = int(q.get('offset', 0))
 
@@ -514,15 +534,19 @@ class MFLFacturacion:
             if q.get('fecha_hasta'):
                 filtros['fecha_hasta'] = q.get('fecha_hasta')
 
+            if sucursales_usuario:
+                filtros['sucursales_usuario'] = sucursales_usuario
+
+            # Obtener acuse_ids con DocumentHeader (facturados con PDF disponible)
+            dh_all = DocumentHeader.objects.filter(ext_link__isnull=False).values('ext_link', 'id')
+            dh_map = {str(dh['ext_link']): dh['id'] for dh in dh_all}
+            acuse_ids_con_pdf = list(dh_map.keys())
+
+            # Pasar al MySQL el filtro: pendientes O con PDF
+            filtros['acuse_ids_con_pdf'] = acuse_ids_con_pdf
+
             facturas = self.mysql_client.get_todas_facturas(sucursal, limit, offset, filtros)
             total = self.mysql_client.count_facturas(sucursal, filtros)
-
-            # Buscar DocumentHeaders vinculados por ext_link (acuse_id)
-            acuse_ids = [str(f['acuse_id']) for f in facturas]
-            dh_map = {}
-            if acuse_ids:
-                dh_qs = DocumentHeader.objects.filter(ext_link__in=acuse_ids).values('ext_link', 'id')
-                dh_map = {str(dh['ext_link']): dh['id'] for dh in dh_qs}
 
             # Formatear para el frontend
             result = []
@@ -548,6 +572,7 @@ class MFLFacturacion:
                     'cliente_codigo': f.get('clientecodigo'),
                     'cliente_nombre': nombre_cliente,
                     'cliente_ruc': f.get('ruc', ''),
+                    'sucursal': f.get('sucursal'),
                     'monto_usd': float(f.get('montousd', 0) or 0),
                     'monto_gs': float(f.get('montogs', 0) or 0),
                     'total_pagado': total_pagado,
@@ -837,18 +862,15 @@ class MFLFacturacion:
             # Si no hay paquetes (otro concepto) → usar obs o descripción personalizada
 
             if paquetes:
-                # Factura de paquetes - siempre usa "Servicio de transporte de paquetes"
-                # (como en PHP JS líneas 3440-3444: concepto = 'Servicio de transporte de paquetes')
-                monto_total_gs = sum(float(paq.get('montogsdet', 0) or 0) for paq in paquetes)
+                # Usar el monto confirmado pagado por el cliente (factura.montogs),
+                # no el cálculo de flete por peso/tarifa (montogsdet)
+                monto_total_gs = float(factura.get('montogs', 0) or 0)
                 if monto_total_gs > 0:
                     details.append({
-                        'prod_cod': 920,
-                        'prod_descripcion': 'Servicio de transporte de paquetes',
+                        'prod_cod': 100,
+                        'prod_descripcion': 'FLETE AEREO INTERNACIONAL DDP',
                         'cantidad': 1,
                         'precio_unitario': monto_total_gs,
-                        'g10': 100,  # 100% gravado al 10%
-                        'g5': 0,
-                        'exenta': 0,
                     })
             else:
                 # Factura por otro concepto - usar obs como descripción

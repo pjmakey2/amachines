@@ -81,6 +81,11 @@
                  dtyp: 'str',
                  hide: false
               },
+              { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'Sucursales FL', dtyp: 'str', dfl: '',
+                render: (data, type, rowobj) => {
+                    return `<span class="fl-suc-cell" data-uid="${rowobj.id}"><small class="text-muted">...</small></span>`;
+                }
+              },
               { fdis: true,
                  gre: true,
                  btyp: 'fdb',
@@ -260,9 +265,38 @@
     }
 
 $(`#${t_user}`).on('draw.dt', function() {
-  tt = qelem(`#table_user_ui`);
-  tt.classList.remove('overlay-container');
-  tt.classList.remove('overlay');
+    tt = qelem(`#table_user_ui`);
+    tt.classList.remove('overlay-container');
+    tt.classList.remove('overlay');
+
+    // Cargar sucursales FL para todos los usuarios visibles
+    let userIds = [];
+    document.querySelectorAll(`#${t_user} .fl-suc-cell`).forEach(el => {
+        userIds.push(parseInt(el.dataset.uid));
+    });
+    if (userIds.length === 0) return;
+
+    let sucNames = {1:'CENTRAL', 2:'MICROCENTRO', 3:'CARMELITAS', 4:'AG ESPAÑA', 5:'INTERIOR', 6:'FDO SUR'};
+    let tdata = new FormData();
+    tdata.append('module', 'OptsIO');
+    tdata.append('package', 'mng_master');
+    tdata.append('attr', 'MMaster');
+    tdata.append('mname', 'get_users_fl_sucursales');
+    tdata.append('user_ids', jfy(userIds));
+    axios.post('{% url "iom" %}', tdata, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then(rsp => {
+        let map = rsp.data.sucursales_map || {};
+        document.querySelectorAll(`#${t_user} .fl-suc-cell`).forEach(el => {
+            let uid = el.dataset.uid;
+            let sucs = map[uid] || [];
+            if (sucs.length === 0) {
+                el.innerHTML = '<span class="badge bg-secondary">Todas</span>';
+            } else {
+                el.innerHTML = sucs.map(s => `<span class="badge bg-primary me-1">${sucNames[s] || s}</span>`).join('');
+            }
+        });
+    });
 })
 
 </script>

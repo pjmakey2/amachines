@@ -18,7 +18,7 @@ DROPLET_USER="am"
 SSH_OPTS="-o StrictHostKeyChecking=accept-new"
 
 LOCAL_PROJECT="/home/peter/projects/frontlinerSistema"
-LOCAL_DUMP=$(ls -t /home/peter/projects/Amachine/dumps/frontlin_db_prod_*.sql.bz2 /home/peter/projects/Amachine/dumps/frontlin_db_prod_*.sql 2>/dev/null | head -1)
+LOCAL_DUMP=$(ls -t /home/peter/projects/Amachine/dumps/frontlin_db_prod_*.sql.bz2 /home/peter/projects/Amachine/dumps/frontlin_db_prod_*.sql 2>/dev/null | grep -v '_old_' | head -1)
 
 REMOTE_PROJECT="/var/www/frontliner"
 REMOTE_DUMP="/tmp/frontlin_db.sql"

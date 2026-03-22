@@ -94,7 +94,7 @@ class FLMySQLClient:
     # CLIENTES
     # =========================================================================
 
-    def buscar_clientes(self, termino: str, sucursal: int = None, limit: int = 50) -> List[Dict]:
+    def buscar_clientes(self, termino: str, sucursal=None, limit: int = 50) -> List[Dict]:
         """
         Busca clientes por nombre, apellido o código.
         Replica exactamente la lógica de ClienteBusqueda.php::buscarClienteParaEntrega()
@@ -145,8 +145,13 @@ class FLMySQLClient:
         """
 
         if sucursal:
-            query += " AND sucursal = %s"
-            params.append(sucursal)
+            if isinstance(sucursal, (list, tuple)):
+                placeholders = ','.join(['%s'] * len(sucursal))
+                query += f" AND sucursal IN ({placeholders})"
+                params.extend(sucursal)
+            else:
+                query += " AND sucursal = %s"
+                params.append(sucursal)
 
         query += f" ORDER BY etiqueta LIMIT {limit}"
 
@@ -247,7 +252,7 @@ class FLMySQLClient:
     # FACTURAS / ACUSES
     # =========================================================================
 
-    def get_facturas_pendientes(self, sucursal: int = None, limit: int = 100) -> List[Dict]:
+    def get_facturas_pendientes(self, sucursal=None, limit: int = 100) -> List[Dict]:
         """
         Obtiene las facturas/acuses pendientes de facturar.
         estado = 2 significa que ya se confirmó el pago
@@ -278,14 +283,19 @@ class FLMySQLClient:
         params = []
 
         if sucursal:
-            query += " AND c.sucursal = %s"
-            params.append(sucursal)
+            if isinstance(sucursal, (list, tuple)):
+                placeholders = ','.join(['%s'] * len(sucursal))
+                query += f" AND c.sucursal IN ({placeholders})"
+                params.extend(sucursal)
+            else:
+                query += " AND c.sucursal = %s"
+                params.append(sucursal)
 
         query += f" ORDER BY f.acuse_id DESC LIMIT {limit}"
 
         return self.execute_query(query, tuple(params) if params else None)
 
-    def buscar_acuses_para_facturar(self, termino: str, limit: int = 30) -> List[Dict]:
+    def buscar_acuses_para_facturar(self, termino: str, sucursales=None, limit: int = 30) -> List[Dict]:
         """
         Busca acuses PENDIENTES por número o por nombre de cliente.
         Solo retorna acuses donde:
@@ -297,8 +307,17 @@ class FLMySQLClient:
             limit: Máximo de resultados
         """
         # Si es numérico, buscar por acuse_id
+        def _suc_filter(params):
+            if sucursales:
+                placeholders = ','.join(['%s'] * len(sucursales))
+                params.extend(sucursales)
+                return f" AND c.sucursal IN ({placeholders})"
+            return ""
+
         if termino.isdigit():
-            query = """
+            params = [int(termino), f'{termino}%']
+            suc_sql = _suc_filter(params)
+            query = f"""
                 SELECT
                     f.acuse_id,
                     f.clientecodigo,
@@ -316,23 +335,23 @@ class FLMySQLClient:
                 WHERE (f.acuse_id = %s OR CAST(f.acuse_id AS CHAR) LIKE %s)
                 AND f.estado = 2
                 AND f.facturaemitida = 2
+                {suc_sql}
                 ORDER BY f.acuse_id DESC
-                LIMIT %s
+                LIMIT {limit}
             """
-            return self.execute_query(query, (int(termino), f'{termino}%', limit))
+            return self.execute_query(query, tuple(params))
         else:
-            # Buscar por nombre de cliente (igual que clientes)
             palabras = [p.strip().upper() for p in termino.split() if p.strip()]
             if not palabras:
                 return []
 
             condiciones_like = []
             params = []
-
             for palabra in palabras:
                 condiciones_like.append("CONCAT(c.clientenombre, ' ', c.clienteapellido) LIKE %s")
                 params.append(f'%{palabra}%')
 
+            suc_sql = _suc_filter(params)
             condicion_where = " AND ".join(condiciones_like)
 
             query = f"""
@@ -353,6 +372,7 @@ class FLMySQLClient:
                 WHERE {condicion_where}
                 AND f.estado = 2
                 AND f.facturaemitida = 2
+                {suc_sql}
                 ORDER BY f.acuse_id DESC
                 LIMIT {limit}
             """
@@ -364,7 +384,7 @@ class FLMySQLClient:
         Obtiene todas las facturas con filtros opcionales.
         """
         query = """
-            SELECT
+            SELECT STRAIGHT_JOIN
                 f.acuse_id,
                 f.clientecodigo,
                 f.fecha,
@@ -419,6 +439,19 @@ class FLMySQLClient:
             if filtros.get('fecha_hasta'):
                 query += " AND f.fecha <= %s"
                 params.append(filtros['fecha_hasta'])
+            acuse_ids_con_pdf = filtros.get('acuse_ids_con_pdf')
+            if acuse_ids_con_pdf is not None:
+                if acuse_ids_con_pdf:
+                    placeholders = ','.join(['%s'] * len(acuse_ids_con_pdf))
+                    query += f" AND (f.facturaemitida = 2 OR f.acuse_id IN ({placeholders}))"
+                    params.extend(acuse_ids_con_pdf)
+                else:
+                    query += " AND f.facturaemitida = 2"
+            sucursales_usuario = filtros.get('sucursales_usuario')
+            if sucursales_usuario:
+                placeholders = ','.join(['%s'] * len(sucursales_usuario))
+                query += f" AND c.sucursal IN ({placeholders})"
+                params.extend(sucursales_usuario)
 
         query += f" ORDER BY f.acuse_id DESC LIMIT {limit} OFFSET {offset}"
 
@@ -497,6 +530,19 @@ class FLMySQLClient:
             if filtros.get('facturaemitida'):
                 query += " AND f.facturaemitida = %s"
                 params.append(filtros['facturaemitida'])
+            acuse_ids_con_pdf = filtros.get('acuse_ids_con_pdf')
+            if acuse_ids_con_pdf is not None:
+                if acuse_ids_con_pdf:
+                    placeholders = ','.join(['%s'] * len(acuse_ids_con_pdf))
+                    query += f" AND (f.facturaemitida = 2 OR f.acuse_id IN ({placeholders}))"
+                    params.extend(acuse_ids_con_pdf)
+                else:
+                    query += " AND f.facturaemitida = 2"
+            sucursales_usuario = filtros.get('sucursales_usuario')
+            if sucursales_usuario:
+                placeholders = ','.join(['%s'] * len(sucursales_usuario))
+                query += f" AND c.sucursal IN ({placeholders})"
+                params.extend(sucursales_usuario)
 
         result = self.execute_one(query, tuple(params) if params else None)
         return result['total'] if result else 0

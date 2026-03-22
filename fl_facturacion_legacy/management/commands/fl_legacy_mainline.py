@@ -75,6 +75,17 @@ class Command(BaseCommand):
             help='Tablas a excluir del dump, separadas por coma (default: bitacora)',
         )
         parser.add_argument(
+            '--marcar_facturados',
+            action='store_true',
+            help='Marca como factura emitida todos los acuses con estado=2 desde la fecha indicada',
+        )
+        parser.add_argument(
+            '--date',
+            type=str,
+            default=None,
+            help='Fecha desde (YYYY-MM-DD) para --marcar_facturados',
+        )
+        parser.add_argument(
             '--dry-run',
             action='store_true',
             help='Muestra lo que se haría sin hacer cambios',
@@ -85,10 +96,17 @@ class Command(BaseCommand):
         migrate_db = options.get('migrate_db', False)
         dry_run = options.get('dry_run', False)
 
-        if not register_plugin and not migrate_db:
+        marcar_facturados = options.get('marcar_facturados', False)
+
+        if not register_plugin and not migrate_db and not marcar_facturados:
             self.stdout.write(self.style.ERROR('Debe especificar una acción:'))
             self.stdout.write('  --register_plugin   Registrar plugin y menús')
             self.stdout.write('  --migrate_db        Copiar BD remota al localhost')
+            self.stdout.write('  --marcar_facturados --date YYYY-MM-DD  Marcar acuses como facturados desde fecha')
+            return
+
+        if marcar_facturados:
+            self._marcar_facturados(options)
             return
 
         if migrate_db:
@@ -471,3 +489,54 @@ class Command(BaseCommand):
         self.stdout.write(f'  FL_MYSQL_DATABASE={local_db}')
         self.stdout.write(f'  FL_MYSQL_USER={local_user}')
         self.stdout.write(f'  FL_MYSQL_PASSWORD={local_pass}')
+
+    # =========================================================================
+    # MARCAR ACUSES COMO FACTURADOS
+    # =========================================================================
+
+    def _marcar_facturados(self, options):
+        """
+        Marca facturaemitida=1 en todos los acuses con estado=2
+        cuya fecha sea >= la fecha indicada.
+
+        Uso:
+            python manage.py fl_legacy_mainline --marcar_facturados --date 2026-01-01
+        """
+        from fl_facturacion_legacy.fl_mysql_client import FLMySQLClient
+
+        fecha = options.get('date')
+        dry_run = options.get('dry_run', False)
+
+        if not fecha:
+            self.stdout.write(self.style.ERROR('Debe especificar --date YYYY-MM-DD'))
+            return
+
+        self.stdout.write(self.style.SUCCESS('=== Marcar Acuses como Facturados ===\n'))
+        self.stdout.write(f'  Fecha desde: {fecha}')
+        if dry_run:
+            self.stdout.write(self.style.WARNING('  [DRY RUN] No se harán cambios\n'))
+
+        db = FLMySQLClient()
+
+        # Contar cuántos se van a afectar
+        rows = db.execute_query(
+            'SELECT COUNT(*) as cnt FROM facturas WHERE estado = 2 AND facturaemitida = 2 AND fecha <= %s',
+            (fecha,)
+        )
+        total = rows[0]['cnt'] if rows else 0
+        self.stdout.write(f'  Acuses a marcar: {total}')
+
+        if total == 0:
+            self.stdout.write(self.style.WARNING('  No hay acuses para marcar.'))
+            return
+
+        if not dry_run:
+            affected = db.execute_update(
+                'UPDATE facturas SET facturaemitida = 1 WHERE estado = 2 AND facturaemitida = 2 AND fecha <= %s',
+                (fecha,)
+            )
+            self.stdout.write(self.style.SUCCESS(f'  {affected} acuses marcados como facturados.'))
+        else:
+            self.stdout.write(f'  [DRY] Se marcarían {total} acuses.')
+
+        self.stdout.write(self.style.SUCCESS('\nListo!'))

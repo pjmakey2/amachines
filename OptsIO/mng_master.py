@@ -6,6 +6,7 @@ from OptsIO.io_serial import IoS
 from OptsIO.io_json import to_json, from_json
 from OptsIO.models import UserProfile, UserBusiness
 from Sifen.models import Business
+from fl_facturacion_legacy.models import UserFLSucursal
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,7 @@ class MMaster:
         # Extraer campos específicos de User
         user_fields = {}
         profile_fields = {}
+        fl_sucursales = uc_fields.pop('fl_sucursales', None)
 
         # Campos de User de Django
         if 'username' in uc_fields:
@@ -99,7 +101,11 @@ class MMaster:
                             profile_instance.save()
                             msg = 'Usuario y foto actualizados exitosamente'
 
-                if not updated and not files:
+                # Sincronizar sucursales FL
+                if fl_sucursales is not None:
+                    self._sync_fl_sucursales(profile_instance, fl_sucursales)
+
+                if not updated and not files and fl_sucursales is None:
                     return {'info': 'Nada que actualizar'}, args, kwargs
 
                 return {'success': msg, 'record_id': user_instance.id}, args, kwargs
@@ -152,7 +158,57 @@ class MMaster:
                 profile_instance.photo = dfobj
                 profile_instance.save()
 
+            # Sincronizar sucursales FL
+            if fl_sucursales is not None:
+                self._sync_fl_sucursales(profile_instance, fl_sucursales)
+
             return {'success': msg, 'record_id': user_instance.id}, args, kwargs
+
+    def _sync_fl_sucursales(self, profile, sucursales):
+        """Sincroniza las sucursales FL de un UserProfile. Lista vacía = acceso a todas."""
+        UserFLSucursal.objects.filter(userprofileobj=profile).delete()
+        for suc in sucursales:
+            UserFLSucursal.objects.create(userprofileobj=profile, sucursal=int(suc))
+
+    def get_users_fl_sucursales(self, *args, **kwargs) -> dict:
+        """Retorna las sucursales FL de múltiples usuarios. {user_id: [sucursales]}"""
+        from OptsIO.io_json import from_json
+        q = kwargs.get('qdict', {})
+        user_ids = from_json(q.get('user_ids', '[]'))
+        if not user_ids:
+            return {'sucursales_map': {}}
+        try:
+            users = User.objects.filter(pk__in=user_ids).values('id', 'username')
+            username_to_id = {u['username']: u['id'] for u in users}
+            profiles = UserProfile.objects.filter(username__in=list(username_to_id.keys()))
+            profile_map = {p.username: p for p in profiles}
+            result = {}
+            for username, user_id in username_to_id.items():
+                profile = profile_map.get(username)
+                if profile:
+                    slist = list(UserFLSucursal.objects.filter(userprofileobj=profile).values_list('sucursal', flat=True))
+                    result[str(user_id)] = slist
+                else:
+                    result[str(user_id)] = []
+            return {'sucursales_map': result}
+        except Exception:
+            return {'sucursales_map': {}}
+
+    def get_user_fl_sucursales(self, *args, **kwargs) -> dict:
+        """Retorna las sucursales FL asignadas a un usuario por su ID."""
+        q = kwargs.get('qdict', {})
+        user_id = q.get('user_id')
+        if not user_id:
+            return {'sucursales': []}
+        try:
+            user_instance = User.objects.get(pk=user_id)
+            profile = UserProfile.objects.get(username=user_instance.username)
+            sucursales = list(
+                UserFLSucursal.objects.filter(userprofileobj=profile).values_list('sucursal', flat=True)
+            )
+            return {'sucursales': sucursales}
+        except (User.DoesNotExist, UserProfile.DoesNotExist):
+            return {'sucursales': []}
 
     def delete_user(self, *args, **kwargs) -> dict:
         """

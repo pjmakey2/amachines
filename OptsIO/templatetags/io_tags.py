@@ -15,6 +15,19 @@ import json
 
 register = template.Library()
 
+
+@register.filter(name='user_fl_sucursales')
+def user_fl_sucursales(user):
+    """Returns list of FL sucursal IDs assigned to a Django User. Empty = all."""
+    try:
+        from OptsIO.models import UserProfile
+        from fl_facturacion_legacy.models import UserFLSucursal
+        profile = UserProfile.objects.get(username=user.username)
+        return list(UserFLSucursal.objects.filter(userprofileobj=profile).values_list('sucursal', flat=True))
+    except Exception:
+        return []
+
+
 @register.filter(name="to_json")
 def to_json(value):
     """Convert Python object to JSON string"""

@@ -61,6 +61,7 @@
                             <th style="width: 60px;">Acuse</th>
                             <th style="width: 100px;">Fecha</th>
                             <th>Cliente</th>
+                            <th style="width: 100px;">Sucursal</th>
                             <th>RUC</th>
                             <th class="text-end">Monto USD</th>
                             <th class="text-end">Monto Gs</th>
@@ -359,7 +360,7 @@
                     <button class="btn btn-sm btn-info fl-ver-detalle" data-acuse="${f.acuse_id}" title="Ver detalle">
                         <i class="mdi mdi-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-primary fl-confirmar-pago" data-acuse="${f.acuse_id}" title="Confirmar Pago">
+                    <button class="d-none btn btn-sm btn-primary fl-confirmar-pago" data-acuse="${f.acuse_id}" title="Confirmar Pago">
                         <i class="mdi mdi-cash"></i>
                     </button>
                 `;
@@ -399,6 +400,7 @@
                 <td class="text-center fw-bold">${f.acuse_id}</td>
                 <td>${f.fecha}</td>
                 <td>${f.cliente_nombre}</td>
+                <td>${f.sucursal || '-'}</td>
                 <td>${f.cliente_ruc || '-'}</td>
                 <td class="text-end">$ ${UiN.formatNumberU(f.monto_usd.toFixed(2))}</td>
                 <td class="text-end">Gs. ${UiN.formatNumberU(f.monto_gs.toFixed(0))}</td>

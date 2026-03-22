@@ -238,7 +238,7 @@
                     type="text"
                     name="detail_cantidad"
                     class="form-control"
-                    placeholder="0"
+                    value="1"
                     style="width: 90px;"
                 />
             </div>
@@ -956,7 +956,7 @@
         $('#form_documentheader_{{ rr }} select[name=detail_prod_descripcion]').val(null).trigger('change');
         selectedProductData = null;
         qelem('#form_documentheader_{{ rr }} input[name=detail_precio_unitario]').value = '';
-        qelem('#form_documentheader_{{ rr }} input[name=detail_cantidad]').value = '';
+        qelem('#form_documentheader_{{ rr }} input[name=detail_cantidad]').value = '1';
         qelem('#form_documentheader_{{ rr }} input[name=detail_descuento_pct]').value = '0';
 
         // Hide tax distribution fields after adding detail
