@@ -75,6 +75,59 @@ class Command(BaseCommand):
             help='Tablas a excluir del dump, separadas por coma (default: bitacora)',
         )
         parser.add_argument(
+            '--sync_remote',
+            action='store_true',
+            help='Sincroniza frontlin_db desde servidor origen a servidor destino (remoto a remoto)',
+        )
+        parser.add_argument(
+            '--src_host',
+            type=str,
+            default='',
+            help='Host MySQL origen',
+        )
+        parser.add_argument(
+            '--src_user',
+            type=str,
+            default='mainline',
+            help='Usuario MySQL origen (default: mainline)',
+        )
+        parser.add_argument(
+            '--src_pass',
+            type=str,
+            default='',
+            help='Password MySQL origen',
+        )
+        parser.add_argument(
+            '--src_db',
+            type=str,
+            default='frontlin_db',
+            help='BD origen (default: frontlin_db)',
+        )
+        parser.add_argument(
+            '--dst_host',
+            type=str,
+            default='',
+            help='Host MySQL destino',
+        )
+        parser.add_argument(
+            '--dst_user',
+            type=str,
+            default='mainline',
+            help='Usuario MySQL destino (default: mainline)',
+        )
+        parser.add_argument(
+            '--dst_pass',
+            type=str,
+            default='',
+            help='Password MySQL destino',
+        )
+        parser.add_argument(
+            '--dst_db',
+            type=str,
+            default='frontlin_db',
+            help='BD destino (default: frontlin_db)',
+        )
+        parser.add_argument(
             '--marcar_facturados',
             action='store_true',
             help='Marca como factura emitida todos los acuses con estado=2 desde la fecha indicada',
@@ -94,19 +147,25 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         register_plugin = options.get('register_plugin', False)
         migrate_db = options.get('migrate_db', False)
+        sync_remote = options.get('sync_remote', False)
         dry_run = options.get('dry_run', False)
 
         marcar_facturados = options.get('marcar_facturados', False)
 
-        if not register_plugin and not migrate_db and not marcar_facturados:
+        if not register_plugin and not migrate_db and not sync_remote and not marcar_facturados:
             self.stdout.write(self.style.ERROR('Debe especificar una acción:'))
             self.stdout.write('  --register_plugin   Registrar plugin y menús')
             self.stdout.write('  --migrate_db        Copiar BD remota al localhost')
+            self.stdout.write('  --sync_remote       Sincronizar BD entre dos servidores remotos')
             self.stdout.write('  --marcar_facturados --date YYYY-MM-DD  Marcar acuses como facturados desde fecha')
             return
 
         if marcar_facturados:
             self._marcar_facturados(options)
+            return
+
+        if sync_remote:
+            self._sync_remote(options)
             return
 
         if migrate_db:
@@ -489,6 +548,233 @@ class Command(BaseCommand):
         self.stdout.write(f'  FL_MYSQL_DATABASE={local_db}')
         self.stdout.write(f'  FL_MYSQL_USER={local_user}')
         self.stdout.write(f'  FL_MYSQL_PASSWORD={local_pass}')
+
+    # =========================================================================
+    # SINCRONIZACIÓN REMOTO → REMOTO
+    # =========================================================================
+
+    def _sync_remote(self, options):
+        """
+        Sincroniza frontlin_db desde un servidor MySQL origen a un servidor
+        MySQL destino, sin archivo intermedio. Usa SSCursor en origen para
+        streaming eficiente y escribe por lotes en el destino.
+
+        Uso:
+            python manage.py fl_legacy_mainline --sync_remote \
+                --src_pass 'pass_origen' \
+                --dst_pass 'pass_destino'
+
+        Parámetros opcionales:
+            --src_host  (default: 165.227.53.87)
+            --src_user  (default: mainline)
+            --src_db    (default: frontlin_db)
+            --dst_host  (default: 143.110.238.24)
+            --dst_user  (default: mainline)
+            --dst_db    (default: frontlin_db)
+            --exclude_tables  (default: bitacora)
+            --dry-run
+        """
+        src_host = options['src_host']
+        src_user = options['src_user']
+        src_pass = options['src_pass']
+        src_db   = options['src_db']
+        dst_host = options['dst_host']
+        dst_user = options['dst_user']
+        dst_pass = options['dst_pass']
+        dst_db   = options['dst_db']
+        exclude_tables = set(
+            t.strip() for t in options.get('exclude_tables', '').split(',') if t.strip()
+        )
+        dry_run = options.get('dry_run', False)
+
+        if not src_host:
+            self.stdout.write(self.style.ERROR('Debe especificar --src_host'))
+            return
+        if not src_pass:
+            self.stdout.write(self.style.ERROR('Debe especificar --src_pass'))
+            return
+        if not dst_host:
+            self.stdout.write(self.style.ERROR('Debe especificar --dst_host'))
+            return
+        if not dst_pass:
+            self.stdout.write(self.style.ERROR('Debe especificar --dst_pass'))
+            return
+
+        self.stdout.write(self.style.SUCCESS('=== Sincronización Remoto → Remoto ===\n'))
+        self.stdout.write(f'  Origen:  {src_user}@{src_host}/{src_db}')
+        self.stdout.write(f'  Destino: {dst_user}@{dst_host}/{dst_db}')
+        if exclude_tables:
+            self.stdout.write(f'  Excluidas: {", ".join(sorted(exclude_tables))}')
+        if dry_run:
+            self.stdout.write(self.style.WARNING('\n[DRY RUN] No se ejecutarán cambios'))
+            return
+
+        try:
+            import pymysql
+            from pymysql.cursors import SSCursor
+        except ImportError:
+            self.stdout.write(self.style.ERROR('pymysql no está instalado. Ejecute: pip install pymysql'))
+            return
+
+        CHUNK_SIZE  = 5000
+        BATCH_SIZE  = 1000
+
+        def make_conn(host, user, password, db):
+            conn = pymysql.connect(
+                host=host, user=user, password=password, database=db,
+                charset='utf8', ssl_disabled=True,
+                connect_timeout=30, read_timeout=600, write_timeout=600,
+            )
+            with conn.cursor() as c:
+                c.execute("SET NET_READ_TIMEOUT=600")
+                c.execute("SET NET_WRITE_TIMEOUT=600")
+            return conn
+
+        def escape_val(v):
+            if v is None:
+                return "NULL"
+            if isinstance(v, (int, float)):
+                return str(v)
+            if isinstance(v, bytes):
+                return "X'" + v.hex() + "'"
+            s = str(v).replace("\\", "\\\\").replace("'", "\\'") \
+                       .replace("\n", "\\n").replace("\r", "\\r").replace("\x00", "")
+            return "'" + s + "'"
+
+        # 1. Conectar a ambos servidores
+        self.stdout.write('\n1. Conectando...')
+        try:
+            src_conn = make_conn(src_host, src_user, src_pass, src_db)
+            self.stdout.write(f'   Origen  OK ({src_host})')
+        except pymysql.Error as e:
+            self.stdout.write(self.style.ERROR(f'   Error conectando a origen: {e}'))
+            return
+        try:
+            dst_conn = make_conn(dst_host, dst_user, dst_pass, dst_db)
+            self.stdout.write(f'   Destino OK ({dst_host})')
+        except pymysql.Error as e:
+            self.stdout.write(self.style.ERROR(f'   Error conectando a destino: {e}'))
+            src_conn.close()
+            return
+
+        # 2. Obtener tablas y conteos desde origen
+        self.stdout.write('\n2. Analizando tablas en origen...')
+        try:
+            with src_conn.cursor() as cur:
+                cur.execute("SHOW TABLES")
+                all_tables = [r[0] for r in cur.fetchall()]
+            tables = [t for t in all_tables if t not in exclude_tables]
+            self.stdout.write(f'   {len(all_tables)} tablas totales, {len(tables)} a sincronizar')
+
+            table_counts = {}
+            for table in tables:
+                with src_conn.cursor() as cur:
+                    cur.execute(f"SELECT COUNT(*) FROM `{table}`")
+                    table_counts[table] = cur.fetchone()[0]
+
+            total_rows = sum(table_counts.values())
+            self.stdout.write(f'   Total filas: {total_rows:,}')
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'   Error analizando tablas: {e}'))
+            src_conn.close(); dst_conn.close()
+            return
+
+        # 3. Sincronizar tabla por tabla
+        self.stdout.write('\n3. Sincronizando...')
+        src_conn.close()  # Cerrar; se reabre por tabla para evitar timeouts
+
+        errors = []
+        total_synced = 0
+
+        try:
+            with dst_conn.cursor() as cur:
+                cur.execute("SET FOREIGN_KEY_CHECKS=0")
+                cur.execute("SET NAMES utf8")
+                cur.execute("SET SQL_MODE='NO_AUTO_VALUE_ON_ZERO'")
+
+            for table in tables:
+                expected = table_counts[table]
+                self.stdout.write(f'   {table} ({expected:,} filas)...', ending=' ')
+                sys.stdout.flush()
+
+                try:
+                    # Conexión fresca por tabla (evita timeout en tablas grandes)
+                    src_conn = make_conn(src_host, src_user, src_pass, src_db)
+
+                    # Obtener CREATE TABLE desde origen
+                    with src_conn.cursor() as meta_cur:
+                        meta_cur.execute(f"SHOW CREATE TABLE `{table}`")
+                        create_sql = meta_cur.fetchone()[1]
+
+                    # Recrear tabla en destino
+                    with dst_conn.cursor() as cur:
+                        cur.execute(f"DROP TABLE IF EXISTS `{table}`")
+                        cur.execute(create_sql)
+                    dst_conn.commit()
+
+                    # Transferir datos si hay filas
+                    row_count = 0
+                    if expected > 0:
+                        ss_cur = src_conn.cursor(SSCursor)
+                        ss_cur.execute(f"SELECT * FROM `{table}`")
+
+                        batch = []
+                        while True:
+                            rows = ss_cur.fetchmany(CHUNK_SIZE)
+                            if not rows:
+                                break
+                            for row in rows:
+                                batch.append("(" + ",".join(escape_val(v) for v in row) + ")")
+                                row_count += 1
+                                if len(batch) >= BATCH_SIZE:
+                                    with dst_conn.cursor() as cur:
+                                        cur.execute(
+                                            f"INSERT INTO `{table}` VALUES " + ",".join(batch)
+                                        )
+                                    dst_conn.commit()
+                                    batch = []
+
+                        if batch:
+                            with dst_conn.cursor() as cur:
+                                cur.execute(
+                                    f"INSERT INTO `{table}` VALUES " + ",".join(batch)
+                                )
+                            dst_conn.commit()
+
+                        ss_cur.close()
+
+                    src_conn.close()
+                    total_synced += row_count
+                    self.stdout.write(self.style.SUCCESS(f'{row_count:,} OK'))
+
+                except Exception as e:
+                    errors.append((table, str(e)))
+                    self.stdout.write(self.style.ERROR(f'ERROR: {e}'))
+                    try:
+                        src_conn.close()
+                    except Exception:
+                        pass
+
+            with dst_conn.cursor() as cur:
+                cur.execute("SET FOREIGN_KEY_CHECKS=1")
+            dst_conn.commit()
+
+        finally:
+            try:
+                dst_conn.close()
+            except Exception:
+                pass
+
+        # 4. Resumen
+        self.stdout.write('\n' + '=' * 60)
+        if errors:
+            self.stdout.write(self.style.ERROR(f'Completado con {len(errors)} error(es):'))
+            for table, err in errors:
+                self.stdout.write(self.style.ERROR(f'  {table}: {err}'))
+        else:
+            self.stdout.write(self.style.SUCCESS('Sincronización completada sin errores!'))
+        self.stdout.write(f'  Filas transferidas: {total_synced:,}')
+        self.stdout.write(f'  Tablas sincronizadas: {len(tables) - len(errors)}/{len(tables)}')
 
     # =========================================================================
     # MARCAR ACUSES COMO FACTURADOS
