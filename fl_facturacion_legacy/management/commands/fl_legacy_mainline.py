@@ -810,10 +810,10 @@ class Command(BaseCommand):
         """
         from fl_facturacion_legacy.fl_mysql_client import FLMySQLClient
         from Sifen.models import Clientes
-        from Sifen.mng_gmdata import Gmdata
+        from Sifen.mng_gmdata import Gdata as Gmdata
 
         dry_run = options.get('dry_run', False)
-        gdata = Gmdata()
+        gdata = Gmdata()  # Gdata de mng_gmdata
 
         self.stdout.write(self.style.SUCCESS('=== Sincronización Clientes FL → Sifen ===\n'))
         if dry_run:
