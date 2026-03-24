@@ -128,6 +128,11 @@ class Command(BaseCommand):
             help='BD destino (default: frontlin_db)',
         )
         parser.add_argument(
+            '--sync_clientes_fl_to_sifen',
+            action='store_true',
+            help='Importa clientes desde MySQL FL al modelo Sifen.Clientes (sin duplicados por pdv_ruc)',
+        )
+        parser.add_argument(
             '--marcar_facturados',
             action='store_true',
             help='Marca como factura emitida todos los acuses con estado=2 desde la fecha indicada',
@@ -152,12 +157,19 @@ class Command(BaseCommand):
 
         marcar_facturados = options.get('marcar_facturados', False)
 
-        if not register_plugin and not migrate_db and not sync_remote and not marcar_facturados:
+        sync_clientes = options.get('sync_clientes_fl_to_sifen', False)
+
+        if not register_plugin and not migrate_db and not sync_remote and not marcar_facturados and not sync_clientes:
             self.stdout.write(self.style.ERROR('Debe especificar una acción:'))
             self.stdout.write('  --register_plugin   Registrar plugin y menús')
             self.stdout.write('  --migrate_db        Copiar BD remota al localhost')
             self.stdout.write('  --sync_remote       Sincronizar BD entre dos servidores remotos')
             self.stdout.write('  --marcar_facturados --date YYYY-MM-DD  Marcar acuses como facturados desde fecha')
+            self.stdout.write('  --sync_clientes_fl_to_sifen             Importar clientes FL → Sifen.Clientes')
+            return
+
+        if sync_clientes:
+            self._sync_clientes_fl_to_sifen(options)
             return
 
         if marcar_facturados:
@@ -775,6 +787,147 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Sincronización completada sin errores!'))
         self.stdout.write(f'  Filas transferidas: {total_synced:,}')
         self.stdout.write(f'  Tablas sincronizadas: {len(tables) - len(errors)}/{len(tables)}')
+
+    # =========================================================================
+    # SINCRONIZACIÓN CLIENTES FL → SIFEN
+    # =========================================================================
+
+    def _sync_clientes_fl_to_sifen(self, options):
+        """
+        Importa clientes desde la tabla `clientes` del MySQL FL al modelo
+        Sifen.Clientes (PostgreSQL).
+
+        - Condicionante de duplicado: pdv_ruc (derivado de clienteci limpio)
+        - Limpieza de clienteci:
+            " 21212 "   → "21212"
+            "2463986-9" → "2463986"   (solo la parte antes del guión)
+        - Calcula DV con calculate_dv()
+        - Si clienteci está vacío/nulo/0, el cliente se marca como innominado
+
+        Uso:
+            python manage.py fl_legacy_mainline --sync_clientes_fl_to_sifen
+            python manage.py fl_legacy_mainline --sync_clientes_fl_to_sifen --dry-run
+        """
+        from fl_facturacion_legacy.fl_mysql_client import FLMySQLClient
+        from Sifen.models import Clientes
+        from Sifen.mng_gmdata import Gmdata
+
+        dry_run = options.get('dry_run', False)
+        gdata = Gmdata()
+
+        self.stdout.write(self.style.SUCCESS('=== Sincronización Clientes FL → Sifen ===\n'))
+        if dry_run:
+            self.stdout.write(self.style.WARNING('  [DRY RUN] No se harán cambios\n'))
+
+        def clean_ruc(raw):
+            """Extrae solo dígitos del clienteci, descartando DV y espacios."""
+            if not raw:
+                return None
+            s = raw.strip()
+            # Descartar dígito verificador si viene con guión: "2463986-9" → "2463986"
+            if '-' in s:
+                s = s.split('-')[0].strip()
+            # Quedarse solo con dígitos
+            digits = ''.join(c for c in s if c.isdigit())
+            return digits if digits else None
+
+        # 1. Leer clientes desde MySQL FL
+        self.stdout.write('1. Leyendo clientes desde MySQL FL...')
+        db = FLMySQLClient()
+        rows = db.execute_query(
+            "SELECT clientecodigo, clientenombre, clienteapellido, clienteci, "
+            "clientetelefono, clientecelular, clientemail, clientedireccion "
+            "FROM clientes ORDER BY clientecodigo"
+        )
+        self.stdout.write(f'   {len(rows):,} clientes encontrados en MySQL')
+
+        # 2. Obtener RUCs ya existentes en Sifen para evitar duplicados
+        self.stdout.write('\n2. Cargando RUCs existentes en Sifen...')
+        existing_rucs = set(Clientes.objects.values_list('pdv_ruc', flat=True))
+        self.stdout.write(f'   {len(existing_rucs):,} clientes ya existen en Sifen')
+
+        # 3. Procesar y clasificar
+        self.stdout.write('\n3. Procesando clientes...')
+        to_create = []
+        skipped_duplicates = 0
+        skipped_sin_ruc = 0
+        errores = []
+
+        BATCH_SIZE = 500
+
+        for row in rows:
+            clientecodigo = row['clientecodigo']
+            nombre = (row.get('clientenombre') or '').strip()
+            apellido = (row.get('clienteapellido') or '').strip()
+            nombre_completo = f"{nombre} {apellido}".strip() or f"CLIENTE {clientecodigo}"
+
+            ruc_limpio = clean_ruc(row.get('clienteci'))
+
+            # Sin RUC válido → omitir completamente
+            if not ruc_limpio or ruc_limpio == '0':
+                skipped_sin_ruc += 1
+                continue
+
+            innominado = False
+            es_contribuyente = True
+
+            # Verificar duplicado
+            if ruc_limpio in existing_rucs:
+                skipped_duplicates += 1
+                continue
+
+            try:
+                dv = gdata.calculate_dv(ruc_limpio) if not innominado else 0
+            except Exception as e:
+                errores.append((clientecodigo, str(e)))
+                continue
+
+            to_create.append(Clientes(
+                pdv_ruc=ruc_limpio,
+                pdv_ruc_dv=dv,
+                pdv_innominado=innominado,
+                pdv_es_contribuyente=es_contribuyente,
+                pdv_nombrefantasia=nombre_completo,
+                pdv_nombrefactura=nombre_completo,
+                pdv_telefono=row.get('clientetelefono') or None,
+                pdv_celular=row.get('clientecelular') or None,
+                pdv_email=row.get('clientemail') or None,
+                pdv_direccion_entrega=row.get('clientedireccion') or None,
+                pdv_codigo=clientecodigo,
+                pdv_pais_cod='PRY',
+                pdv_pais='PRY',
+                pdv_tipocontribuyente='1',
+                cargado_usuario='fl_sync',
+                anclaje_cliente=str(clientecodigo),
+            ))
+
+            # Marcar como existente para evitar duplicados dentro del mismo batch
+            existing_rucs.add(ruc_limpio)
+
+            # Insertar en batch
+            if len(to_create) >= BATCH_SIZE:
+                if not dry_run:
+                    Clientes.objects.bulk_create(to_create, ignore_conflicts=True)
+                self.stdout.write(f'   Insertados {len(to_create)} clientes...', ending='\r')
+                sys.stdout.flush()
+                to_create = []
+
+        # Insertar restantes
+        if to_create and not dry_run:
+            Clientes.objects.bulk_create(to_create, ignore_conflicts=True)
+
+        # 4. Resumen
+        total_nuevos = len(rows) - skipped_duplicates - skipped_sin_ruc - len(errores)
+        self.stdout.write('\n\n' + '=' * 60)
+        self.stdout.write(self.style.SUCCESS('Resumen:'))
+        self.stdout.write(f'  Total en MySQL:      {len(rows):,}')
+        self.stdout.write(f'  Nuevos importados:   {total_nuevos:,}{"  [DRY RUN]" if dry_run else ""}')
+        self.stdout.write(f'  Ya existían:         {skipped_duplicates:,}')
+        self.stdout.write(f'  Sin RUC (omitidos):  {skipped_sin_ruc:,}')
+        if errores:
+            self.stdout.write(self.style.ERROR(f'  Errores:             {len(errores)}'))
+            for cod, err in errores[:10]:
+                self.stdout.write(self.style.ERROR(f'    clientecodigo={cod}: {err}'))
 
     # =========================================================================
     # MARCAR ACUSES COMO FACTURADOS
