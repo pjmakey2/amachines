@@ -42,7 +42,7 @@
                         <i id="fl_ruc_error" class="mdi mdi-alert-circle text-danger ms-1" style="display: none;" title="RUC no encontrado en SIFEN"></i>
                         <span id="fl_ruc_loading" class="spinner-border spinner-border-sm text-primary ms-1" style="display: none;"></span>
                     </label>
-                    <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC">
+                    <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC" oninput="form_validation.just_number(event)">
                     <small id="fl_ruc_nombre_sifen" class="text-muted" style="display: none;"></small>
                 </div>
                 <div class="col-md-4">
@@ -451,26 +451,8 @@
             });
         }
 
-        // Validación de RUC: solo permitir números
-        const rucInput = document.getElementById('fl_ruc_factura');
-        rucInput.addEventListener('input', function(e) {
-            // Remover caracteres que no sean números, puntos o guiones
-            let valor = e.target.value;
-            let valorLimpio = valor.replace(/[^\d.-]/g, '');
-
-            if (valor !== valorLimpio) {
-                e.target.value = valorLimpio;
-                // Mostrar mensaje temporal
-                const errorIcon = document.getElementById('fl_ruc_error');
-                errorIcon.style.display = 'inline';
-                errorIcon.title = 'Solo se permiten números en el RUC';
-                setTimeout(() => {
-                    errorIcon.style.display = 'none';
-                }, 2000);
-            }
-        });
-
         // Validación de RUC al perder foco
+        const rucInput = document.getElementById('fl_ruc_factura');
         rucInput.addEventListener('blur', validarRucSifen);
 
         // Botones
@@ -485,6 +467,7 @@
     // Validar RUC contra SIFEN
     async function validarRucSifen() {
         const rucInput = document.getElementById('fl_ruc_factura');
+        rucInput.value = rucInput.value.replace(/\D/g, '');
         const ruc = rucInput.value.trim();
 
         const checkIcon = document.getElementById('fl_ruc_check');
