@@ -2175,11 +2175,7 @@ class MSifen:
         #uc_fields['doc_op'] = 'VTA'
         uc_fields['doc_estado'] = 'CREADO'
         uc_fields['source'] = 'MANUAL'
-        if uc_fields.get('ext_link'):
-            ext_link = uc_fields['ext_link']
-        else:
-            uc_fields['ext_link'] = '0'
-        if not ext_link:
+        if not uc_fields.get('ext_link'):
             uc_fields['ext_link'] = '0'
         # Business info
         uc_fields['bs'] = self.bsobj.name
