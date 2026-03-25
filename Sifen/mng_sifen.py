@@ -177,6 +177,7 @@ class MSifen:
         mailgun_domain = os.environ.get('MAILGUN_DOMAIN', 'm.altamachines.com')
         mailgun_api_key = os.environ.get('MAILGUN_API_KEY', '')
         temail = docobj.pdv_email
+        #temail = 'atfrontliner@gmail.com'
         if settings.DEBUG:
             temail = 'atfrontliner@gmail.com'
         with open(pdf_file, 'rb') as f_pdf, open(xml_file, 'rb') as f_xml:
