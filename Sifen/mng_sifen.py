@@ -176,7 +176,9 @@ class MSifen:
         # Enviar via API de Mailgun (SMTP bloqueado en Digital Ocean)
         mailgun_domain = os.environ.get('MAILGUN_DOMAIN', 'm.altamachines.com')
         mailgun_api_key = os.environ.get('MAILGUN_API_KEY', '')
-
+        temail = docobj.pdv_email
+        if settings.DEBUG:
+            temail = 'atfrontliner@gmail.com'
         with open(pdf_file, 'rb') as f_pdf, open(xml_file, 'rb') as f_xml:
             response = requests.post(
                 f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
@@ -187,7 +189,7 @@ class MSifen:
                 ],
                 data={
                     "from": settings.DEFAULT_FROM_EMAIL,
-                    "to": [docobj.pdv_email],
+                    "to": [temail],
                     "subject": subject,
                     "html": html_c,
                 },
