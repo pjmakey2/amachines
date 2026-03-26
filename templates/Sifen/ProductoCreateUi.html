@@ -87,15 +87,13 @@
             <div class="col-md-4">
                 <label>Precio <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight mb-3">
-                    <input type="text" name="precio" class="form-control" placeholder="0"
-                           value="{% if mobj %}{{ mobj.precio }}{% endif %}" required />
+                    <input type="text" name="precio" class="form-control" placeholder="0" required />
                 </div>
             </div>
             <div class="col-md-4">
                 <label>Costo</label>
                 <div class="input-group flex-nowrap am_focus_highlight mb-3">
-                    <input type="text" name="costo" class="form-control" placeholder="0"
-                           value="{% if mobj %}{{ mobj.costo }}{% else %}0{% endif %}" />
+                    <input type="text" name="costo" class="form-control" placeholder="0" />
                 </div>
             </div>
             <div class="col-md-4">
@@ -121,8 +119,7 @@
             <div class="col-md-6">
                 <label>Stock</label>
                 <div class="input-group flex-nowrap am_focus_highlight mb-3">
-                    <input type="text" name="stock" class="form-control" placeholder="0"
-                           value="{% if mobj %}{{ mobj.stock }}{% else %}0{% endif %}" />
+                    <input type="text" name="stock" class="form-control" placeholder="0" />
                 </div>
             </div>
         </div>
@@ -202,8 +199,8 @@
     function initializeInputMasks() {
         let maskOptions = {
             alias: 'numeric',
-            groupSeparator: ',',
-            radixPoint: '.',
+            groupSeparator: '.',
+            radixPoint: ',',
             autoGroup: true,
             digits: 2,
             digitsOptional: false,
@@ -217,11 +214,17 @@
         Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=precio]'));
         Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=costo]'));
         Inputmask(maskOptions).mask(qelem('#form_producto_{{ rr }} input[name=stock]'));
-
     }
 
     // Initialize masks on load
     initializeInputMasks();
+
+    // Set initial values via JS (avoids Django template locale issues with floatformat)
+    {% if mobj %}
+    qelem('#form_producto_{{ rr }} input[name=precio]').value = {{ mobj.precio }};
+    qelem('#form_producto_{{ rr }} input[name=costo]').value = {{ mobj.costo }};
+    qelem('#form_producto_{{ rr }} input[name=stock]').value = {{ mobj.stock }};
+    {% endif %}
 
     // Photo preview
     qelem('#input_photo_{{ rr }}').addEventListener('change', function(e) {
@@ -365,15 +368,16 @@
 
         log.info(`#form_producto_{{ rr }} Preparing data to be sent to the backend`);
         let formData = new FormData(target);
-
-        // Extract form data for edata
-        //let edata = {};
-        //for (let [key, value] of formData.entries()) {
-        //    if (key !== 'photo') {  // Skip the file field
-        //        edata[key] = value;
-        //    }
-        //}
         let edata = form_serials.form_to_json(formData);
+        // Leer valores sin máscara directamente del inputmask
+        ['precio', 'costo', 'stock'].forEach(f => {
+            let el = qelem(`#form_producto_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        // Normalizar decimales en campos de porcentaje (floatformat:2 puede enviar coma)
+        ['exenta', 'g5', 'g10'].forEach(f => {
+            if (edata[f] !== undefined) edata[f] = edata[f].toString().replace(',', '.');
+        });
         const efiles = form_serials.form_files(formData);
         efiles.forEach((idx)=> {
             ff = formData.get(idx);
