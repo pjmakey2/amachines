@@ -65,7 +65,7 @@ class SEserial:
         establecimiento = q.get('establecimiento')
 
         stats = {}
-        tipos = ['FE', 'NC', 'ND', 'AF']
+        tipos = ['FE', 'NC', 'ND', 'AF', 'RC', 'NRE']
 
         for tipo in tipos:
             query = Enumbers.objects.filter(tipo=tipo)
@@ -151,7 +151,7 @@ class SEserial:
         if not timbrado_id or not establecimiento:
             return {'error': 'Falta timbrado_id o establecimiento'}
 
-        tipos = ['FE', 'NC', 'ND', 'AF']
+        tipos = ['FE', 'NC', 'ND', 'AF', 'RC', 'NRE']
         current = {}
 
         for tipo in tipos:

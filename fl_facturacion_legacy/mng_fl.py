@@ -1037,6 +1037,7 @@ class MFLFacturacion:
             # 4. Crear factura en SIFEN
             msifen = MSifen()
 
+            uc_fields['send_save'] = True
             result, _, _ = msifen.create_documentheader(
                 userobj=userobj,
                 qdict={

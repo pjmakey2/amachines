@@ -8,7 +8,8 @@ LOGO = f'{settings.BASE_DIR}/media/toca3d_logo.png'
 
 load_dotenv(settings.BASE_DIR / '.env')
 
-RUC='80163121'
+#RUC='80163121'
+RUC='80070523'
 ESTABLECIMIENTO = {
     1: '1'.zfill(3), #CENTRAL
 }
