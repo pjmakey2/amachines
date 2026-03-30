@@ -237,8 +237,8 @@ class MSifen:
         q: dict = kwargs.get('qdict', {})
         pk = q.get('id')
         docobj = DocumentHeader.objects.get(pk=pk)
-        if docobj.ek_estado != 'Aprobado':
-            return {'error': 'Solo se pueden enviar facturas aprobadas en la SIFEN'}, args, kwargs
+        # if docobj.ek_estado != 'Aprobado':
+        #     return {'error': 'Solo se pueden enviar facturas aprobadas en la SIFEN'}, args, kwargs
         qq = QueryDict(mutable=True)
         qq.update({
             'docpk': pk,
@@ -253,7 +253,7 @@ class MSifen:
         force_send = q.get('force_send', False)
         userobj = kwargs.get('userobj')
         if not userobj:
-            userobj = User.objects.get(username='amadmin')
+            userobj = User.objects.first()
         docpk = q.get('docpk')
         dbcon = q.get('dbcon')
         from_console = q.get('from_console')
@@ -290,6 +290,9 @@ class MSifen:
         pdf_file = f'{settings.BASE_DIR}/{d_pdf.get("pdf_file")}'
         logging.info(f'PDF generado en {pdf_file}')
         xml_file = docobj.ek_xml_file_signed.path
+
+
+
         tp_l = {
             "tipo": tipo,
             "razon_social": docobj.pdv_nombrefactura,
@@ -307,39 +310,52 @@ class MSifen:
         html_c = f"""
         Estimado cliente, adjuntamos en este correo, su factura correspondiente de {self.bsobj.nombrefactura}. Gracias por su preferencia.
         """
-
+        with open(pdf_file, 'rb') as file:
+            file_content = file.read()
+        with open(xml_file, 'rb') as file:
+            file_content_xml = file.read()
         file_name = os.path.basename(pdf_file)
         file_name_xml = os.path.basename(xml_file)
+
         logging.info(f'Enviando correo a {docobj.pdv_email} con factura {docobj.doc_numero}')
         subject = f'{docobj.bs} {tipo} {docobj.doc_numero} generada'
 
         # Enviar via API de Mailgun (SMTP bloqueado en Digital Ocean)
-        mailgun_domain = os.environ.get('MAILGUN_DOMAIN', 'm.altamachines.com')
-        mailgun_api_key = os.environ.get('MAILGUN_API_KEY', '')
+        # mailgun_domain = os.environ.get('MAILGUN_DOMAIN', 'm.altamachines.com')
+        # mailgun_api_key = os.environ.get('MAILGUN_API_KEY', '')
         temail = docobj.pdv_email
         #temail = 'atfrontliner@gmail.com'
         if settings.DEBUG:
             temail = 'atfrontliner@gmail.com'
-        with open(pdf_file, 'rb') as f_pdf, open(xml_file, 'rb') as f_xml:
-            response = requests.post(
-                f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
-                auth=("api", mailgun_api_key),
-                files=[
-                    ("attachment", (file_name, f_pdf, 'application/pdf')),
-                    ("attachment", (file_name_xml, f_xml, 'application/xml')),
-                ],
-                data={
-                    "from": settings.DEFAULT_FROM_EMAIL,
-                    "to": [temail],
-                    "subject": subject,
-                    "html": html_c,
-                },
-                timeout=30
-            )
+        subject = f'Frontliner S.A. {tipo} {docobj.doc_numero} generada'
+        email = EmailMultiAlternatives(subject=subject, 
+                                    body=subject, 
+                                    from_email=settings.DEFAULT_FROM_EMAIL, 
+                                    to=[temail])
+        email.attach_alternative(html_c, 'text/html')
+        email.attach(file_name, file_content, 'application/pdf')
+        email.attach(file_name_xml, file_content_xml, 'application/xml')
+        email.send()
+        # with open(pdf_file, 'rb') as f_pdf, open(xml_file, 'rb') as f_xml:
+        #     response = requests.post(
+        #         f"https://api.mailgun.net/v3/{mailgun_domain}/messages",
+        #         auth=("api", mailgun_api_key),
+        #         files=[
+        #             ("attachment", (file_name, f_pdf, 'application/pdf')),
+        #             ("attachment", (file_name_xml, f_xml, 'application/xml')),
+        #         ],
+        #         data={
+        #             "from": settings.DEFAULT_FROM_EMAIL,
+        #             "to": [temail],
+        #             "subject": subject,
+        #             "html": html_c,
+        #         },
+        #         timeout=30
+        #     )
 
-        if response.status_code != 200:
-            logging.error(f'Error enviando email: {response.status_code} - {response.text}')
-            raise Exception(f'Error Mailgun: {response.status_code} - {response.text}')
+        # if response.status_code != 200:
+        #     logging.error(f'Error enviando email: {response.status_code} - {response.text}')
+        #     raise Exception(f'Error Mailgun: {response.status_code} - {response.text}')
 
         docobj.enviado_cliente = True
         docobj.enviado_cliente_fecha = datetime.now()
