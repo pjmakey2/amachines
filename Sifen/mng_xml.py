@@ -43,7 +43,14 @@ class MngXml:
     def to_string_xml(self, node, pretty_print=False, xml_declaration=False):
         return etree.tostring(node, pretty_print=pretty_print, encoding='UTF-8', xml_declaration=xml_declaration)
 
+    # def fromstring(self, xml):
+    #     xml = xml.replace("<?xml version='1.0' encoding='UTF-8'?>", '')
+    #     print(xml)
+    #     return etree.fromstring(xml)
+
     def fromstring(self, xml):
+        if isinstance(xml, bytes):
+            xml = xml.decode('utf-8')
         xml = xml.replace("<?xml version='1.0' encoding='UTF-8'?>", '')
         return etree.fromstring(xml)
 

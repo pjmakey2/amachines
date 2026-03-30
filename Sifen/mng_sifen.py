@@ -90,6 +90,146 @@ class MSifen:
 
         return None
 
+    def get_contadores_estado(self, *args, **kwargs) -> dict:
+        """Obtiene contadores de documentos por estado de lote"""
+        base = DocumentHeader.objects.all()
+        pendientes = base.filter(lote_estado__isnull=True).count()
+        recibido = base.filter(lote_estado='RECIBIDO').count()
+        rechazado = base.filter(lote_estado='Rechazado').count()
+        cancelado = base.filter(lote_estado='Cancelado').count()
+        mal_emitido = base.filter(lote_estado='Mal Emitido').count()
+        aprobado = base.filter(lote_estado='Aprobado').count()
+        return {
+            'pendientes': pendientes,
+            'recibido': recibido,
+            'rechazado': rechazado,
+            'cancelado': cancelado,
+            'mal_emitido': mal_emitido,
+            'aprobado': aprobado
+        }
+
+    def _aplicar_tasa(self, valor, factor, dividir):
+        v = Decimal(str(valor))
+        return v / factor if dividir else v * factor
+
+    def convertir_moneda(self, *args, **kwargs):
+        """Convierte un documento entre GS y USD usando la tasa_cambio guardada en el documento."""
+        q: dict = kwargs.get('qdict', {})
+        doc_id = q.get('doc_id')
+        dbcon = q.get('dbcon', 'default')
+        if not doc_id:
+            return {'error': 'Falta doc_id'}, args, kwargs
+        try:
+            docobj = DocumentHeader.objects.using(dbcon).get(pk=doc_id)
+        except DocumentHeader.DoesNotExist:
+            return {'error': 'Documento no encontrado'}, args, kwargs
+        if docobj.ek_estado:
+            return {'error': 'No se puede convertir un documento ya enviado a SIFEN'}, args, kwargs
+        if docobj.lote_estado in ['RECIBIDO', 'PROCESANDO', 'CONCLUIDO']:
+            return {'error': f'No se puede convertir con lote en estado {docobj.lote_estado}'}, args, kwargs
+
+        tasa = Decimal(str(docobj.tasa_cambio))
+        if not tasa or tasa <= 1:
+            return {'error': 'El documento no tiene una tasa de cambio válida para la conversión'}, args, kwargs
+
+        if docobj.doc_moneda == 'GS':
+            dividir = True
+            nueva_moneda = 'USD'
+        elif docobj.doc_moneda == 'USD':
+            dividir = False
+            nueva_moneda = 'GS'
+        else:
+            return {'error': f'Moneda {docobj.doc_moneda} no soportada para conversión'}, args, kwargs
+
+        for det in docobj.documentdetail_set.all():
+            det.precio_unitario_source = self._aplicar_tasa(det.precio_unitario_source, tasa, dividir)
+            det.precio_unitario = self._aplicar_tasa(det.precio_unitario, tasa, dividir)
+            det.precio_unitario_siniva = self._aplicar_tasa(det.precio_unitario_siniva, tasa, dividir)
+            det.exenta = self._aplicar_tasa(det.exenta, tasa, dividir)
+            det.iva_5 = self._aplicar_tasa(det.iva_5, tasa, dividir)
+            det.gravada_5 = self._aplicar_tasa(det.gravada_5, tasa, dividir)
+            det.base_gravada_5 = self._aplicar_tasa(det.base_gravada_5, tasa, dividir)
+            det.iva_10 = self._aplicar_tasa(det.iva_10, tasa, dividir)
+            det.gravada_10 = self._aplicar_tasa(det.gravada_10, tasa, dividir)
+            det.base_gravada_10 = self._aplicar_tasa(det.base_gravada_10, tasa, dividir)
+            det.afecto = self._aplicar_tasa(det.afecto, tasa, dividir)
+            det.descuento = self._aplicar_tasa(det.descuento, tasa, dividir)
+            neto = Decimal(str(det.precio_unitario)) * Decimal(str(det.cantidad)) - Decimal(str(det.descuento))
+            if not det.exenta and det.gravada_10:
+                det.gravada_10 = neto
+                det.base_gravada_10 = neto / Decimal('11') * Decimal('10')
+                det.iva_10 = neto / Decimal('11')
+                det.afecto = neto
+                det.precio_unitario_siniva = det.base_gravada_10 / Decimal(str(det.cantidad))
+            elif not det.exenta and det.gravada_5:
+                det.gravada_5 = neto
+                det.base_gravada_5 = neto / Decimal('21') * Decimal('20')
+                det.iva_5 = neto / Decimal('21')
+                det.afecto = neto
+                det.precio_unitario_siniva = det.base_gravada_5 / Decimal(str(det.cantidad))
+            det.save()
+
+        det_qs = docobj.documentdetail_set.filter(anulado=False)
+        agg = det_qs.aggregate(
+            s_g10=Sum('gravada_10'), s_i10=Sum('iva_10'),
+            s_g5=Sum('gravada_5'), s_i5=Sum('iva_5'),
+            s_exenta=Sum('exenta'), s_desc=Sum('descuento'),
+        )
+        docobj.doc_g10 = agg['s_g10'] or Decimal('0')
+        docobj.doc_i10 = agg['s_i10'] or Decimal('0')
+        docobj.doc_g5 = agg['s_g5'] or Decimal('0')
+        docobj.doc_i5 = agg['s_i5'] or Decimal('0')
+        docobj.doc_exenta = agg['s_exenta'] or Decimal('0')
+        docobj.doc_iva = docobj.doc_i10 + docobj.doc_i5
+        docobj.doc_total = docobj.doc_g10 + docobj.doc_g5 + docobj.doc_exenta
+        docobj.doc_descuento = agg['s_desc'] or Decimal('0')
+        if docobj.doc_total_redondeo:
+            docobj.doc_total_redondeo = self._aplicar_tasa(docobj.doc_total_redondeo, tasa, dividir)
+        docobj.doc_moneda = nueva_moneda
+        docobj.tasa_cambio = tasa if nueva_moneda == 'USD' else Decimal('1')
+        docobj.save()
+        return {'success': f'Documento convertido a {nueva_moneda} con tasa {tasa:,.2f} Gs/USD'}, args, kwargs
+
+    def trace_lote_doc(self, *args, **kwargs) -> dict:
+        """Consulta el estado del lote de un documento por su ID."""
+        from Sifen.rq_soap_handler import SoapSifen
+        q: dict = kwargs.get('qdict', {})
+        doc_id = q.get('doc_id')
+        dbcon = q.get('dbcon', 'default')
+        if not doc_id:
+            return {'error': 'Falta el ID del documento'}
+        try:
+            headerobj = DocumentHeader.objects.using(dbcon).get(pk=doc_id)
+        except DocumentHeader.DoesNotExist:
+            return {'error': 'Documento no encontrado'}
+        if not headerobj.lote:
+            return {'error': 'El documento no tiene lote asignado'}
+        soap_sifen = SoapSifen()
+        rsp = soap_sifen.qr_lote(headerobj.lote)
+        logging.info(f'trace_lote_doc lote={headerobj.lote} rsp={rsp.text}')
+        return {'success': f'Consulta de lote {headerobj.lote} ejecutada', 'lote_estado': headerobj.lote_estado}
+
+    def query_cdc_from_ui(self, *args, **kwargs) -> dict:
+        """Consulta el CDC del documento en SIFEN y actualiza ek_estado si está Aprobado."""
+        from Sifen.rq_soap_handler import SoapSifen
+        q: dict = kwargs.get('qdict', {})
+        doc_id = q.get('doc_id')
+        dbcon = q.get('dbcon', 'default')
+        if not doc_id:
+            return {'error': 'Falta el ID del documento'}
+        try:
+            headerobj = DocumentHeader.objects.using(dbcon).get(pk=doc_id)
+        except DocumentHeader.DoesNotExist:
+            return {'error': 'Documento no encontrado'}
+        if not headerobj.ek_cdc:
+            return {'error': 'El documento no tiene CDC asignado'}
+        soap_sifen = SoapSifen()
+        rsp = soap_sifen.qr_cdc(headerobj.ek_cdc)
+        if rsp.get('exitos'):
+            headerobj.refresh_from_db()
+            return {'success': 'CDC encontrado — documento marcado como Aprobado', 'ek_estado': headerobj.ek_estado}
+        return {'error': rsp.get('error', 'Sin respuesta de SIFEN')}
+
     def send_invoice_from_ui(self, *args: list, **kwargs: dict) -> tuple:
         """
         Send invoice to client from UI

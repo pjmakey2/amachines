@@ -2,18 +2,56 @@
     <div class="documentheader_ui_msgs"></div>
     <div id="t_modal_documentheader"></div>
 
+    <!-- Contadores de estados -->
+    <div class="row mb-2 g-2">
+        <div class="col-auto">
+            <span class="badge bg-warning text-dark fs-6">
+                <i class="mdi mdi-clock-outline"></i> Pendientes: <span id="cnt_pendientes">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-info fs-6">
+                <i class="mdi mdi-cloud-upload"></i> Recibido: <span id="cnt_recibido">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-danger fs-6">
+                <i class="mdi mdi-close-circle"></i> Rechazado: <span id="cnt_rechazado">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-secondary fs-6">
+                <i class="mdi mdi-cancel"></i> Cancelado: <span id="cnt_cancelado">0</span>
+            </span>
+        </div>
+        <div class="col-auto">
+            <span class="badge bg-dark fs-6">
+                <i class="mdi mdi-alert-circle"></i> Mal Emitido: <span id="cnt_mal_emitido">0</span>
+            </span>
+        </div>
+    </div>
+
     <!-- Toolbar -->
-    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
-        <div class="toolbar-buttons">
-            <button id="btn_crear_documentheader" class="btn btn-primary me-2">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="toolbar-buttons d-flex align-items-center gap-2">
+            <button id="btn_crear_documentheader" class="btn btn-primary">
                 <i class="mdi mdi-plus"></i> Facturar
             </button>
-            <button id="btn_borrar_documentheader" class="btn btn-danger me-2">
+            <button id="btn_borrar_documentheader" class="btn btn-danger">
                 <i class="mdi mdi-delete"></i> Borrar
             </button>
             <button id="btn_filtros_avanzados" class="btn btn-info">
                 <i class="mdi mdi-filter"></i> Filtros
             </button>
+            <select id="filtro_lote_estado" class="form-select" style="width: auto;">
+                <option value="">Todos los estados</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Pendiente">Pendiente</option>
+                <option value="RECIBIDO">Recibido</option>
+                <option value="Rechazado">Rechazado</option>
+                <option value="Cancelado">Cancelado</option>
+                <option value="Mal Emitido">Mal Emitido</option>
+            </select>
         </div>
         <div class="toolbar-search">
             <input type="text" id="input_buscar_documentheader" class="form-control am_input" placeholder="Buscar...">
@@ -24,6 +62,28 @@
 </div>
 <script type="text/javascript">
     var gmquery = [];
+    var filtroEstado = '';
+
+    function cargarContadores() {
+        var fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'get_contadores_estado');
+        fdata.append('dbcon', 'default');
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then(function(rsp) {
+            if (rsp.data) {
+                document.getElementById('cnt_pendientes').textContent = rsp.data.pendientes || 0;
+                document.getElementById('cnt_recibido').textContent = rsp.data.recibido || 0;
+                document.getElementById('cnt_rechazado').textContent = rsp.data.rechazado || 0;
+                document.getElementById('cnt_cancelado').textContent = rsp.data.cancelado || 0;
+                document.getElementById('cnt_mal_emitido').textContent = rsp.data.mal_emitido || 0;
+            }
+        });
+    }
+
     documentheader_home_be = function (data, settings) {
         tt = qelem(`#table_documentheader_ui`);
         tt.classList.add('overlay-container');
@@ -31,6 +91,14 @@
         crdata = Object.assign({}, settings.ajax.initquery);
         mquery = [];
         t_guid = settings.ajax.t_guid;
+
+        filtroEstado = document.getElementById('filtro_lote_estado').value;
+        if (filtroEstado === 'Pendiente') {
+            mquery.push({'field': 'lote_estado__isnull', 'value': true});
+        } else if (filtroEstado !== '') {
+            mquery.push({'field': 'lote_estado', 'value': filtroEstado});
+        }
+
         if (gmquery.length > 0) {
             log.info(`Adding global mquery: ${jfy(gmquery)}`);
             mquery = [...mquery, ...gmquery];
@@ -90,7 +158,19 @@
                         icons += `<i title="Reinicializar Lote" class="tr-documentheader-reinit-lote text fs-5 mdi mdi-refresh text-warning me-2"></i>`;
                     }
                     if (rowobj.ek_estado == 'Aprobado' && rowobj.ek_qr_link) {
-                        icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode"></i></a>`;
+                        icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode me-2"></i></a>`;
+                    }
+                    if (rowobj.ek_estado != 'Aprobado') {
+                        if (rowobj.lote) {
+                            icons += `<i title="Consultar Lote" class="tr-doc-trace-lote fs-5 mdi mdi-cloud-search-outline text-warning me-2 cursor-pointer"></i>`;
+                        }
+                        if (rowobj.ek_cdc) {
+                            icons += `<i title="Consultar CDC en SIFEN" class="tr-doc-query-cdc fs-5 mdi mdi-qrcode-scan text-secondary me-2 cursor-pointer"></i>`;
+                        }
+                        if (!rowobj.ek_estado && (rowobj.doc_moneda === 'GS' || rowobj.doc_moneda === 'USD')) {
+                            let title = rowobj.doc_moneda === 'GS' ? 'Convertir a USD' : 'Convertir a GS';
+                            icons += `<i title="${title}" class="tr-doc-convertir-moneda fs-5 mdi mdi-currency-usd text-success me-2 cursor-pointer"></i>`;
+                        }
                     }
                     return icons;
                 }
@@ -148,6 +228,7 @@
                { fdis: true, gre: true, btyp: 'fdb', idx: 'lote_estado', tit: 'lote_estado', cls: 'align-left', dtyp: 'str', hide: true },
                { fdis: true, gre: true, btyp: 'fdb', idx: 'lote_msg', tit: 'lote_msg', cls: 'align-left', dtyp: 'str', hide: true },
                { fdis: true, gre: true, btyp: 'fdb', idx: 'lote', tit: 'lote', cls: 'align-left', dtyp: 'str', hide: true },
+               { fdis: true, gre: true, btyp: 'fdb', idx: 'ek_cdc', tit: 'ek_cdc', cls: 'align-left', dtyp: 'str', hide: true },
                { fdis: true, gre: true, btyp: 'fdb', idx: 'ek_xml_file_signed', tit: 'ek_xml_file_signed', cls: 'align-left', dtyp: 'str', hide: true },
                { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_vencimiento', tit: 'Vencimiento', cls: 'align-left', dtyp: 'date', hide: true },
                { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_total', tit: 'Total', cls: 'align-right', dtyp: 'float', hide: false,
@@ -430,6 +511,81 @@
         });
     })
 
+    $(`#${t_documentheader} tbody`).on('click', '.tr-doc-trace-lote', function() {
+        let rowobj = $(`#${t_documentheader}`).DataTable().row($(this).closest('tr')).data();
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'trace_lote_doc');
+        fdata.append('doc_id', rowobj.id);
+        fdata.append('dbcon', 'default');
+        UiB.MsgInfo(`Consultando lote ${rowobj.lote}...`);
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+            if (d.success) {
+                UiB.MsgSuccess(d.success);
+                $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
+            } else {
+                UiB.MsgError(d.error || 'Error al consultar lote');
+            }
+        });
+    });
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-doc-query-cdc', function() {
+        let rowobj = $(`#${t_documentheader}`).DataTable().row($(this).closest('tr')).data();
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'query_cdc_from_ui');
+        fdata.append('doc_id', rowobj.id);
+        fdata.append('dbcon', 'default');
+        UiB.MsgInfo('Consultando CDC en SIFEN...');
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+            if (d.success) {
+                UiB.MsgSuccess(d.success);
+                $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
+            } else {
+                UiB.MsgError(d.error || 'Error al consultar CDC');
+            }
+        });
+    });
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-doc-convertir-moneda', function() {
+        let rowobj = $(`#${t_documentheader}`).DataTable().row($(this).closest('tr')).data();
+        let confirmMsg = rowobj.doc_moneda === 'GS'
+            ? `¿Convertir documento ${rowobj.doc_numero} de GS a USD? Se usará la tasa de cambio registrada en el documento.`
+            : `¿Convertir documento ${rowobj.doc_numero} de USD a GS? Se usará la tasa de cambio registrada en el documento.`;
+        UiB.MsgSwall({ msg: confirmMsg, ttype: 'info' }).then((result) => {
+            if (!result.isConfirmed) return;
+            let fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'convertir_moneda');
+            fdata.append('doc_id', rowobj.id);
+            fdata.append('dbcon', 'default');
+            UiB.MsgInfo('Convirtiendo documento...');
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+                if (d.success) {
+                    UiB.MsgSuccess(d.success);
+                    $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
+                } else {
+                    UiB.MsgError(d.error || 'Error al convertir moneda');
+                }
+            });
+        });
+    });
+
     qelem('#btn_crear_documentheader').addEventListener('click', function() {
           documentheader_form();
       });
@@ -570,5 +726,11 @@ qelem('#btn_filtros_avanzados').addEventListener('click', function() {
 DrawDocumentHeaderHome = () => {
     $(`#${t_documentheader}`).DataTable().ajax.reload();
 }
+
+document.getElementById('filtro_lote_estado').addEventListener('change', function() {
+    $(`#${t_documentheader}`).DataTable().ajax.reload();
+});
+
+cargarContadores();
 
 </script>

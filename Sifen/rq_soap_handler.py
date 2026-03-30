@@ -1,4 +1,5 @@
 import logging
+import html
 from django.conf import settings
 from urllib.parse import quote
 from django.forms import model_to_dict
@@ -79,7 +80,9 @@ class SoapSifen:
             self._pfx_pass = None
 
         pfx_path, pfx_pass = self._get_certificate_credentials()
-        logging.info(f'set_session: URL={URL}, PFX={pfx_path}')
+        msgl = f'set_session: URL={URL}, PFX={pfx_path}'
+        print(msgl)
+        logging.info(msgl)
         session.mount(URL, Pkcs12Adapter(pkcs12_filename=pfx_path, pkcs12_password=pfx_pass))
         return session
 
@@ -109,8 +112,13 @@ class SoapSifen:
         sxml = soap_schemas_xml.siConsRUC(ruc)
         session = self.set_session()
         rsp = self.send_rq(session, sxml.get('xml').decode('utf-8'), ROUTE_CONSULTA_RUC)
+        if re.search('BIG-IP logout page', rsp.text):
+            if format:
+                return {
+                    'dmsgres': 'Error pagina de SIFEN'
+                }
         if format:
-            rt = self.mxml.fromstring(str(rsp.text).replace('&lt;', '<').replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
+            rt = self.mxml.fromstring(html.unescape(str(rsp.text)).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
             drsp = self.xtodict(rt, 'siConsRUC', clientecod=ruc)
             return drsp
         #self.update_rsp(rsp, sxml.get('sppk'), metodo='siConsRUC', clientecod=clientecod)
@@ -128,7 +136,7 @@ class SoapSifen:
         session = self.set_session()
         rsp = self.send_rq(session, sxml.get('xml').decode('utf-8'), ROUTE_CONSULTA)
         self.update_rsp(rsp, sxml.get('sppk'), cdc=cdc, metodo='SiConsDE')
-        rt = self.mxml.fromstring(str(rsp.text).replace('&lt;', '<').replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
+        rt = self.mxml.fromstring(html.unescape(str(rsp.text)).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
         drsp = self.xtodict(rt, 'qr_cdc')
         if drsp.get('dmsgres') == 'CDC encontrado':
             return {'exitos': drsp.get('dmsgres')}
@@ -236,7 +244,7 @@ class SoapSifen:
     def update_rsp(self, rsp, sppk, cdc=0, metodo='ND', clientecod=None, ppks=[]):
         """This gonna be used to update the soap table with the response that we got from the SET server"""
         try:
-            rt = self.mxml.fromstring(str(rsp.text).replace('&lt;', '<').replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
+            rt = self.mxml.fromstring(html.unescape(str(rsp.text)).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
         except Exception as e:
             #print(e)
             logging.info(e)
