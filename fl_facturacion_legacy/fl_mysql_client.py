@@ -278,7 +278,7 @@ class FLMySQLClient:
                 c.sucursal
             FROM facturas f
             LEFT JOIN clientes c ON f.clientecodigo = c.clientecodigo
-            WHERE f.estado = 2 AND f.facturaemitida = 2 AND f.fecha >= '2026-03-29'
+            WHERE f.estado = 2 AND f.facturaemitida = 2 AND f.fecha >= '2026-03-31'
         """
         params = []
 
@@ -335,7 +335,7 @@ class FLMySQLClient:
                 WHERE (f.acuse_id = %s OR CAST(f.acuse_id AS CHAR) LIKE %s)
                 AND f.estado = 2
                 AND f.facturaemitida = 2
-                AND f.fecha >= '2026-03-29'
+                AND f.fecha >= '2026-03-31'
                 {suc_sql}
                 ORDER BY f.acuse_id DESC
                 LIMIT {limit}
@@ -373,7 +373,7 @@ class FLMySQLClient:
                 WHERE {condicion_where}
                 AND f.estado = 2
                 AND f.facturaemitida = 2
-                AND f.fecha >= '2026-03-29'
+                AND f.fecha >= '2026-03-31'
                 {suc_sql}
                 ORDER BY f.acuse_id DESC
                 LIMIT {limit}
