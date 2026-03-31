@@ -900,7 +900,7 @@ class MFLFacturacion:
 
             uc_fields = {
                 'doc_tipo': 'FE',  # Factura Electrónica
-                'doc_moneda': 'PYG',
+                'doc_moneda': 'GS',
                 'doc_establecimiento': establecimiento,
                 'pdv_ruc': ruc_cliente,
                 'pdv_ruc_dv': ruc_dv,
@@ -915,10 +915,10 @@ class MFLFacturacion:
                 'pdv_email': correo_frontend or factura.get('email') or 'nomail@nomail.com',
                 'pdv_pais_cod': 'PRY',
                 'pdv_pais': 'Paraguay',
-                'pdv_dpto_cod': 1,
-                'pdv_dpto_nombre': 'CAPITAL',
-                'pdv_ciudad_cod': 1,
-                'pdv_ciudad_nombre': 'ASUNCION',
+                'pdv_dpto_cod': 0,
+                #'pdv_dpto_nombre': 'CAPITAL',
+                'pdv_ciudad_cod': 0,
+                #'pdv_ciudad_nombre': 'ASUNCION',
                 'doc_tipo_ope': 2,  # Prestación de servicios
                 'doc_tipo_ope_desc': 'Prestación de servicios',
                 'doc_cre_tipo_cod': doc_cre_tipo_cod,
