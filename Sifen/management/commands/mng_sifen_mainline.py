@@ -63,7 +63,7 @@ class Command(BaseCommand):
 
         if options['track_lotes']:
             self.stdout.write(self.style.SUCCESS('Tracking lotes for non-Aprobado documents...'))
-            dobjs = DocumentHeader.objects.exclude(ek_estado='Aprobado').exclude(lote__isnull=True).exclude(lote='')
+            dobjs = DocumentHeader.objects.exclude(ek_estado='Aprobado').exclude(lote=0)
             count = dobjs.count()
             if count == 0:
                 self.stdout.write(self.style.WARNING('No documents with pending lotes found'))
