@@ -62,14 +62,25 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('Tasks are running asynchronously. Check Celery logs for progress.'))
 
         if options['track_lotes']:
-            fdate = options.get('date')
-            if not fdate:
-                self.stdout.write(self.style.ERROR('--date is required for track_lotes (YYYY-MM-DD)'))
-                return
-            self.stdout.write(self.style.SUCCESS(f'Tracking lotes from {fdate}...'))
-            eser = ekuatia_serials.Eserial()
-            result = eser.track_lotes(fdate=fdate)
-            self.stdout.write(self.style.SUCCESS(f"Track lotes completed: {result}"))
+            self.stdout.write(self.style.SUCCESS('Tracking lotes for non-Aprobado documents...'))
+            dobjs = DocumentHeader.objects.exclude(ek_estado='Aprobado').exclude(lote__isnull=True).exclude(lote='')
+            count = dobjs.count()
+            if count == 0:
+                self.stdout.write(self.style.WARNING('No documents with pending lotes found'))
+            else:
+                self.stdout.write(f'  - Found {count} documents to track')
+                msifen = mng_sifen.MSifen()
+                for docobj in tqdm(dobjs, desc='Tracking lotes'):
+                    try:
+                        result = msifen.trace_lote_doc(qdict={'doc_id': str(docobj.pk), 'dbcon': 'default'})
+                        rdata = result[0] if isinstance(result, tuple) else result
+                        if 'error' in rdata:
+                            self.stdout.write(self.style.WARNING(f'  - Doc {docobj.doc_numero} lote={docobj.lote}: {rdata["error"]}'))
+                        else:
+                            self.stdout.write(f'  - Doc {docobj.doc_numero} lote={docobj.lote}: {rdata.get("success", "ok")}')
+                    except Exception as e:
+                        self.stdout.write(self.style.ERROR(f'  - Doc {docobj.doc_numero}: Error - {str(e)}'))
+            self.stdout.write(self.style.SUCCESS('Track lotes completed'))
 
         if options['send_pending_docs']:
             self.stdout.write(self.style.SUCCESS('Sending pending documents to Sifen...'))
@@ -103,38 +114,31 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'Sent {count} documents to Sifen'))
 
         if options['send_email']:
-            fdate = options.get('date')
-            if not fdate:
-                self.stdout.write(self.style.ERROR('--date is required for send_email (YYYY-MM-DD)'))
-                return
-            self.stdout.write(self.style.SUCCESS(f'Sending invoice emails for documents from {fdate}...'))
-            dobjs = DocumentHeader.objects.filter(
-                doc_fecha__gte=fdate,
-                enviado_cliente=False,
-                ek_estado='Aprobado'
-            )
+            self.stdout.write(self.style.SUCCESS('Sending invoice emails to pending documents...'))
+            dobjs = DocumentHeader.objects.filter(enviado_cliente=False)
             count = dobjs.count()
             if count == 0:
                 self.stdout.write(self.style.WARNING('No pending emails to send'))
-                return
-            self.stdout.write(f'  - Found {count} documents to email')
-            msifen = mng_sifen.MSifen()
-            for docobj in tqdm(dobjs, desc='Sending emails'):
-                try:
-                    qdict = QueryDict(mutable=True)
-                    qdict.update({
-                        'docpk': str(docobj.pk),
-                        'dbcon': 'default',
-                        'from_console': 'true'
-                    })
-                    result = msifen.send_invoice(qdict=qdict)
-                    if 'error' in result[0] if isinstance(result, tuple) else 'error' in result:
-                        self.stdout.write(self.style.WARNING(f'  - Doc {docobj.doc_numero}: {result}'))
-                    else:
-                        self.stdout.write(self.style.SUCCESS(f'  - Doc {docobj.doc_numero}: Email sent'))
-                except Exception as e:
-                    self.stdout.write(self.style.ERROR(f'  - Doc {docobj.doc_numero}: Error - {str(e)}'))
-            self.stdout.write(self.style.SUCCESS(f'Email sending completed'))
+            else:
+                self.stdout.write(f'  - Found {count} documents to email')
+                msifen = mng_sifen.MSifen()
+                for docobj in tqdm(dobjs, desc='Sending emails'):
+                    try:
+                        qdict = QueryDict(mutable=True)
+                        qdict.update({
+                            'docpk': str(docobj.pk),
+                            'dbcon': 'default',
+                            'from_console': 'true'
+                        })
+                        result = msifen.send_invoice(qdict=qdict)
+                        rdata = result[0] if isinstance(result, tuple) else result
+                        if 'error' in rdata:
+                            self.stdout.write(self.style.WARNING(f'  - Doc {docobj.doc_numero}: {rdata["error"]}'))
+                        else:
+                            self.stdout.write(self.style.SUCCESS(f'  - Doc {docobj.doc_numero}: Email sent'))
+                    except Exception as e:
+                        self.stdout.write(self.style.ERROR(f'  - Doc {docobj.doc_numero}: Error - {str(e)}'))
+            self.stdout.write(self.style.SUCCESS('Email sending completed'))
 
         if options['create_timbrado']:
             eser = ekuatia_serials.Eserial()
