@@ -2358,7 +2358,7 @@ class MSifen:
         if (uc_fields.get('pdv_ruc_dv') is None) or (uc_fields.get('pdv_ruc_dv') == ''):
             uc_fields['pdv_tipocontribuyente'] = 1
             uc_fields['pdv_es_contribuyente'] = False
-        uc_fields['pdv_type_business'] = uc_fields.get('pdv_type_business', 'B2B')
+        uc_fields['pdv_type_business'] = uc_fields.get('pdv_type_business', 'B2C')
         if not pk:
             uc_fields.pop('doc_numero', None)
         # Operation type defaults
