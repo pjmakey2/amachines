@@ -941,18 +941,22 @@ class MFLFacturacion:
             cheque = float(factura.get('montochkgs', 0) or 0) + float(factura.get('montochkusd', 0) or 0) * tasa
 
             # Seleccionar el tipo de pago principal
-            if tarjeta_credito >= max(efectivo, tarjeta_debito, cheque):
-                uc_fields['doc_tipo_pago_cod'] = 3  # Tarjeta de crédito
-                uc_fields['doc_tipo_pago'] = 'Tarjeta de crédito'
-            elif tarjeta_debito >= max(efectivo, cheque):
-                uc_fields['doc_tipo_pago_cod'] = 4  # Tarjeta de débito
-                uc_fields['doc_tipo_pago'] = 'Tarjeta de débito'
-            elif cheque >= efectivo:
-                uc_fields['doc_tipo_pago_cod'] = 2  # Cheque
-                uc_fields['doc_tipo_pago'] = 'Cheque'
-            else:
-                uc_fields['doc_tipo_pago_cod'] = 1  # Efectivo
-                uc_fields['doc_tipo_pago'] = 'Efectivo'
+            # if tarjeta_credito >= max(efectivo, tarjeta_debito, cheque):
+            #     uc_fields['doc_tipo_pago_cod'] = 3  # Tarjeta de crédito
+            #     uc_fields['doc_tipo_pago'] = 'Tarjeta de crédito'
+            # elif tarjeta_debito >= max(efectivo, cheque):
+            #     uc_fields['doc_tipo_pago_cod'] = 4  # Tarjeta de débito
+            #     uc_fields['doc_tipo_pago'] = 'Tarjeta de débito'
+            # elif cheque >= efectivo:
+            #     uc_fields['doc_tipo_pago_cod'] = 2  # Cheque
+            #     uc_fields['doc_tipo_pago'] = 'Cheque'
+            # else:
+            #     uc_fields['doc_tipo_pago_cod'] = 1  # Efectivo
+            #     uc_fields['doc_tipo_pago'] = 'Efectivo'
+
+            #Asumir siempre efectivo, el cajer@ no carga los datos de la tarjeta
+            uc_fields['doc_tipo_pago_cod'] = 1  # Efectivo
+            uc_fields['doc_tipo_pago'] = 'Efectivo'
 
             # 3. Crear/Actualizar registro en Clientes (Sifen) con anclaje_cliente
             try:
