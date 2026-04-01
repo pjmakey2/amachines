@@ -360,7 +360,7 @@ class DocumentHeader(models.Model):
     pdv_pais = models.CharField(max_length=10, null=True)
     pdv_tipocontribuyente = models.CharField(max_length=120, null=True)
     pdv_es_contribuyente = models.BooleanField(default=True)
-    pdv_type_business = models.CharField(max_length=120, null=True, default='B2B')
+    pdv_type_business = models.CharField(max_length=120, null=True, default='B2C')
     pdv_codigo = models.BigIntegerField(default=0) 
     pdv_ruc = models.CharField(max_length=120)
     pdv_ruc_dv = models.IntegerField(default=0)
