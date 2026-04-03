@@ -192,7 +192,7 @@ class SoapSifen:
                         )
         return rsp
 
-    def cancelar_xde(self, cdc, motivo):
+    def cancelar_xde(self, doc_fecha, cdc, motivo):
         now = datetime.now()
         tnow = now.strftime('%Y-%m-%d %H:%M:%S')
 
@@ -210,7 +210,7 @@ class SoapSifen:
         except Business.DoesNotExist:
             logging.warning(f'cancelar_xde: Business con RUC {ruc_emisor} no encontrado, usando certificado por defecto')
 
-        sxml = soap_schemas_xml.CancelacionDeEvento(cdc, motivo, pem_path=pem_path, key_path=key_path)
+        sxml = soap_schemas_xml.CancelacionDeEvento(doc_fecha, cdc, motivo, pem_path=pem_path, key_path=key_path)
         session = self.set_session()
         rsp = self.send_rq(session, 
                            sxml.get('xml').decode('utf-8'), 

@@ -179,7 +179,7 @@ def SiResultLoteDE(lote):
     mxml.save_xml(ele, fname)
     return {'xml': mxml.to_string_xml(ele), 'sppk': sppk }
 
-def CancelacionDeEvento(cdc, motivo, pem_path=None, key_path=None):
+def CancelacionDeEvento(doc_fecha, cdc, motivo, pem_path=None, key_path=None):
     """
     <rEnviEventoDe
         xmlns="http://ekuatia.set.gov.py/sifen/xsd"
@@ -199,7 +199,7 @@ def CancelacionDeEvento(cdc, motivo, pem_path=None, key_path=None):
     ROOTFOLDER = set_soap_folder()
     attr_qname = lxml.etree.QName("http://www.w3.org/2001/XMLSchema-instance", "schemaLocation")
     now = datetime.now()
-    tnow = now.strftime('%Y-%m-%dT%H:%M:%S')
+    tnow = now.strftime('{}T%H:%M:%S'.format(doc_fecha))
     esign = ESigner()
     ele, header, sbody = mxml.get_soap_schema()
     rEnviEventoDe = mxml.create_SubElement(

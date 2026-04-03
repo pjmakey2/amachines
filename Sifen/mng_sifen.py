@@ -208,7 +208,7 @@ class MSifen:
         if not headerobj.ek_cdc:
             return {'error': 'El documento no tiene CDC asignado'}
         soap_sifen = SoapSifen()
-        rsp = soap_sifen.cancelar_xde(headerobj.ek_cdc, motivo)
+        rsp = soap_sifen.cancelar_xde(headerobj.doc_fecha.strftime('%Y-%m-%d'), headerobj.ek_cdc, motivo)
         logging.info(f'cancelar_doc cdc={headerobj.ek_cdc} rsp={rsp.text}')
         return {'success': f'Cancelación enviada para el documento {headerobj.doc_numero}'}
 
