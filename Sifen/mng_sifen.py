@@ -210,6 +210,9 @@ class MSifen:
         soap_sifen = SoapSifen()
         rsp = soap_sifen.cancelar_xde(headerobj.doc_fecha.strftime('%Y-%m-%d'), headerobj.ek_cdc, motivo)
         logging.info(f'cancelar_doc cdc={headerobj.ek_cdc} rsp={rsp.text}')
+        if 'Evento registrado correctamente' in rsp.text:
+            DocumentHeader.objects.using(dbcon).filter(pk=doc_id).update(ek_estado='Cancelado')
+            return {'success': f'Documento {headerobj.doc_numero} cancelado correctamente en SIFEN'}
         return {'success': f'Cancelación enviada para el documento {headerobj.doc_numero}'}
 
     def trace_lote_doc(self, *args, **kwargs) -> dict:
