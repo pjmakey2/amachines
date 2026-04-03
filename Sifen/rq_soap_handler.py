@@ -195,7 +195,22 @@ class SoapSifen:
     def cancelar_xde(self, cdc, motivo):
         now = datetime.now()
         tnow = now.strftime('%Y-%m-%d %H:%M:%S')
-        sxml = soap_schemas_xml.CancelacionDeEvento(cdc, motivo)
+
+        # Obtener certificado activo del negocio emisor (RUC en posiciones 3-10 del CDC)
+        pem_path = None
+        key_path = None
+        try:
+            ruc_emisor = cdc[2:10].lstrip('0') or cdc[2:10]
+            businessobj = Business.objects.get(ruc=ruc_emisor)
+            cert_obj = certificate_manager.get_active_certificate_for_business(businessobj)
+            if cert_obj and cert_obj.pem_file and cert_obj.key_file:
+                pem_path = cert_obj.pem_file.path
+                key_path = cert_obj.key_file.path
+                logging.info(f'cancelar_xde: usando certificado {cert_obj.nombre} para negocio {businessobj.name}')
+        except Business.DoesNotExist:
+            logging.warning(f'cancelar_xde: Business con RUC {ruc_emisor} no encontrado, usando certificado por defecto')
+
+        sxml = soap_schemas_xml.CancelacionDeEvento(cdc, motivo, pem_path=pem_path, key_path=key_path)
         session = self.set_session()
         rsp = self.send_rq(session, 
                            sxml.get('xml').decode('utf-8'), 

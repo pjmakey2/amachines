@@ -179,7 +179,7 @@ def SiResultLoteDE(lote):
     mxml.save_xml(ele, fname)
     return {'xml': mxml.to_string_xml(ele), 'sppk': sppk }
 
-def CancelacionDeEvento(cdc, motivo):
+def CancelacionDeEvento(cdc, motivo, pem_path=None, key_path=None):
     """
     <rEnviEventoDe
         xmlns="http://ekuatia.set.gov.py/sifen/xsd"
@@ -234,14 +234,14 @@ def CancelacionDeEvento(cdc, motivo):
     #did.text = str(1)
     reve.attrib['Id'] = str(sppk)
     fname = '{}/EventoDeCancelacion{}_soap.xml'.format(ROOTFOLDER, sppk)
-    signature = esign.dynamically_sign(rEnviEventoDe, str(sppk))
+    signature = esign.dynamically_sign(rEnviEventoDe, str(sppk), pem_path=pem_path, key_path=key_path)
     rGesEve.append(signature)
     mxml.save_xml(ele, fname)
     print(mxml.to_string_xml(ele, pretty_print=True))
     return {'xml': mxml.to_string_xml(ele), 'sppk': sppk }
 
 
-def InutilizacionDeEvento(timbrado, esta, punex, nin, nfin, dtipo, motivo):
+def InutilizacionDeEvento(timbrado, esta, punex, nin, nfin, dtipo, motivo, pem_path=None, key_path=None):
     """
     <rEnviEventoDe
         xmlns="http://ekuatia.set.gov.py/sifen/xsd"
@@ -301,7 +301,7 @@ def InutilizacionDeEvento(timbrado, esta, punex, nin, nfin, dtipo, motivo):
     #did.text = str(1)
     reve.attrib['Id'] = str(sppk)
     fname = '{}/EventoDeInutilizacion{}_soap.xml'.format(ROOTFOLDER, sppk)
-    signature = esign.dynamically_sign(rEnviEventoDe, str(sppk))
+    signature = esign.dynamically_sign(rEnviEventoDe, str(sppk), pem_path=pem_path, key_path=key_path)
     rGesEve.append(signature)
     mxml.save_xml(ele, fname)
     print(mxml.to_string_xml(ele, pretty_print=True))

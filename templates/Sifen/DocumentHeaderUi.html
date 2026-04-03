@@ -161,7 +161,11 @@
                         icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode me-2"></i></a>`;
                     }
                     if (rowobj.ek_cdc) {
-                        icons += `<i title="Cancelar documento" class="tr-doc-cancelar fs-5 mdi mdi-cancel text-danger me-2 cursor-pointer"></i>`;
+                        let docFecha = moment(rowobj.doc_fecha);
+                        let diffHoras = moment().diff(docFecha, 'hours');
+                        if (diffHoras <= 48) {
+                            icons += `<i title="Cancelar documento" class="tr-doc-cancelar fs-5 mdi mdi-cancel text-danger me-2 cursor-pointer"></i>`;
+                        }
                     }
                     if (rowobj.ek_estado != 'Aprobado') {
                         if (rowobj.lote) {
