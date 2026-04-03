@@ -190,6 +190,28 @@ class MSifen:
         docobj.save()
         return {'success': f'Documento convertido a {nueva_moneda} con tasa {tasa:,.2f} Gs/USD'}, args, kwargs
 
+    def cancelar_doc(self, *args, **kwargs) -> dict:
+        """Cancela un documento electrónico en SIFEN via evento de cancelación."""
+        from Sifen.rq_soap_handler import SoapSifen
+        q: dict = kwargs.get('qdict', {})
+        doc_id = q.get('doc_id')
+        motivo = q.get('motivo', '').strip()
+        dbcon = q.get('dbcon', 'default')
+        if not doc_id:
+            return {'error': 'Falta el ID del documento'}
+        if not motivo:
+            return {'error': 'El motivo de cancelación es obligatorio'}
+        try:
+            headerobj = DocumentHeader.objects.using(dbcon).get(pk=doc_id)
+        except DocumentHeader.DoesNotExist:
+            return {'error': 'Documento no encontrado'}
+        if not headerobj.ek_cdc:
+            return {'error': 'El documento no tiene CDC asignado'}
+        soap_sifen = SoapSifen()
+        rsp = soap_sifen.cancelar_xde(headerobj.ek_cdc, motivo)
+        logging.info(f'cancelar_doc cdc={headerobj.ek_cdc} rsp={rsp.text}')
+        return {'success': f'Cancelación enviada para el documento {headerobj.doc_numero}'}
+
     def trace_lote_doc(self, *args, **kwargs) -> dict:
         """Consulta el estado del lote de un documento por su ID."""
         from Sifen.rq_soap_handler import SoapSifen

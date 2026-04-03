@@ -160,6 +160,9 @@
                     if (rowobj.ek_estado == 'Aprobado' && rowobj.ek_qr_link) {
                         icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode me-2"></i></a>`;
                     }
+                    if (rowobj.ek_cdc) {
+                        icons += `<i title="Cancelar documento" class="tr-doc-cancelar fs-5 mdi mdi-cancel text-danger me-2 cursor-pointer"></i>`;
+                    }
                     if (rowobj.ek_estado != 'Aprobado') {
                         if (rowobj.lote) {
                             icons += `<i title="Consultar Lote" class="tr-doc-trace-lote fs-5 mdi mdi-cloud-search-outline text-warning me-2 cursor-pointer"></i>`;
@@ -581,6 +584,48 @@
                     $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
                 } else {
                     UiB.MsgError(d.error || 'Error al convertir moneda');
+                }
+            });
+        });
+    });
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-doc-cancelar', function() {
+        let rowobj = $(`#${t_documentheader}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({
+            title: 'Cancelar documento',
+            html: `Documento <strong>${rowobj.doc_numero}</strong><br>CDC: <small>${rowobj.ek_cdc}</small>`,
+            input: 'textarea',
+            inputLabel: 'Motivo de cancelación',
+            inputPlaceholder: 'Ingrese el motivo...',
+            inputAttributes: { maxlength: 250 },
+            inputValidator: (value) => {
+                if (!value || value.trim() === '') return 'El motivo es obligatorio';
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Cancelar documento',
+            cancelButtonText: 'Volver',
+            confirmButtonColor: '#dc3545',
+            icon: 'warning'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'cancelar_doc');
+            fdata.append('doc_id', rowobj.id);
+            fdata.append('motivo', result.value.trim());
+            fdata.append('dbcon', 'default');
+            UiB.MsgInfo('Enviando cancelación a SIFEN...');
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+                if (d.success) {
+                    UiB.MsgSuccess(d.success);
+                    $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
+                } else {
+                    UiB.MsgError(d.error || 'Error al cancelar documento');
                 }
             });
         });
