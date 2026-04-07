@@ -169,6 +169,9 @@
                             icons += `<i title="Cancelar documento" class="tr-doc-cancelar fs-5 mdi mdi-cancel text-danger me-2 cursor-pointer"></i>`;
                         }
                     }
+                    if (rowobj.pdv_innominado && rowobj.ek_cdc && rowobj.ek_estado == 'Aprobado') {
+                        icons += `<i title="Nominar documento" class="tr-doc-nominar fs-5 mdi mdi-account-plus text-info me-2 cursor-pointer"></i>`;
+                    }
                     if (rowobj.ek_estado != 'Aprobado') {
                         if (rowobj.lote) {
                             icons += `<i title="Consultar Lote" class="tr-doc-trace-lote fs-5 mdi mdi-cloud-search-outline text-warning me-2 cursor-pointer"></i>`;
@@ -632,6 +635,155 @@
                     $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
                 } else {
                     UiB.MsgError(d.error || 'Error al cancelar documento');
+                }
+            });
+        });
+    });
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-doc-nominar', function() {
+        let rowobj = $(`#${t_documentheader}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({
+            title: 'Nominar documento',
+            html: `
+                <p class="text-muted small mb-3">Documento <strong>${rowobj.doc_numero}</strong> — CDC: <small>${rowobj.ek_cdc}</small></p>
+                <div class="text-start">
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Naturaleza del Receptor</label>
+                        <select id="nom_nat_rec" class="form-select form-select-sm">
+                            <option value="1">Contribuyente</option>
+                            <option value="2">No Contribuyente</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Tipo de Operación</label>
+                        <select id="nom_tipo_ope" class="form-select form-select-sm">
+                            <option value="2">B2C (Negocio a consumidor)</option>
+                            <option value="1">B2B (Negocio a negocio)</option>
+                        </select>
+                    </div>
+                    <div id="nom_contrib_fields" class="mb-2" style="display:none;">
+                        <label class="form-label fw-semibold">Tipo Contribuyente</label>
+                        <select id="nom_tipo_cont" class="form-select form-select-sm">
+                            <option value="1">Persona Física</option>
+                            <option value="2">Persona Jurídica</option>
+                        </select>
+                    </div>
+                    <div id="nom_ruc_fields" class="row g-2 mb-2" style="display:none;">
+                        <div class="col-9">
+                            <label class="form-label fw-semibold">RUC</label>
+                            <input id="nom_ruc" type="text" class="form-control form-control-sm" placeholder="RUC sin DV">
+                        </div>
+                        <div class="col-3">
+                            <label class="form-label fw-semibold">DV</label>
+                            <input id="nom_dv" type="text" class="form-control form-control-sm" placeholder="DV">
+                        </div>
+                    </div>
+                    <div id="nom_id_fields" class="mb-2">
+                        <label class="form-label fw-semibold">Tipo de Documento de Identidad</label>
+                        <select id="nom_tip_id_rec" class="form-select form-select-sm">
+                            <option value="1">Cédula paraguaya</option>
+                            <option value="2">Pasaporte</option>
+                            <option value="3">Cédula extranjera</option>
+                            <option value="4">Carnet de residencia</option>
+                            <option value="5">Tarjeta Diplomática de exoneración fiscal</option>
+                            <option value="9">Otro</option>
+                        </select>
+                    </div>
+                    <div id="nom_id_num_field" class="mb-2">
+                        <label class="form-label fw-semibold">Número de Documento</label>
+                        <input id="nom_num_id_rec" type="text" class="form-control form-control-sm" placeholder="Número de cédula / pasaporte">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Nombre / Razón Social</label>
+                        <input id="nom_nombre" type="text" class="form-control form-control-sm" placeholder="Nombre completo (mín. 4 caracteres)">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold">Motivo</label>
+                        <input id="nom_motivo" type="text" class="form-control form-control-sm" value="Se asigna el receptor correcto del DTE">
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Enviar Nominación',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#0dcaf0',
+            icon: 'info',
+            width: '600px',
+            didOpen: () => {
+                const natRec = document.getElementById('nom_nat_rec');
+                const contribFields = document.getElementById('nom_contrib_fields');
+                const rucFields = document.getElementById('nom_ruc_fields');
+                const idFields = document.getElementById('nom_id_fields');
+                const idNumField = document.getElementById('nom_id_num_field');
+                const tipoOpe = document.getElementById('nom_tipo_ope');
+                function toggleFields() {
+                    let isContrib = natRec.value === '1';
+                    contribFields.style.display = isContrib ? '' : 'none';
+                    rucFields.style.display = isContrib ? '' : 'none';
+                    idFields.style.display = isContrib ? 'none' : '';
+                    idNumField.style.display = isContrib ? 'none' : '';
+                    tipoOpe.value = isContrib ? '1' : '2';
+                }
+                toggleFields();
+                natRec.addEventListener('change', toggleFields);
+            },
+            preConfirm: () => {
+                let nombre = document.getElementById('nom_nombre').value.trim();
+                let motivo = document.getElementById('nom_motivo').value.trim();
+                let natRec = parseInt(document.getElementById('nom_nat_rec').value);
+                let tipoOpe = parseInt(document.getElementById('nom_tipo_ope').value);
+                let tipoCont = parseInt(document.getElementById('nom_tipo_cont').value);
+                let ruc = document.getElementById('nom_ruc').value.trim();
+                let dv = document.getElementById('nom_dv').value.trim();
+                let tipIdRec = document.getElementById('nom_tip_id_rec').value;
+                let numIdRec = document.getElementById('nom_num_id_rec').value.trim();
+                if (!nombre || nombre.length < 4) {
+                    Swal.showValidationMessage('El nombre debe tener al menos 4 caracteres');
+                    return false;
+                }
+                if (!motivo || motivo.length < 5) {
+                    Swal.showValidationMessage('El motivo debe tener al menos 5 caracteres');
+                    return false;
+                }
+                if (natRec === 1 && !ruc) {
+                    Swal.showValidationMessage('El RUC es obligatorio para contribuyentes');
+                    return false;
+                }
+                if (natRec === 2 && !numIdRec) {
+                    Swal.showValidationMessage('El número de documento de identidad es obligatorio');
+                    return false;
+                }
+                return { nombre, motivo, natRec, tipoOpe, tipoCont, ruc, dv, tipIdRec, numIdRec };
+            }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let v = result.value;
+            let fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'nominar_doc');
+            fdata.append('doc_id', rowobj.id);
+            fdata.append('nombre', v.nombre);
+            fdata.append('motivo', v.motivo);
+            fdata.append('nat_rec', v.natRec);
+            fdata.append('tipo_ope', v.tipoOpe);
+            fdata.append('tipo_cont', v.tipoCont);
+            fdata.append('ruc', v.ruc);
+            fdata.append('dv', v.dv);
+            fdata.append('tip_id_rec', v.tipIdRec);
+            fdata.append('num_id_rec', v.numIdRec);
+            fdata.append('dbcon', 'default');
+            UiB.MsgInfo('Enviando nominación a SIFEN...');
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+                if (d.success) {
+                    UiB.MsgSuccess(d.success);
+                    $(`#${t_documentheader}`).DataTable().ajax.reload(null, false);
+                } else {
+                    UiB.MsgError(d.error || 'Error al nominar documento');
                 }
             });
         });

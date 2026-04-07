@@ -192,6 +192,59 @@ class MSifen:
         docobj.save()
         return {'success': f'Documento convertido a {nueva_moneda} con tasa {tasa:,.2f} Gs/USD'}, args, kwargs
 
+    def nominar_doc(self, *args, **kwargs) -> dict:
+        """Envía el evento de nominación a SIFEN para un documento innominado."""
+        from Sifen.rq_soap_handler import SoapSifen
+        q: dict = kwargs.get('qdict', {})
+        doc_id = q.get('doc_id')
+        dbcon = q.get('dbcon', 'default')
+        ruc = q.get('ruc', '').strip()
+        dv = q.get('dv', '').strip()
+        nombre = q.get('nombre', '').strip()
+        motivo = q.get('motivo', 'Se asigna el receptor correcto del DTE').strip()
+        nat_rec = int(q.get('nat_rec', 1))
+        tipo_ope = int(q.get('tipo_ope', 2))
+        tipo_cont = int(q.get('tipo_cont', 1))
+        tip_id_rec = q.get('tip_id_rec', '1').strip()
+        num_id_rec = q.get('num_id_rec', '').strip()
+
+        if not doc_id:
+            return {'error': 'Falta el ID del documento'}
+        if not nombre:
+            return {'error': 'El nombre del receptor es obligatorio'}
+        if nat_rec == 1 and not ruc:
+            return {'error': 'El RUC es obligatorio para contribuyentes'}
+        if nat_rec == 2 and not num_id_rec:
+            return {'error': 'El número de documento de identidad es obligatorio para no contribuyentes'}
+
+        try:
+            headerobj = DocumentHeader.objects.using(dbcon).get(pk=doc_id)
+        except DocumentHeader.DoesNotExist:
+            return {'error': 'Documento no encontrado'}
+
+        if not headerobj.pdv_innominado:
+            return {'error': 'El documento no es innominado'}
+        if not headerobj.ek_cdc:
+            return {'error': 'El documento no tiene CDC asignado'}
+
+        doc_fecha = headerobj.doc_fecha.strftime('%Y-%m-%d')
+        soap_sifen = SoapSifen()
+        rsp = soap_sifen.nominar_xde(
+            doc_fecha, headerobj.ek_cdc, motivo, ruc, dv, nombre,
+            nat_rec=nat_rec, tipo_ope=tipo_ope, tipo_cont=tipo_cont,
+            tip_id_rec=tip_id_rec, num_id_rec=num_id_rec
+        )
+        logging.info(f'nominar_doc cdc={headerobj.ek_cdc} rsp={rsp.text}')
+
+        if 'Aprobado' in rsp.text or 'Evento registrado correctamente' in rsp.text:
+            update_fields = {'pdv_innominado': False, 'pdv_nombrefactura': nombre}
+            if nat_rec == 1:
+                update_fields['pdv_ruc'] = ruc
+                update_fields['pdv_ruc_dv'] = dv if dv else None
+            DocumentHeader.objects.using(dbcon).filter(pk=doc_id).update(**update_fields)
+            return {'success': f'Documento {headerobj.doc_numero} nominado correctamente'}
+        return {'success': f'Nominación enviada para el documento {headerobj.doc_numero}'}
+
     def cancelar_doc(self, *args, **kwargs) -> dict:
         """Cancela un documento electrónico en SIFEN via evento de cancelación."""
         
@@ -2355,8 +2408,10 @@ class MSifen:
 
         if uc_fields.get('pdv_tipocontribuyente') == '3':
             uc_fields['pdv_es_contribuyente'] = False
-        if uc_fields.get('pdv_innominado'):
+        if uc_fields.get('pdv_innominado') == '1':
             uc_fields['pdv_innominado'] = True
+        else:
+            uc_fields['pdv_innominado'] = False
             
         #uc_fields['doc_op'] = 'VTA'
         uc_fields['doc_estado'] = 'CREADO'

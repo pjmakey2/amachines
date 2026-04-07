@@ -156,6 +156,15 @@
                     <label>Tipo Contrib.</label>
                 </div>
             </div>
+            <div class="col-md-2">
+                <div class="form-floating form-floating-sm">
+                    <select name="pdv_innominado" id="sel_pdv_innominado" class="form-select">
+                        <option value="0" {% if not mobj or not mobj.pdv_innominado %}selected{% endif %}>No</option>
+                        <option value="1" {% if mobj and mobj.pdv_innominado %}selected{% endif %}>Sí</option>
+                    </select>
+                    <label>Innominado</label>
+                </div>
+            </div>
             <div class="col-md-3">
                 <div class="form-floating form-floating-sm">
                     <select required name="pdv_type_business" class="form-select">
@@ -1303,6 +1312,12 @@
             $('#doc_vencimiento_container').removeClass('d-none');
         } else {
             $('#doc_vencimiento_container').addClass('d-none');
+        }
+    });
+
+    document.getElementById('sel_pdv_innominado').addEventListener('change', function() {
+        if (this.value === '1') {
+            qelem('select[name=pdv_tipocontribuyente]').value = '3';
         }
     });
 </script>

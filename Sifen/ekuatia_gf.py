@@ -222,8 +222,12 @@ class Egf(object):
                 self.mxml.create_SubElement(gdatrec, 'iTipIDRec', _text=9)
                 self.mxml.create_SubElement(gdatrec, 'dDTipIDRec', _text=u'Número de Registro')
             #self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=headerobj.pdv_ruc)
-            self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=0)
-            self.mxml.create_SubElement(gdatrec, 'dNomRec', _text='Sin Nombre')
+            if headerobj.pdv_innominado and headerobj.doc_tipo not in ['NC', 'ND']:
+                self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=0)
+                self.mxml.create_SubElement(gdatrec, 'dNomRec', _text='Sin Nombre')
+            else:
+                self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=headerobj.pdv_ruc)
+                self.mxml.create_SubElement(gdatrec, 'dNomRec', _text=headerobj.pdv_nombrefactura)
         if headerobj.pdv_direccion_entrega:
             self.mxml.create_SubElement(gdatrec, 'dDirRec', _text=headerobj.pdv_direccion_entrega)
             self.mxml.create_SubElement(gdatrec, 'dNumCasRec', _text=headerobj.pdv_numero_casa)

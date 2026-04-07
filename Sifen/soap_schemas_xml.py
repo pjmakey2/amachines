@@ -241,6 +241,65 @@ def CancelacionDeEvento(doc_fecha, cdc, motivo, pem_path=None, key_path=None):
     return {'xml': mxml.to_string_xml(ele), 'sppk': sppk }
 
 
+def NominacionDeEvento(doc_fecha, cdc, motivo, ruc, dv, nombre,
+                       nat_rec=1, tipo_ope=1, tipo_cont=1,
+                       tip_id_rec=None, num_id_rec=None,
+                       pem_path=None, key_path=None):
+    ROOTFOLDER = set_soap_folder()
+    attr_qname = lxml.etree.QName("http://www.w3.org/2001/XMLSchema-instance", "schemaLocation")
+    now = datetime.now()
+    tnow = '{}T{}'.format(doc_fecha, now.strftime('%H:%M:%S'))
+    esign = ESigner()
+    ele, header, sbody = mxml.get_soap_schema()
+    rEnviEventoDe = mxml.create_SubElement(
+        sbody, 'rEnviEventoDe',
+        xmlns=SIFEN_NAME_SPACE.strip('{}')
+    )
+    did = mxml.create_SubElement(rEnviEventoDe, 'dId')
+    dEvReg = mxml.create_SubElement(rEnviEventoDe, 'dEvReg')
+    gGroupGesEve = mxml.create_SubElement(
+        dEvReg, 'gGroupGesEve',
+        {attr_qname: 'http://ekuatia.set.gov.py/sifen/xsd siRecepEvento_v150.xsd'},
+        xmlns=SIFEN_NAME_SPACE.strip('{}'),
+        nsmap={'xsi': XSI_NAME_SPACE.strip('{}')}
+    )
+    rGesEve = mxml.create_SubElement(gGroupGesEve, 'rGesEve')
+    reve = mxml.create_SubElement(rGesEve, 'rEve')
+    mxml.create_SubElement(reve, 'dFecFirma', _text=tnow)
+    mxml.create_SubElement(reve, 'dVerFor', _text=EVERSION)
+    ggrouptievt = mxml.create_SubElement(reve, 'gGroupTiEvt')
+    rgevenom = mxml.create_SubElement(ggrouptievt, 'rGEveNom')
+    mxml.create_SubElement(rgevenom, 'Id', _text=cdc)
+    mxml.create_SubElement(rgevenom, 'mOtEve', _text=motivo)
+    mxml.create_SubElement(rgevenom, 'iNatRec', _text=str(nat_rec))
+    mxml.create_SubElement(rgevenom, 'iTiOpe', _text=str(tipo_ope))
+    mxml.create_SubElement(rgevenom, 'cPaisRec', _text='PRY')
+    mxml.create_SubElement(rgevenom, 'dDesPaisRe', _text='Paraguay')
+    if nat_rec == 1:
+        mxml.create_SubElement(rgevenom, 'iTiContRec', _text=str(tipo_cont))
+        mxml.create_SubElement(rgevenom, 'dRucRec', _text=str(ruc))
+        mxml.create_SubElement(rgevenom, 'dDVRec', _text=str(dv))
+    else:
+        tip_id_desc = {
+            '1': 'Cédula paraguaya', '2': 'Pasaporte', '3': 'Cédula extranjera',
+            '4': 'Carnet de residencia', '5': 'Tarjeta Diplomática de exoneración fiscal',
+            '9': 'Otro'
+        }
+        tip_id = str(tip_id_rec) if tip_id_rec else '1'
+        mxml.create_SubElement(rgevenom, 'iTipIDRec', _text=tip_id)
+        mxml.create_SubElement(rgevenom, 'dDTipIDRec', _text=tip_id_desc.get(tip_id, 'Cédula paraguaya'))
+        mxml.create_SubElement(rgevenom, 'dNumIDRec', _text=str(num_id_rec) if num_id_rec else '0')
+    mxml.create_SubElement(rgevenom, 'dNomRec', _text=nombre)
+    sppk = track_soap_msg('NominacionDeEvento', mxml.to_string_xml(ele))
+    did.text = str(sppk)
+    reve.attrib['Id'] = str(sppk)
+    fname = '{}/EventoDeNominacion{}_soap.xml'.format(ROOTFOLDER, sppk)
+    signature = esign.dynamically_sign(rEnviEventoDe, str(sppk), pem_path=pem_path, key_path=key_path)
+    rGesEve.append(signature)
+    mxml.save_xml(ele, fname)
+    return {'xml': mxml.to_string_xml(ele), 'sppk': sppk}
+
+
 def InutilizacionDeEvento(timbrado, esta, punex, nin, nfin, dtipo, motivo, pem_path=None, key_path=None):
     """
     <rEnviEventoDe

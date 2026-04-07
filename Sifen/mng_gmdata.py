@@ -99,7 +99,7 @@ class Gdata:
             EVERSION, 
             pedobj.ek_cdc, 
             binascii.hexlify(datf).decode('utf-8'),
-            pedobj.pdv_ruc,
+            '0' if pedobj.pdv_innominado else pedobj.pdv_ruc,
             '{:.4f}'.format(pedobj.get_total_operacion()-abs(pedobj.doc_redondeo)),
             '{:.4f}'.format(pedobj.get_ivas_master()),
             pedobj.documentdetail_set.filter(anulado=False).exclude(prod_cod=90000).count(),

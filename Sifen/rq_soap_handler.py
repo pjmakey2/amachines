@@ -234,6 +234,45 @@ class SoapSifen:
         return rsp        
     
 
+    def nominar_xde(self, doc_fecha, cdc, motivo, ruc, dv, nombre, nat_rec=1, tipo_ope=1, tipo_cont=1, tip_id_rec=None, num_id_rec=None):
+        now = datetime.now()
+        tnow = now.strftime('%Y-%m-%d %H:%M:%S')
+
+        pem_path = None
+        key_path = None
+        try:
+            ruc_emisor = cdc[2:10].lstrip('0') or cdc[2:10]
+            businessobj = Business.objects.get(ruc=ruc_emisor)
+            cert_obj = certificate_manager.get_active_certificate_for_business(businessobj)
+            if cert_obj and cert_obj.pem_file and cert_obj.key_file:
+                pem_path = cert_obj.pem_file.path
+                key_path = cert_obj.key_file.path
+                logging.info(f'nominar_xde: usando certificado {cert_obj.nombre} para negocio {businessobj.name}')
+        except Business.DoesNotExist:
+            logging.warning(f'nominar_xde: Business con RUC {ruc_emisor} no encontrado, usando certificado por defecto')
+
+        sxml = soap_schemas_xml.NominacionDeEvento(
+            doc_fecha, cdc, motivo, ruc, dv, nombre,
+            nat_rec=nat_rec, tipo_ope=tipo_ope, tipo_cont=tipo_cont,
+            tip_id_rec=tip_id_rec, num_id_rec=num_id_rec,
+            pem_path=pem_path, key_path=key_path
+        )
+        session = self.set_session()
+        rsp = self.send_rq(session, sxml.get('xml').decode('utf-8'), ROUTE_EVENTO)
+        self.update_rsp(rsp, sxml.get('sppk'), metodo='NominacionDeEvento', cdc=cdc)
+        CdcTrack.objects.create(
+            cdc=cdc,
+            metodo='NominacionDeEvento',
+            header_msg='NominacionDeEvento',
+            cod_rsp=0,
+            state='PENDIENTE',
+            dfecproc=tnow,
+            msg='PENDIENTE',
+            transaccion=sxml.get('sppk'),
+            qr_link='ND'
+        )
+        return rsp
+
     def inutilizar_nros(self, timbrado, dtipo, establecimiento, expd, start, end, motivo):
         now = datetime.now()
         sxml = soap_schemas_xml.InutilizacionDeEvento(
