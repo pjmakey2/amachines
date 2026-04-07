@@ -2355,6 +2355,7 @@ class MSifen:
 
         if uc_fields.get('pdv_tipocontribuyente') == '3':
             uc_fields['pdv_es_contribuyente'] = False
+        if uc_fields.get('pdv_innominado'):
             uc_fields['pdv_innominado'] = True
             
         #uc_fields['doc_op'] = 'VTA'
