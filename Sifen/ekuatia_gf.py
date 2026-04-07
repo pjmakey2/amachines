@@ -208,6 +208,8 @@ class Egf(object):
             self.mxml.create_SubElement(gdatrec, 'iTiContRec', _text=headerobj.pdv_tipocontribuyente)
             self.mxml.create_SubElement(gdatrec, 'dRucRec', _text=headerobj.pdv_ruc)
             self.mxml.create_SubElement(gdatrec, 'dDVRec', _text=headerobj.pdv_ruc_dv)
+            self.mxml.create_SubElement(gdatrec, 'dNomRec', _text=headerobj.pdv_nombrefactura)
+            self.mxml.create_SubElement(gdatrec, 'dNomFanRec', _text=headerobj.pdv_nombrefantasia)
         else:
         # if headerobj.pdv_tipocontribuyente == 0:
             if headerobj.pdv_innominado:
@@ -219,9 +221,9 @@ class Egf(object):
             else:
                 self.mxml.create_SubElement(gdatrec, 'iTipIDRec', _text=9)
                 self.mxml.create_SubElement(gdatrec, 'dDTipIDRec', _text=u'Número de Registro')
-            self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=headerobj.pdv_ruc)
-        self.mxml.create_SubElement(gdatrec, 'dNomRec', _text=headerobj.pdv_nombrefactura)
-        self.mxml.create_SubElement(gdatrec, 'dNomFanRec', _text=headerobj.pdv_nombrefantasia)
+            #self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=headerobj.pdv_ruc)
+            self.mxml.create_SubElement(gdatrec, 'dNumIDRec', _text=0)
+            self.mxml.create_SubElement(gdatrec, 'dNomRec', _text='Sin Nombre')
         if headerobj.pdv_direccion_entrega:
             self.mxml.create_SubElement(gdatrec, 'dDirRec', _text=headerobj.pdv_direccion_entrega)
             self.mxml.create_SubElement(gdatrec, 'dNumCasRec', _text=headerobj.pdv_numero_casa)
