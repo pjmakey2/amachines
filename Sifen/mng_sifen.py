@@ -3035,8 +3035,8 @@ class MSifen:
             rsp = eser.qr_ruc(ruc, business=self.bsobj)
             if rsp.get('dmsgres') == 'RUC encontrado':
                 msg = 'RUC SET'
-                clobj.pdv_nombrefactura = rsp.get('drazcons')
-                pdv_nombrefactura = rsp.get('drazcons')
+                clobj.pdv_nombrefactura = rsp.get('drazcons').strip()
+                pdv_nombrefactura = rsp.get('drazcons').strip()
                 clobj.pdv_es_contribuyente = True
                 clobj.pdv_innominado = False
                 clobj.save()
