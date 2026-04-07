@@ -7,7 +7,7 @@
         <p><b>Condición:</b> {% if mobj.doc_cre_tipo_cod == 2 %}Crédito{% else %}Contado{% endif %}</p>
     </div>
     <div class="am-header-transac-right">
-        <p><b>RUC / Doc. Identidad:</b> {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv %}-{{ mobj.pdv_ruc_dv }}{% endif %}</p>
+        <p><b>RUC / Doc. Identidad:</b> {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv >= 0 %}-{{ mobj.pdv_ruc_dv }}{% endif %}</p>
         <p><b>Nombre / Razón Social:</b> {{ mobj.pdv_nombrefactura }}</p>
         <p><b>Dirección:</b> {% if mobj.pdv_direccion_entrega and mobj.pdv_direccion_entrega != "ND" %}{{ mobj.pdv_direccion_entrega }}{% else %}-{% endif %}</p>
         <p><b>Correo:</b> {{ mobj.pdv_email|default:"-" }}</p>

@@ -1,7 +1,7 @@
 <div class="am-header-transac">
     <div class="am-header-transac-left">
         <p><b>Fecha y hora de emisión:</b> {{ mobj.doc_establecimiento_ciudad }}, {{ mobj.doc_fecha|date:"d" }} DE {{ mobj.doc_fecha|date:"E"|upper }} DE {{ mobj.doc_fecha|date:"Y" }}</p>
-        <p><b>RUC / Documento Identidad:</b> {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv %}-{{ mobj.pdv_ruc_dv }}{% endif %}</p>
+        <p><b>RUC / Documento Identidad:</b> {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv >= 0 %}-{{ mobj.pdv_ruc_dv }}{% endif %}</p>
         <p><b>Nombre o Razón Social:</b> {{ mobj.pdv_nombrefactura }}</p>
         <p><b>Dirección Transacción:</b> {% if mobj.pdv_direccion_entrega and mobj.pdv_direccion_entrega != "ND"  %} {{ mobj.pdv_direccion_entrega }} {% endif %} </p>
         <p><b>Correo:</b> {{ mobj.pdv_email }}  <b style="padding-left: 50px;">Teléfono:</b> {{ mobj.pdv_celular }}</p>
