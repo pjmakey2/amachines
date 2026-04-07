@@ -20,6 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOGIN_URL = '/io/glogin/'
 LOGOUT_REDIRECT_URL = '/io/glogin/'
 
+# Sesión expira tras 1 hora de inactividad
+SESSION_COOKIE_AGE = 3600
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Cargar variables de entorno desde .env
 load_dotenv(BASE_DIR / '.env')
 

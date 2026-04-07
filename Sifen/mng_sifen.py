@@ -1,4 +1,6 @@
 import uuid, os
+from Sifen.rq_soap_handler import SoapSifen
+from Sifen.models import SoapMsg
 import requests
 import pandas as pd
 from zoneinfo import ZoneInfo
@@ -192,7 +194,7 @@ class MSifen:
 
     def cancelar_doc(self, *args, **kwargs) -> dict:
         """Cancela un documento electrónico en SIFEN via evento de cancelación."""
-        from Sifen.rq_soap_handler import SoapSifen
+        
         q: dict = kwargs.get('qdict', {})
         doc_id = q.get('doc_id')
         motivo = q.get('motivo', '').strip()
@@ -217,7 +219,6 @@ class MSifen:
 
     def trace_lote_doc(self, *args, **kwargs) -> dict:
         """Consulta el estado del lote de un documento por su ID."""
-        from Sifen.rq_soap_handler import SoapSifen
         q: dict = kwargs.get('qdict', {})
         doc_id = q.get('doc_id')
         dbcon = q.get('dbcon', 'default')
@@ -236,7 +237,7 @@ class MSifen:
 
     def query_cdc_from_ui(self, *args, **kwargs) -> dict:
         """Consulta el CDC del documento en SIFEN y actualiza ek_estado si está Aprobado."""
-        from Sifen.rq_soap_handler import SoapSifen
+        
         q: dict = kwargs.get('qdict', {})
         doc_id = q.get('doc_id')
         dbcon = q.get('dbcon', 'default')
@@ -2394,10 +2395,10 @@ class MSifen:
 
         # Credit type - get description from code
         doc_cre_tipo_cod = int(uc_fields.get('doc_cre_tipo_cod', 1))
-
-        if doc_cre_tipo_cod == 2 and not uc_fields.get('doc_vencimiento'):
-            return {'error': 'Debe especificar los días de crédito para facturas a crédito'}, args, kwargs
-        if doc_cre_tipo_cod == 1:
+        if uc_fields.get('doc_tipo') == 'FE':
+            if doc_cre_tipo_cod == 2 and not uc_fields.get('doc_vencimiento'):
+                return {'error': 'Debe especificar los días de crédito para facturas a crédito'}, args, kwargs
+        if doc_cre_tipo_cod == 1 or uc_fields.get('doc_tipo') == 'NC':
             # Vencimiento
             uc_fields['doc_vencimiento'] = arrow.get().shift(days=30).strftime('%Y-%m-%d')
 
@@ -2894,12 +2895,11 @@ class MSifen:
         mobj = DocumentHeader.objects.using(dbcon).get(pk=pk)
 
         # Verificar que el estado sea RECIBIDO y no tenga lote asignado
-        if mobj.lote_estado != 'RECIBIDO':
-            return {'error': f'El estado del lote debe ser RECIBIDO. Estado actual: {mobj.lote_estado}'}
-
-        if mobj.lote and mobj.lote != '' and mobj.lote != '0':
-            return {'error': f'El documento ya tiene un lote asignado: {mobj.lote}'}
-
+        if mobj.lote_msg != 'Lote no encolado para procesamiento {Se rechazaron todos los DE del lote}':
+            if mobj.lote_estado != 'RECIBIDO':
+                return {'error': f'El estado del lote debe ser RECIBIDO. Estado actual: {mobj.lote_estado}'}
+            if mobj.lote and mobj.lote != '' and mobj.lote != '0':
+                return {'error': f'El documento ya tiene un lote asignado: {mobj.lote}'}
         # Reinicializar el estado del lote
         mobj.lote_estado = None
         mobj.lote = 0
@@ -3005,8 +3005,7 @@ class MSifen:
 
     def trace_lote(self, *args, **kwargs) -> dict:
         """Wrapper method to call qr_lote from SoapSifen"""
-        from Sifen.rq_soap_handler import SoapSifen
-        from Sifen.models import SoapMsg
+
         q: dict = kwargs.get('qdict', {})
         soapmsg_id = q.get('soapmsg_id')
         dbcon = q.get('dbcon', 'default')

@@ -157,6 +157,9 @@
                     if (rowobj.lote_estado == 'RECIBIDO' && (!rowobj.lote || rowobj.lote == '' || rowobj.lote == '0' || rowobj.lote == 0)) {
                         icons += `<i title="Reinicializar Lote" class="tr-documentheader-reinit-lote text fs-5 mdi mdi-refresh text-warning me-2"></i>`;
                     }
+                    if (rowobj.lote_msg === 'Lote no encolado para procesamiento {Se rechazaron todos los DE del lote}') {
+                        icons += `<i title="Reinicializar Lote" class="tr-documentheader-reinit-lote text fs-5 mdi mdi-refresh text-warning me-2"></i>`;
+                    }
                     if (rowobj.ek_estado == 'Aprobado' && rowobj.ek_qr_link) {
                         icons += `<a href="${rowobj.ek_qr_link}" target="_blank" title="Consultar QR" class="text-info"><i class="fs-5 mdi mdi-qrcode me-2"></i></a>`;
                     }

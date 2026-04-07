@@ -56,6 +56,16 @@
                     <label>Nombre Factura</label>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="form-floating form-floating-sm">
+                    <select required name="pdv_tipocontribuyente" class="form-select">
+                        <option value="1" {% if mobj and mobj.pdv_tipocontribuyente == '1' %}selected{% endif %}>Fisica</option>
+                        <option value="2" {% if mobj and mobj.pdv_tipocontribuyente == '2' %}selected{% endif %}>Juridica</option>
+                        <option value="3" {% if not mobj or mobj.pdv_tipocontribuyente == '3' %}selected{% endif %}>No contribuyente</option>
+                    </select>
+                    <label>Tipo Contrib.</label>
+                </div>
+            </div>
         </div>
 
         <!-- Row 2: Factura Relacionada y Motivo -->
@@ -145,7 +155,7 @@
             </div>
             <div class="col-md-3">
                 <div class="form-floating form-floating-sm">
-                    <select disabled required name="pdv_type_business" class="form-select">
+                    <select required name="pdv_type_business" class="form-select">
                         <option value="B2C" {% if not mobj or mobj.pdv_type_business == 'B2C' %}selected{% endif %}>B2C - Consumidor</option>
                         <option value="B2B" {% if mobj.pdv_type_business == 'B2B' %}selected{% endif %}>B2B - Empresa</option>
                         <option value="B2G" {% if mobj.pdv_type_business == 'B2G' %}selected{% endif %}>B2G - Gobierno</option>
@@ -249,6 +259,7 @@
                     class="form-control"
                     placeholder="0"
                     style="width: 90px;"
+                    value="1"
                 />
             </div>
             <div>
@@ -540,12 +551,15 @@
 
             if (rdata.success) {
                 // Populate client fields
-                qelem('#form_documentnc_{{ rr }} input[name=pdv_ruc_dv]').value = rdata.pdv_ruc_dv || '';
+                qelem('#form_documentnc_{{ rr }} input[name=pdv_ruc_dv]').value = rdata.pdv_ruc_dv;
                 qelem('#form_documentnc_{{ rr }} input[name=pdv_nombrefactura]').value = rdata.pdv_nombrefactura || '';
                 qelem('#form_documentnc_{{ rr }} input[name=pdv_celular]').value = rdata.pdv_celular || '';
                 qelem('#form_documentnc_{{ rr }} input[name=pdv_email]').value = rdata.pdv_email || '';
                 if (rdata.pdv_type_business) {
                     qelem('#form_documentnc_{{ rr }} select[name=pdv_type_business]').value = rdata.pdv_type_business;
+                }
+                if (rdata.pdv_tipocontribuyente != null) {
+                    qelem('select[name=pdv_tipocontribuyente]').value = rdata.pdv_tipocontribuyente;
                 }
 
                 msgRuc.className = 'msg_pdv_ruc text-success';
@@ -1338,7 +1352,7 @@
                         facturaSelect.appendChild(option);
 
                         // Store available balance (add back the current NC total to get original balance)
-                        let currentNCTotal = {{ mobj.doc_total|default:0 }};
+                        let currentNCTotal = parseFloat("{{ mobj.doc_total|default:0|stringformat:"g" }}");
                         facturaSaldoDisponible = (parseFloat(inv.doc_relacion_saldo) || 0) + currentNCTotal;
 
                         // Now render the details table with the balance info

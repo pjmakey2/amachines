@@ -366,5 +366,22 @@
             });
         }
     </script>
+    <script>
+    (function() {
+        var INACTIVITY_MS = 60 * 60 * 1000; // 1 hora
+        //var INACTIVITY_MS = 15000
+        var timer;
+        function resetTimer() {
+            clearTimeout(timer);
+            timer = setTimeout(function() {
+                window.location.href = '/io/glogin/';
+            }, INACTIVITY_MS);
+        }
+        ['click', 'keydown', 'scroll', 'mousemove', 'touchstart'].forEach(function(evt) {
+            document.addEventListener(evt, resetTimer, { passive: true });
+        });
+        resetTimer();
+    })();
+    </script>
 </body>
 </html>
