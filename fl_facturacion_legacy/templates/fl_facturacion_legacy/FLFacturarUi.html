@@ -512,18 +512,21 @@
 
             if (response.data.success) {
                 // RUC válido
-                checkIcon.style.display = 'inline';
+                if (response.data.success == 'RUC SET') { 
+                    checkIcon.style.display = 'inline';
+                }
                 ultimoRucValidado = ruc;
 
                 // Mostrar nombre de SIFEN debajo del input
                 if (response.data.pdv_nombrefactura) {
-                    nombreSifen.textContent = 'SIFEN: ' + response.data.pdv_nombrefactura;
+                    nombreSifen.textContent =  response.data.success + ' ' + response.data.pdv_nombrefactura;
                     nombreSifen.style.display = 'block';
-
                     // Actualizar campo nombre con datos de SIFEN
                     const nombreInput = document.getElementById('fl_nombre_factura');
                     nombreInput.value = response.data.pdv_nombrefactura;
-                    nombreCheck.style.display = 'inline';
+                    if (response.data.success == 'RUC SET') { 
+                        nombreCheck.style.display = 'inline';
+                    }
                 }
 
                 if (response.data.pdv_email) {
@@ -556,6 +559,12 @@
                 // Aplicar estilo verde al input
                 rucInput.classList.remove('is-invalid');
                 rucInput.classList.add('is-valid');
+                if (response.data.success == 'RUC LOCAL') {
+                    rucInput.classList.remove('is-valid');
+                    rucInput.classList.add('is-invalid');
+                    document.getElementById('fl_nombre_factura').classList.add('is-valid');
+                    document.getElementById('fl_nombre_factura').classList.add('is-invalid');
+                }
             } else {
                 // RUC no encontrado
                 errorIcon.style.display = 'inline';

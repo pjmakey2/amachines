@@ -1216,7 +1216,11 @@
                 }
                 qelem('.msg_pdv_ruc').classList.toggle('text-success', true);
                 qelem('.msg_pdv_ruc').classList.toggle('text-danger', false);
-                $('.msg_pdv_ruc').text('RUC válido y datos cargados.');
+                if (rdata.success === 'RUC LOCAL') {
+                    qelem('.msg_pdv_ruc').classList.toggle('text-success', false);
+                    qelem('.msg_pdv_ruc').classList.toggle('text-danger', true);
+                }
+                $('.msg_pdv_ruc').text(`${rdata.success} y datos cargados.`);
                 if (rdata.pdv_celular === null) {
                     qelem('#form_documentheader_{{ rr }} input[name=pdv_celular]').focus();
                 } else {
