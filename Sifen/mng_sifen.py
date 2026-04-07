@@ -3030,16 +3030,19 @@ class MSifen:
         eser = ekuatia_serials.Eserial()
         clobj = Clientes.objects.filter(pdv_ruc=ruc).first()
         if clobj:
+            pdv_nombrefactura = ''
             if clobj.pdv_es_contribuyente == False:
                 rsp = eser.qr_ruc(ruc, business=self.bsobj)
                 if rsp.get('dmsgres') == 'RUC encontrado':
+                    clobj.pdv_nombrefactura = rsp.get('drazcons')
+                    pdv_nombrefactura = rsp.get('drazcons')
                     clobj.pdv_es_contribuyente = True
                     clobj.pdv_innominado = False
                     clobj.save()
             return {
                 'success': 'RUC válido',
                 'pdv_ruc_dv': clobj.pdv_ruc_dv,
-                'pdv_nombrefactura': rsp.get('drazcons'),
+                'pdv_nombrefactura': pdv_nombrefactura,
                 'pdv_celular': clobj.pdv_celular,
                 'pdv_email': clobj.pdv_email,
                 'pdv_type_business': clobj.pdv_type_business,
