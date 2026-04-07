@@ -3039,7 +3039,7 @@ class MSifen:
             return {
                 'success': 'RUC válido',
                 'pdv_ruc_dv': clobj.pdv_ruc_dv,
-                'pdv_nombrefactura': clobj.pdv_nombrefactura,
+                'pdv_nombrefactura': rsp.get('drazcons'),
                 'pdv_celular': clobj.pdv_celular,
                 'pdv_email': clobj.pdv_email,
                 'pdv_type_business': clobj.pdv_type_business,
