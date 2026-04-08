@@ -545,6 +545,10 @@
                     } else {
                         correoInput.value = response.data.pdv_email;
                         document.getElementById('fl_correo_check').style.display = 'inline';
+                        if (response.data.pdv_email === '' ) {
+                            correoInput.value = '';
+                            document.getElementById('fl_correo_check').style.display = 'none';
+                        }
                     }
                 } 
                 if (response.data.pdv_email === '' ) {
