@@ -673,8 +673,10 @@
     // Function to fetch available numbers
     function fetchAvailableNumbers(timbrado, establecimiento) {
         {% if mobj %}
-            qelem('#form_documentheader_{{ rr }} input[name=doc_numero]').value = '{{ mobj.doc_numero }}';
-            return;
+            {% if mobj.doc_numero %}
+                qelem('#form_documentheader_{{ rr }} input[name=doc_numero]').value = '{{ mobj.doc_numero }}';
+                return;
+            {% endif %}
         {% endif %}
         let fdata = new FormData();
         fdata.append('module', 'Sifen');
