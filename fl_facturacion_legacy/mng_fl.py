@@ -641,6 +641,7 @@ class MFLFacturacion:
             nombre_factura = factura.get('razonsocial', '')
             correo_factura = factura.get('email', '')
 
+            ruc_dv = ''
             try:
                 cliente_sifen = Clientes.objects.filter(anclaje_cliente=cliente_codigo).first()
                 if cliente_sifen:
@@ -648,6 +649,7 @@ class MFLFacturacion:
                     ruc_factura = cliente_sifen.pdv_ruc or ruc_factura
                     nombre_factura = cliente_sifen.pdv_nombrefactura or nombre_factura
                     correo_factura = cliente_sifen.pdv_email or correo_factura
+                    ruc_dv = cliente_sifen.pdv_ruc_dv if cliente_sifen.pdv_ruc_dv is not None else ''
             except Exception as e:
                 logger.warning(f"Error buscando cliente en Sifen por anclaje_cliente={cliente_codigo}: {e}")
                 # Si hay error, continuar con los datos de MySQL
@@ -673,6 +675,7 @@ class MFLFacturacion:
                     'facturado': factura.get('facturaemitida') == 1,
                     'id_factura': factura.get('id_factura', ''),
                     'ruc_factura': ruc_factura,
+                    'ruc_dv': ruc_dv,
                     'nombre_factura': nombre_factura,
                     'correo_factura': correo_factura,
                     'observacion': factura.get('obs', ''),

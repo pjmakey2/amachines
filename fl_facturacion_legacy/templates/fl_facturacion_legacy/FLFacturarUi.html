@@ -42,7 +42,10 @@
                         <i id="fl_ruc_error" class="mdi mdi-alert-circle text-danger ms-1" style="display: none;" title="RUC no encontrado en SIFEN"></i>
                         <span id="fl_ruc_loading" class="spinner-border spinner-border-sm text-primary ms-1" style="display: none;"></span>
                     </label>
-                    <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC" oninput="form_validation.just_number(event)">
+                    <div class="d-flex gap-1">
+                        <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC" oninput="form_validation.just_number(event)">
+                        <input type="text" id="fl_ruc_dv" class="form-control bg-light" placeholder="DV" readonly style="max-width: 50px;">
+                    </div>
                     <small id="fl_ruc_nombre_sifen" class="text-muted" style="display: none;"></small>
                 </div>
                 <div class="col-md-4">
@@ -503,6 +506,7 @@
             fdata.append('attr', 'MSifen');
             fdata.append('mname', 'validate_ruc');
             fdata.append('ruc', ruc);
+            
 
             const response = await axios.post('/io/iom/', fdata, {
                 headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
@@ -516,6 +520,11 @@
                     checkIcon.style.display = 'inline';
                 }
                 ultimoRucValidado = ruc;
+
+                // Poblar DV
+                if (response.data.pdv_ruc_dv !== undefined && response.data.pdv_ruc_dv !== null) {
+                    document.getElementById('fl_ruc_dv').value = response.data.pdv_ruc_dv;
+                }
 
                 // Mostrar nombre de SIFEN debajo del input
                 if (response.data.pdv_nombrefactura) {
@@ -537,6 +546,9 @@
                         correoInput.value = response.data.pdv_email;
                         document.getElementById('fl_correo_check').style.display = 'inline';
                     }
+                } 
+                if (response.data.pdv_email === '' ) {
+                    correoInput.value = '';
                 }
 
                 // Poblar celular y checkbox WhatsApp
@@ -640,6 +652,7 @@
 
         // Datos para factura
         document.getElementById('fl_ruc_factura').value = f.ruc_factura || f.cliente_ruc || '';
+        document.getElementById('fl_ruc_dv').value = (f.ruc_dv !== null && f.ruc_dv !== undefined) ? f.ruc_dv : '';
         document.getElementById('fl_nombre_factura').value = f.nombre_factura || f.cliente_nombre || '';
         document.getElementById('fl_correo_factura').value = f.correo_factura || f.cliente_email || '';
 
@@ -1001,6 +1014,7 @@
         document.getElementById('fl_acuse_id').value = '';
         document.getElementById('fl_cant_paquetes').value = '';
         document.getElementById('fl_ruc_factura').value = '';
+        document.getElementById('fl_ruc_dv').value = '';
         document.getElementById('fl_nombre_factura').value = '';
         document.getElementById('fl_correo_factura').value = '';
         document.getElementById('fl_observaciones').value = '';
