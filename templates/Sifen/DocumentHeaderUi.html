@@ -313,7 +313,7 @@
                { fdis: true, gre: true, btyp: 'fdb', idx: 'cargado_usuario', tit: 'Usuario', cls: 'align-left', dtyp: 'str', hide: false },
                { fdis: true, gre: true, btyp: 'fdb', idx: 'ext_link', tit: 'Origen', cls: 'align-left', dtyp: 'str', hide: false,
                     render: (data, type, rowobj) => {
-                        if (rowobj.ext_link === 0 ) {
+                        if (rowobj.ext_link === '0' ) {
                             return 'MANUAL';
                         }
                         return data;
