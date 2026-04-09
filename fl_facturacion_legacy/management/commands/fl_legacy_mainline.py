@@ -144,6 +144,11 @@ class Command(BaseCommand):
             help='Fecha desde (YYYY-MM-DD) para --marcar_facturados',
         )
         parser.add_argument(
+            '--fix_ext_links',
+            action='store_true',
+            help='Detecta y repara DocumentHeaders con ext_link=0 que tienen acuse_id en observacion',
+        )
+        parser.add_argument(
             '--dry-run',
             action='store_true',
             help='Muestra lo que se haría sin hacer cambios',
@@ -159,13 +164,19 @@ class Command(BaseCommand):
 
         sync_clientes = options.get('sync_clientes_fl_to_sifen', False)
 
-        if not register_plugin and not migrate_db and not sync_remote and not marcar_facturados and not sync_clientes:
+        fix_ext_links = options.get('fix_ext_links', False)
+
+        if not register_plugin and not migrate_db and not sync_remote and not marcar_facturados and not sync_clientes and not fix_ext_links:
             self.stdout.write(self.style.ERROR('Debe especificar una acción:'))
             self.stdout.write('  --register_plugin   Registrar plugin y menús')
             self.stdout.write('  --migrate_db        Copiar BD remota al localhost')
             self.stdout.write('  --sync_remote       Sincronizar BD entre dos servidores remotos')
             self.stdout.write('  --marcar_facturados --date YYYY-MM-DD  Marcar acuses como facturados desde fecha')
             self.stdout.write('  --sync_clientes_fl_to_sifen             Importar clientes FL → Sifen.Clientes')
+            return
+
+        if fix_ext_links:
+            self._fix_ext_links(dry_run)
             return
 
         if sync_clientes:
@@ -979,3 +990,31 @@ class Command(BaseCommand):
             self.stdout.write(f'  [DRY] Se marcarían {total} acuses.')
 
         self.stdout.write(self.style.SUCCESS('\nListo!'))
+
+    def _fix_ext_links(self, dry_run=False):
+        """Detecta DocumentHeaders con ext_link=0 que tienen 'Acuse: NNNN' en observacion y repara el ext_link."""
+        import re
+        from Sifen.models import DocumentHeader
+
+        self.stdout.write(self.style.SUCCESS('=== Reparando ext_link perdidos ==='))
+        docs = DocumentHeader.objects.filter(ext_link__in=[0, None, '']).exclude(observacion='')
+        found = 0
+        fixed = 0
+        for doc in docs:
+            match = re.search(r'Acuse:\s*(\d+)', doc.observacion or '')
+            if not match:
+                continue
+            acuse_id = match.group(1)
+            found += 1
+            self.stdout.write(f'  pk={doc.pk} doc_numero={doc.doc_numero} ext_link={doc.ext_link} -> acuse={acuse_id}')
+            if not dry_run:
+                DocumentHeader.objects.filter(pk=doc.pk).update(ext_link=acuse_id)
+                fixed += 1
+
+        if found == 0:
+            self.stdout.write(self.style.WARNING('  No se encontraron ext_links rotos'))
+        else:
+            if dry_run:
+                self.stdout.write(self.style.WARNING(f'  [DRY] Se repararían {found} registros'))
+            else:
+                self.stdout.write(self.style.SUCCESS(f'  {fixed} ext_links reparados'))

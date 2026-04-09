@@ -2528,6 +2528,7 @@ class MSifen:
                 return {'error': 'No se puede modificar un documento ya aprobado por el SIFEN'}, args, kwargs
             if int(uc_fields['pdv_tipocontribuyente']) == 2:
                 uc_fields['pdv_es_contribuyente'] = True
+            uc_fields.pop('ext_link', None)
             DocumentHeader.objects.using(dbcon).filter(pk=pk).update(**uc_fields)
             docobj = DocumentHeader.objects.using(dbcon).get(pk=pk)
             docobj.documentdetail_set.all().delete()
