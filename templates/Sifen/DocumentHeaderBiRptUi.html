@@ -60,14 +60,6 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-2 d-none">
-            <div class="card border-secondary">
-                <div class="card-body p-2 text-center">
-                    <div class="small text-muted">Líneas</div>
-                    <div class="fs-5 fw-bold text-secondary" id="kpi_lineas">0</div>
-                </div>
-            </div>
-        </div>
         <div class="col-md-2">
             <div class="card border-success">
                 <div class="card-body p-2 text-center">
@@ -111,7 +103,6 @@
                             <th style="width:24px"></th>
                             <th class="text-start">Producto</th>
                             <th class="text-end">Facturas</th>
-                            <th class="text-end">Líneas</th>
                             <th class="text-end">Cantidad</th>
                             <th class="text-end">Precio Prom.</th>
                             <th class="text-end">Exenta</th>
@@ -125,7 +116,7 @@
                         </tr>
                     </thead>
                     <tbody id="bi_tbody">
-                        <tr><td colspan="14" class="text-center text-muted py-4">Presione "Generar" para cargar el reporte</td></tr>
+                        <tr><td colspan="13" class="text-center text-muted py-4">Presione "Generar" para cargar el reporte</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -159,7 +150,6 @@
     function renderKPIs(t) {
         document.getElementById('kpi_productos').textContent = t.productos || 0;
         document.getElementById('kpi_facturas').textContent = t.facturas || 0;
-        document.getElementById('kpi_lineas').textContent = t.lineas || 0;
         document.getElementById('kpi_total').textContent = fmt(t.total);
         document.getElementById('kpi_iva_10').textContent = fmt(t.iva_10);
         document.getElementById('kpi_exenta').textContent = fmt(t.exenta);
@@ -178,7 +168,7 @@
 
     function renderClientesRows(rows) {
         if (!rows || rows.length === 0) {
-            return `<tr class="bi-detalle-row"><td colspan="14" class="text-center text-muted fst-italic py-2 ps-4">Sin clientes registrados</td></tr>`;
+            return `<tr class="bi-detalle-row"><td colspan="13" class="text-center text-muted fst-italic py-2 ps-4">Sin clientes registrados</td></tr>`;
         }
         return rows.map(r => `
             <tr class="bi-detalle-row table-info" style="font-size:0.82em;">
@@ -187,7 +177,6 @@
                     <i class="mdi mdi-account-circle me-1"></i>${r.cliente}${r.ruc ? ` <span class="badge bg-secondary ms-1">${r.ruc}</span>` : ''}
                 </td>
                 <td class="text-end">${r.facturas}</td>
-                <td class="text-end">${r.lineas}</td>
                 <td class="text-end">${fmt2(r.cantidad)}</td>
                 <td class="text-end">-</td>
                 <td class="text-end">${fmt(r.exenta)}</td>
@@ -231,7 +220,7 @@
         // Loading placeholder
         let loadingTr = document.createElement('tr');
         loadingTr.className = 'bi-detalle-row';
-        loadingTr.innerHTML = `<td colspan="14" class="text-center text-muted py-2"><span class="spinner-border spinner-border-sm me-1"></span>Cargando clientes...</td>`;
+        loadingTr.innerHTML = `<td colspan="13" class="text-center text-muted py-2"><span class="spinner-border spinner-border-sm me-1"></span>Cargando clientes...</td>`;
         trElement.insertAdjacentElement('afterend', loadingTr);
 
         let filters = getFilters();
@@ -276,7 +265,7 @@
         expandedRows.clear();
 
         if (!rows || rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="14" class="text-center text-muted py-4">Sin datos para los filtros aplicados</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="13" class="text-center text-muted py-4">Sin datos para los filtros aplicados</td></tr>`;
             return;
         }
         let filtradas = filtro ? rows.filter(r => (r.prod_descripcion || '').toLowerCase().includes(filtro)) : rows;
@@ -288,7 +277,6 @@
                 <td class="text-center"><i class="bi-expand-icon mdi mdi-chevron-right text-muted"></i></td>
                 <td class="text-start">${r.prod_descripcion}</td>
                 <td class="text-end">${r.facturas}</td>
-                <td class="text-end">${r.lineas}</td>
                 <td class="text-end">${fmt2(r.cantidad)}</td>
                 <td class="text-end">${fmt(r.precio_promedio)}</td>
                 <td class="text-end">${fmt(r.exenta)}</td>
@@ -307,7 +295,6 @@
             <td></td>
             <td class="text-start">TOTAL</td>
             <td class="text-end">${t.facturas || 0}</td>
-            <td class="text-end">${t.lineas || 0}</td>
             <td class="text-end">${fmt2(t.cantidad)}</td>
             <td class="text-end">-</td>
             <td class="text-end">${fmt(t.exenta)}</td>
