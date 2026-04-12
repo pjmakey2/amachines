@@ -92,6 +92,125 @@ class MSifen:
 
         return None
 
+    def get_bi_rpt_productos(self, *args, **kwargs) -> dict:
+        """Reporte BI de facturas agrupado por producto (prod_descripcion).
+        Filtra por rango de fechas y tipo de documento. Solo incluye docs aprobados por default.
+        """
+        from django.db.models import Sum, Count
+        q: dict = kwargs.get('qdict', {})
+        fecha_desde = q.get('fecha_desde')
+        fecha_hasta = q.get('fecha_hasta')
+        doc_tipo = q.get('doc_tipo', '')
+        only_aprobado = q.get('only_aprobado', '1') == '1'
+
+        qs = DocumentDetail.objects.filter(anulado=False)
+        if fecha_desde:
+            qs = qs.filter(documentheaderobj__doc_fecha__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(documentheaderobj__doc_fecha__lte=fecha_hasta)
+        if doc_tipo:
+            qs = qs.filter(documentheaderobj__doc_tipo=doc_tipo)
+        if only_aprobado:
+            qs = qs.filter(documentheaderobj__ek_estado='Aprobado')
+
+        agg = qs.values('prod_descripcion').annotate(
+            cantidad_total=Sum('cantidad'),
+            exenta_total=Sum('exenta'),
+            gravada_10_total=Sum('gravada_10'),
+            gravada_5_total=Sum('gravada_5'),
+            iva_10_total=Sum('iva_10'),
+            iva_5_total=Sum('iva_5'),
+            descuento_total=Sum('descuento'),
+            facturas=Count('documentheaderobj', distinct=True),
+            lineas=Count('id'),
+        ).order_by('-gravada_10_total', '-exenta_total')
+
+        result = []
+        for r in agg:
+            cant = float(r['cantidad_total'] or 0)
+            total = float((r['exenta_total'] or 0) + (r['gravada_10_total'] or 0) + (r['gravada_5_total'] or 0))
+            result.append({
+                'prod_descripcion': r['prod_descripcion'] or '(sin descripción)',
+                'cantidad': cant,
+                'exenta': float(r['exenta_total'] or 0),
+                'gravada_10': float(r['gravada_10_total'] or 0),
+                'gravada_5': float(r['gravada_5_total'] or 0),
+                'iva_10': float(r['iva_10_total'] or 0),
+                'iva_5': float(r['iva_5_total'] or 0),
+                'descuento': float(r['descuento_total'] or 0),
+                'total': total,
+                'precio_promedio': (total / cant) if cant else 0,
+                'facturas': r['facturas'],
+                'lineas': r['lineas'],
+            })
+        return {
+            'rows': result,
+            'totales': {
+                'productos': len(result),
+                'facturas': sum(x['facturas'] for x in result),
+                'lineas': sum(x['lineas'] for x in result),
+                'cantidad': sum(x['cantidad'] for x in result),
+                'total': sum(x['total'] for x in result),
+                'iva_10': sum(x['iva_10'] for x in result),
+                'iva_5': sum(x['iva_5'] for x in result),
+                'exenta': sum(x['exenta'] for x in result),
+            }
+        }
+
+    def get_bi_rpt_producto_clientes(self, *args, **kwargs) -> dict:
+        """Detalle de clientes para un producto dado, con los mismos filtros del reporte principal."""
+        from django.db.models import Sum, Count
+        q: dict = kwargs.get('qdict', {})
+        prod_descripcion = q.get('prod_descripcion', '')
+        fecha_desde = q.get('fecha_desde')
+        fecha_hasta = q.get('fecha_hasta')
+        doc_tipo = q.get('doc_tipo', '')
+        only_aprobado = q.get('only_aprobado', '1') == '1'
+
+        qs = DocumentDetail.objects.filter(anulado=False, prod_descripcion=prod_descripcion)
+        if fecha_desde:
+            qs = qs.filter(documentheaderobj__doc_fecha__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(documentheaderobj__doc_fecha__lte=fecha_hasta)
+        if doc_tipo:
+            qs = qs.filter(documentheaderobj__doc_tipo=doc_tipo)
+        if only_aprobado:
+            qs = qs.filter(documentheaderobj__ek_estado='Aprobado')
+
+        agg = qs.values(
+            'documentheaderobj__pdv_nombrefactura',
+            'documentheaderobj__pdv_ruc',
+        ).annotate(
+            cantidad_total=Sum('cantidad'),
+            exenta_total=Sum('exenta'),
+            gravada_10_total=Sum('gravada_10'),
+            gravada_5_total=Sum('gravada_5'),
+            iva_10_total=Sum('iva_10'),
+            iva_5_total=Sum('iva_5'),
+            descuento_total=Sum('descuento'),
+            facturas=Count('documentheaderobj', distinct=True),
+            lineas=Count('id'),
+        ).order_by('-gravada_10_total', '-exenta_total')
+
+        result = []
+        for r in agg:
+            total = float((r['exenta_total'] or 0) + (r['gravada_10_total'] or 0) + (r['gravada_5_total'] or 0))
+            result.append({
+                'cliente': r['documentheaderobj__pdv_nombrefactura'] or '(sin nombre)',
+                'ruc': r['documentheaderobj__pdv_ruc'] or '',
+                'cantidad': float(r['cantidad_total'] or 0),
+                'exenta': float(r['exenta_total'] or 0),
+                'gravada_10': float(r['gravada_10_total'] or 0),
+                'gravada_5': float(r['gravada_5_total'] or 0),
+                'iva_10': float(r['iva_10_total'] or 0),
+                'iva_5': float(r['iva_5_total'] or 0),
+                'descuento': float(r['descuento_total'] or 0),
+                'total': total,
+                'facturas': r['facturas'],
+                'lineas': r['lineas'],
+            })
+        return {'rows': result}
+
     def get_contadores_estado(self, *args, **kwargs) -> dict:
         """Obtiene contadores de documentos por estado de lote"""
         base = DocumentHeader.objects.all()

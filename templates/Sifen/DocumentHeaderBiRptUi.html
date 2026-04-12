@@ -1,0 +1,429 @@
+<div class="bi_rpt_productos_container container-fluid">
+    <div class="bi_rpt_msgs"></div>
+
+    <!-- Filtros -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Fecha Desde</label>
+                    <input type="date" id="bi_fecha_desde" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Fecha Hasta</label>
+                    <input type="date" id="bi_fecha_hasta" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Tipo Documento</label>
+                    <select id="bi_doc_tipo" class="form-select form-select-sm">
+                        <option value="">Todos</option>
+                        <option value="FE" selected>Factura Electrónica</option>
+                        <option value="AF">Autofactura</option>
+                        <option value="NC">Nota de Crédito</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold mb-1">Estado</label>
+                    <select id="bi_only_aprobado" class="form-select form-select-sm">
+                        <option value="1" selected>Solo Aprobados</option>
+                        <option value="0">Todos los estados</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button id="btn_bi_generar" class="btn btn-primary btn-sm">
+                        <i class="mdi mdi-play"></i> Generar
+                    </button>
+                    <button id="btn_bi_exportar" class="btn btn-success btn-sm">
+                        <i class="mdi mdi-file-excel"></i> Exportar XLSX
+                    </button>
+                    <input type="text" id="bi_buscar" class="form-control form-control-sm" placeholder="Filtrar producto...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen (KPIs) -->
+    <div class="row g-2 mb-3">
+        <div class="col-md-2">
+            <div class="card border-primary">
+                <div class="card-body p-2 text-center">
+                    <div class="small text-muted">Productos</div>
+                    <div class="fs-5 fw-bold text-primary" id="kpi_productos">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-info">
+                <div class="card-body p-2 text-center">
+                    <div class="small text-muted">Facturas</div>
+                    <div class="fs-5 fw-bold text-info" id="kpi_facturas">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-secondary">
+                <div class="card-body p-2 text-center">
+                    <div class="small text-muted">Líneas</div>
+                    <div class="fs-5 fw-bold text-secondary" id="kpi_lineas">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-success">
+                <div class="card-body p-2 text-center">
+                    <div class="small text-muted">Total</div>
+                    <div class="fs-5 fw-bold text-success" id="kpi_total">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-warning">
+                <div class="card-body p-2 text-center">
+                    <div class="small text-muted">IVA 10%</div>
+                    <div class="fs-5 fw-bold text-warning" id="kpi_iva_10">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-dark">
+                <div class="card-body p-2 text-center">
+                    <div class="small text-muted">Exenta</div>
+                    <div class="fs-5 fw-bold text-dark" id="kpi_exenta">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla Pivot -->
+    <div class="card">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="mdi mdi-chart-bar"></i> Agrupado por Producto
+                <small class="text-muted ms-2 fw-normal">Clic en una fila para ver detalle por cliente</small>
+            </h6>
+            <small class="text-muted" id="bi_ultima_consulta"></small>
+        </div>
+        <div class="card-body p-0">
+            <div id="bi_tabla_container" class="table-responsive" style="max-height: 600px; overflow-y: auto;">
+                <table class="table table-sm table-striped table-hover mb-0" id="bi_tabla">
+                    <thead class="table-dark sticky-top">
+                        <tr>
+                            <th style="width:24px"></th>
+                            <th class="text-start">Producto</th>
+                            <th class="text-end">Facturas</th>
+                            <th class="text-end">Líneas</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Precio Prom.</th>
+                            <th class="text-end">Exenta</th>
+                            <th class="text-end">Gravada 10%</th>
+                            <th class="text-end">Gravada 5%</th>
+                            <th class="text-end">IVA 10%</th>
+                            <th class="text-end">IVA 5%</th>
+                            <th class="text-end">Descuento</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-end">% Part.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bi_tbody">
+                        <tr><td colspan="14" class="text-center text-muted py-4">Presione "Generar" para cargar el reporte</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+<script type="text/javascript">
+(function() {
+    let biData = { rows: [], totales: {} };
+    let clientesCache = {};
+    let expandedRows = new Set();
+
+    function fmt(n) {
+        return UiN.formatNumberU(parseFloat(n || 0).toFixed(0));
+    }
+    function fmt2(n) {
+        return UiN.formatNumberU(parseFloat(n || 0).toFixed(2));
+    }
+
+    // Default: últimos 30 días
+    (function initFechas() {
+        let hoy = new Date();
+        let desde = new Date(); desde.setDate(hoy.getDate() - 30);
+        document.getElementById('bi_fecha_desde').value = desde.toISOString().substring(0, 10);
+        document.getElementById('bi_fecha_hasta').value = hoy.toISOString().substring(0, 10);
+    })();
+
+    function renderKPIs(t) {
+        document.getElementById('kpi_productos').textContent = t.productos || 0;
+        document.getElementById('kpi_facturas').textContent = t.facturas || 0;
+        document.getElementById('kpi_lineas').textContent = t.lineas || 0;
+        document.getElementById('kpi_total').textContent = fmt(t.total);
+        document.getElementById('kpi_iva_10').textContent = fmt(t.iva_10);
+        document.getElementById('kpi_exenta').textContent = fmt(t.exenta);
+    }
+
+    function getFilters() {
+        return {
+            fecha_desde: document.getElementById('bi_fecha_desde').value,
+            fecha_hasta: document.getElementById('bi_fecha_hasta').value,
+            doc_tipo: document.getElementById('bi_doc_tipo').value,
+            only_aprobado: document.getElementById('bi_only_aprobado').value,
+        };
+    }
+
+    // ---- Detalle de clientes ----
+
+    function renderClientesRows(rows) {
+        if (!rows || rows.length === 0) {
+            return `<tr class="bi-detalle-row"><td colspan="14" class="text-center text-muted fst-italic py-2 ps-4">Sin clientes registrados</td></tr>`;
+        }
+        return rows.map(r => `
+            <tr class="bi-detalle-row table-info" style="font-size:0.82em;">
+                <td></td>
+                <td class="text-start ps-4 text-muted">
+                    <i class="mdi mdi-account-circle me-1"></i>${r.cliente}${r.ruc ? ` <span class="badge bg-secondary ms-1">${r.ruc}</span>` : ''}
+                </td>
+                <td class="text-end">${r.facturas}</td>
+                <td class="text-end">${r.lineas}</td>
+                <td class="text-end">${fmt2(r.cantidad)}</td>
+                <td class="text-end">-</td>
+                <td class="text-end">${fmt(r.exenta)}</td>
+                <td class="text-end">${fmt(r.gravada_10)}</td>
+                <td class="text-end">${fmt(r.gravada_5)}</td>
+                <td class="text-end">${fmt(r.iva_10)}</td>
+                <td class="text-end">${fmt(r.iva_5)}</td>
+                <td class="text-end">${fmt(r.descuento)}</td>
+                <td class="text-end fw-semibold">${fmt(r.total)}</td>
+                <td></td>
+            </tr>`).join('');
+    }
+
+    function toggleDetalle(prodDescripcion, trElement) {
+        let key = prodDescripcion;
+
+        // Quitar filas de detalle existentes para este producto
+        let next = trElement.nextElementSibling;
+        while (next && next.classList.contains('bi-detalle-row')) {
+            let tmp = next.nextElementSibling;
+            next.remove();
+            next = tmp;
+        }
+
+        if (expandedRows.has(key)) {
+            expandedRows.delete(key);
+            let icon = trElement.querySelector('.bi-expand-icon');
+            if (icon) icon.className = 'bi-expand-icon mdi mdi-chevron-right';
+            return;
+        }
+
+        expandedRows.add(key);
+        let icon = trElement.querySelector('.bi-expand-icon');
+        if (icon) icon.className = 'bi-expand-icon mdi mdi-chevron-down';
+
+        if (clientesCache[key] !== undefined) {
+            insertDetalleRows(trElement, clientesCache[key]);
+            return;
+        }
+
+        // Loading placeholder
+        let loadingTr = document.createElement('tr');
+        loadingTr.className = 'bi-detalle-row';
+        loadingTr.innerHTML = `<td colspan="14" class="text-center text-muted py-2"><span class="spinner-border spinner-border-sm me-1"></span>Cargando clientes...</td>`;
+        trElement.insertAdjacentElement('afterend', loadingTr);
+
+        let filters = getFilters();
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'get_bi_rpt_producto_clientes');
+        fdata.append('prod_descripcion', prodDescripcion);
+        fdata.append('fecha_desde', filters.fecha_desde);
+        fdata.append('fecha_hasta', filters.fecha_hasta);
+        fdata.append('doc_tipo', filters.doc_tipo);
+        fdata.append('only_aprobado', filters.only_aprobado);
+        fdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+            loadingTr.remove();
+            if (d.error) { UiB.MsgError(d.error); return; }
+            clientesCache[key] = d.rows || [];
+            if (expandedRows.has(key)) {
+                insertDetalleRows(trElement, clientesCache[key]);
+            }
+        }).catch(() => {
+            loadingTr.remove();
+            UiB.MsgError('Error al cargar detalle de clientes');
+        });
+    }
+
+    function insertDetalleRows(trElement, rows) {
+        trElement.insertAdjacentHTML('afterend', renderClientesRows(rows));
+    }
+
+    // ---- Tabla principal ----
+
+    function renderTabla(rows, totalGlobal) {
+        let filtro = document.getElementById('bi_buscar').value.trim().toLowerCase();
+        let tbody = document.getElementById('bi_tbody');
+        clientesCache = {};
+        expandedRows.clear();
+
+        if (!rows || rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="14" class="text-center text-muted py-4">Sin datos para los filtros aplicados</td></tr>`;
+            return;
+        }
+        let filtradas = filtro ? rows.filter(r => (r.prod_descripcion || '').toLowerCase().includes(filtro)) : rows;
+        let html = '';
+        filtradas.forEach(r => {
+            let part = totalGlobal > 0 ? (r.total / totalGlobal) * 100 : 0;
+            let esc = r.prod_descripcion.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            html += `<tr class="bi-prod-row" style="cursor:pointer;" data-prod="${esc}">
+                <td class="text-center"><i class="bi-expand-icon mdi mdi-chevron-right text-muted"></i></td>
+                <td class="text-start">${r.prod_descripcion}</td>
+                <td class="text-end">${r.facturas}</td>
+                <td class="text-end">${r.lineas}</td>
+                <td class="text-end">${fmt2(r.cantidad)}</td>
+                <td class="text-end">${fmt(r.precio_promedio)}</td>
+                <td class="text-end">${fmt(r.exenta)}</td>
+                <td class="text-end">${fmt(r.gravada_10)}</td>
+                <td class="text-end">${fmt(r.gravada_5)}</td>
+                <td class="text-end">${fmt(r.iva_10)}</td>
+                <td class="text-end">${fmt(r.iva_5)}</td>
+                <td class="text-end">${fmt(r.descuento)}</td>
+                <td class="text-end fw-bold">${fmt(r.total)}</td>
+                <td class="text-end"><span class="badge bg-light text-dark">${part.toFixed(1)}%</span></td>
+            </tr>`;
+        });
+        // Fila total
+        let t = biData.totales || {};
+        html += `<tr class="table-dark fw-bold">
+            <td></td>
+            <td class="text-start">TOTAL</td>
+            <td class="text-end">${t.facturas || 0}</td>
+            <td class="text-end">${t.lineas || 0}</td>
+            <td class="text-end">${fmt2(t.cantidad)}</td>
+            <td class="text-end">-</td>
+            <td class="text-end">${fmt(t.exenta)}</td>
+            <td class="text-end">${fmt(filtradas.reduce((s, r) => s + r.gravada_10, 0))}</td>
+            <td class="text-end">${fmt(filtradas.reduce((s, r) => s + r.gravada_5, 0))}</td>
+            <td class="text-end">${fmt(t.iva_10)}</td>
+            <td class="text-end">${fmt(t.iva_5)}</td>
+            <td class="text-end">${fmt(filtradas.reduce((s, r) => s + r.descuento, 0))}</td>
+            <td class="text-end">${fmt(t.total)}</td>
+            <td class="text-end">100%</td>
+        </tr>`;
+        tbody.innerHTML = html;
+
+        tbody.querySelectorAll('.bi-prod-row').forEach(tr => {
+            tr.addEventListener('click', () => toggleDetalle(tr.dataset.prod, tr));
+        });
+    }
+
+    function generar() {
+        let tt = document.getElementById('bi_tabla_container');
+        tt.classList.add('overlay-container', 'overlay');
+
+        let filters = getFilters();
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'get_bi_rpt_productos');
+        fdata.append('fecha_desde', filters.fecha_desde);
+        fdata.append('fecha_hasta', filters.fecha_hasta);
+        fdata.append('doc_tipo', filters.doc_tipo);
+        fdata.append('only_aprobado', filters.only_aprobado);
+        fdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+            if (d.error) {
+                UiB.MsgError(d.error);
+                return;
+            }
+            biData = d;
+            renderKPIs(d.totales || {});
+            renderTabla(d.rows || [], (d.totales || {}).total || 0);
+            document.getElementById('bi_ultima_consulta').textContent =
+                `Consultado: ${new Date().toLocaleString()}`;
+        }).catch((err) => {
+            log.error(`Error al generar reporte: ${jfy(err)}`);
+            UiB.MsgError('Error al generar el reporte');
+        }).finally(() => {
+            tt.classList.remove('overlay-container', 'overlay');
+        });
+    }
+
+    function exportarXlsx() {
+        if (!biData.rows || biData.rows.length === 0) {
+            UiB.MsgError('No hay datos para exportar');
+            return;
+        }
+
+        let wb = XLSX.utils.book_new();
+
+        // --- Hoja 1: Resumen por producto ---
+        let prodHeaders = ['Producto', 'Facturas', 'Lineas', 'Cantidad', 'Precio Promedio',
+                           'Exenta', 'Gravada 10', 'Gravada 5', 'IVA 10', 'IVA 5', 'Descuento', 'Total'];
+        let prodRows = biData.rows.map(r => [
+            r.prod_descripcion, r.facturas, r.lineas,
+            parseFloat(r.cantidad.toFixed(2)),
+            parseFloat(r.precio_promedio.toFixed(0)),
+            r.exenta, r.gravada_10, r.gravada_5, r.iva_10, r.iva_5, r.descuento, r.total
+        ]);
+        let t = biData.totales || {};
+        prodRows.push(['TOTAL', t.facturas, t.lineas, t.cantidad || 0, '',
+                       t.exenta || 0, '', '', t.iva_10 || 0, t.iva_5 || 0, '', t.total || 0]);
+
+        let wsProd = XLSX.utils.aoa_to_sheet([prodHeaders, ...prodRows]);
+        wsProd['!cols'] = [
+            {wch: 45}, {wch: 10}, {wch: 10}, {wch: 12}, {wch: 14},
+            {wch: 14}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 14}
+        ];
+        XLSX.utils.book_append_sheet(wb, wsProd, 'Por Producto');
+
+        // --- Hoja 2: Detalle clientes (solo los ya cargados via drill-down) ---
+        let cachedKeys = Object.keys(clientesCache);
+        if (cachedKeys.length > 0) {
+            let clientHeaders = ['Producto', 'Cliente', 'RUC', 'Facturas', 'Lineas', 'Cantidad',
+                                 'Exenta', 'Gravada 10', 'Gravada 5', 'IVA 10', 'IVA 5', 'Descuento', 'Total'];
+            let allClientRows = [];
+            cachedKeys.forEach(prod => {
+                (clientesCache[prod] || []).forEach(r => {
+                    allClientRows.push([
+                        prod, r.cliente, r.ruc, r.facturas, r.lineas,
+                        parseFloat(r.cantidad.toFixed(2)),
+                        r.exenta, r.gravada_10, r.gravada_5, r.iva_10, r.iva_5, r.descuento, r.total
+                    ]);
+                });
+            });
+            let wsClientes = XLSX.utils.aoa_to_sheet([clientHeaders, ...allClientRows]);
+            wsClientes['!cols'] = [
+                {wch: 40}, {wch: 35}, {wch: 14}, {wch: 10}, {wch: 10}, {wch: 12},
+                {wch: 14}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 14}
+            ];
+            XLSX.utils.book_append_sheet(wb, wsClientes, 'Detalle Clientes');
+        }
+
+        let fecha = new Date().toISOString().substring(0, 10);
+        XLSX.writeFile(wb, `reporte_productos_${fecha}.xlsx`);
+    }
+
+    document.getElementById('btn_bi_generar').addEventListener('click', generar);
+    document.getElementById('btn_bi_exportar').addEventListener('click', exportarXlsx);
+    document.getElementById('bi_buscar').addEventListener('input', () => {
+        renderTabla(biData.rows || [], (biData.totales || {}).total || 0);
+    });
+
+    generar();
+})();
+</script>
