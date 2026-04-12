@@ -2657,6 +2657,7 @@ class MSifen:
             if int(uc_fields['pdv_tipocontribuyente']) == 2:
                 uc_fields['pdv_es_contribuyente'] = True
             uc_fields.pop('ext_link', None)
+            uc_fields.pop('source', None)
             DocumentHeader.objects.using(dbcon).filter(pk=pk).update(**uc_fields)
             docobj = DocumentHeader.objects.using(dbcon).get(pk=pk)
             docobj.documentdetail_set.all().delete()
