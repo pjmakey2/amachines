@@ -102,6 +102,7 @@ class MSifen:
         fecha_hasta = q.get('fecha_hasta')
         doc_tipo = q.get('doc_tipo', '')
         only_aprobado = q.get('only_aprobado', '1') == '1'
+        agrupar_fuente = q.get('agrupar_fuente', '0') == '1'
 
         qs = DocumentDetail.objects.filter(anulado=False)
         if fecha_desde:
@@ -113,7 +114,11 @@ class MSifen:
         if only_aprobado:
             qs = qs.filter(documentheaderobj__ek_estado='Aprobado')
 
-        agg = qs.values('prod_descripcion').annotate(
+        group_fields = ['prod_descripcion']
+        if agrupar_fuente:
+            group_fields.append('documentheaderobj__source')
+
+        agg = qs.values(*group_fields).annotate(
             cantidad_total=Sum('cantidad'),
             exenta_total=Sum('exenta'),
             gravada_10_total=Sum('gravada_10'),
@@ -129,7 +134,7 @@ class MSifen:
         for r in agg:
             cant = float(r['cantidad_total'] or 0)
             total = float((r['exenta_total'] or 0) + (r['gravada_10_total'] or 0) + (r['gravada_5_total'] or 0))
-            result.append({
+            row = {
                 'prod_descripcion': r['prod_descripcion'] or '(sin descripción)',
                 'cantidad': cant,
                 'exenta': float(r['exenta_total'] or 0),
@@ -142,7 +147,10 @@ class MSifen:
                 'precio_promedio': (total / cant) if cant else 0,
                 'facturas': r['facturas'],
                 'lineas': r['lineas'],
-            })
+            }
+            if agrupar_fuente:
+                row['source'] = r['documentheaderobj__source'] or ''
+            result.append(row)
         return {
             'rows': result,
             'totales': {
@@ -2534,7 +2542,8 @@ class MSifen:
             
         #uc_fields['doc_op'] = 'VTA'
         uc_fields['doc_estado'] = 'CREADO'
-        uc_fields['source'] = 'MANUAL'
+        if not uc_fields.get('source'):
+            uc_fields['source'] = 'MANUAL'
         if not uc_fields.get('ext_link'):
             uc_fields['ext_link'] = '0'
         # Business info

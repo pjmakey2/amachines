@@ -928,7 +928,7 @@ class MFLFacturacion:
                 'doc_tipo_pago_cod': 1,  # Efectivo (se puede mejorar según forma de pago)
                 'observacion': f"Acuse: {acuse_id}. {factura.get('obs', '')}",
                 'ext_link': acuse_id,  # Guardar referencia al acuse
-                'source': 'FL_LEGACY',
+                'source': 'ACUSE',
                 'details': details,
             }
 
