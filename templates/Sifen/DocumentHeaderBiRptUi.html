@@ -211,6 +211,149 @@
         init_select2: true,
     });
 
+    // ---- Drill-down facturas por cliente ----
+
+    let facturasCache = {};
+
+    function abrirPdfFactura(docId) {
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'generando_documentheader');
+        fdata.append('id', docId);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem('#bi_concepto_container');
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                let link = document.createElement('a');
+                link.href = data.ek_pdf_file;
+                link.target = '_blank';
+                link.click();
+                UiB.MsgSuccess(data.success);
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            log.error(`Error al generar PDF: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al generar el PDF.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    }
+
+    function renderFacturasRows(rows) {
+        if (!rows || rows.length === 0) {
+            return `<tr class="bi-facturas-row"><td colspan="11" class="text-center text-muted fst-italic py-2 ps-5">Sin facturas</td></tr>`;
+        }
+        return rows.map(r => `
+            <tr class="bi-facturas-row" style="font-size:0.80em; background:#f8f9ff;">
+                <td class="ps-5" colspan="2">
+                    <a href="#" class="btn-abrir-pdf fw-semibold text-primary text-decoration-none"
+                       data-id="${r.id}">
+                        <i class="mdi mdi-file-pdf-box me-1 text-danger"></i>Factura N° ${r.doc_numero}
+                    </a>
+                    <span class="text-muted ms-2">${r.doc_fecha}</span>
+                    <span class="badge bg-secondary ms-1">${r.doc_tipo}</span>
+                </td>
+                <td colspan="9" class="text-muted">${r.ek_estado}</td>
+            </tr>`).join('');
+    }
+
+    function toggleFacturasCliente(ruc, trElement) {
+        let key = ruc;
+        let next = trElement.nextElementSibling;
+        while (next && next.classList.contains('bi-facturas-row')) {
+            let tmp = next.nextElementSibling;
+            next.remove();
+            next = tmp;
+        }
+
+        if (facturasCache[key] === 'open') {
+            facturasCache[key] = 'closed';
+            let icon = trElement.querySelector('.bi-cliente-icon');
+            if (icon) icon.className = 'bi-cliente-icon mdi mdi-chevron-right text-muted me-1';
+            return;
+        }
+
+        facturasCache[key] = 'open';
+        let icon = trElement.querySelector('.bi-cliente-icon');
+        if (icon) icon.className = 'bi-cliente-icon mdi mdi-chevron-down text-muted me-1';
+
+        if (facturasCache[key + '_data']) {
+            let html = renderFacturasRows(facturasCache[key + '_data']);
+            trElement.insertAdjacentHTML('afterend', html);
+            bindPdfLinks(trElement);
+            return;
+        }
+
+        let loadingTr = document.createElement('tr');
+        loadingTr.className = 'bi-facturas-row';
+        loadingTr.innerHTML = `<td colspan="11" class="text-center text-muted py-1 ps-5"><span class="spinner-border spinner-border-sm me-1"></span>Cargando facturas...</td>`;
+        trElement.insertAdjacentElement('afterend', loadingTr);
+
+        let filters = getFilters();
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'get_bi_concepto_facturas_cliente');
+        fdata.append('prod_descripcion', $('#bi_concepto_select').val() || '');
+        fdata.append('pdv_ruc', ruc);
+        fdata.append('fecha_desde', filters.fecha_desde);
+        fdata.append('fecha_hasta', filters.fecha_hasta);
+        fdata.append('doc_tipo', filters.doc_tipo);
+        fdata.append('only_aprobado', filters.only_aprobado);
+        fdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+            loadingTr.remove();
+            if (d.error) { UiB.MsgError(d.error); return; }
+            facturasCache[key + '_data'] = d.rows || [];
+            if (facturasCache[key] === 'open') {
+                let html = renderFacturasRows(facturasCache[key + '_data']);
+                trElement.insertAdjacentHTML('afterend', html);
+                bindPdfLinks(trElement);
+            }
+        }).catch(() => {
+            loadingTr.remove();
+            UiB.MsgError('Error al cargar facturas');
+        });
+    }
+
+    function bindPdfLinks(trElement) {
+        let next = trElement.nextElementSibling;
+        while (next && next.classList.contains('bi-facturas-row')) {
+            next.querySelectorAll('.btn-abrir-pdf').forEach(a => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    abrirPdfFactura(a.dataset.id);
+                });
+            });
+            next = next.nextElementSibling;
+        }
+    }
+
+    function bindClienteRows() {
+        document.getElementById('bi_concepto_tbody').querySelectorAll('.bi-cliente-row').forEach(tr => {
+            tr.addEventListener('click', (e) => {
+                if (e.target.closest('.btn-abrir-pdf')) return;
+                toggleFacturasCliente(tr.dataset.ruc, tr);
+            });
+        });
+    }
+
     $('#bi_concepto_select').on('change', function() {
         let val = $(this).val();
         if (val) {
@@ -221,6 +364,7 @@
     });
 
     function mostrarModoConcepto(concepto) {
+        facturasCache = {};
         document.getElementById('bi_pivot_section').classList.add('d-none');
         document.getElementById('bi_concepto_section').classList.remove('d-none');
         document.getElementById('bi_concepto_section_label').textContent = concepto;
@@ -285,8 +429,14 @@
                     total: acc.total + r.total,
                 }), {facturas:0, cantidad:0, exenta:0, gravada_10:0, gravada_5:0, iva_10:0, iva_5:0, descuento:0, total:0});
 
-                let html = rows.map(r => `<tr>
-                    <td class="text-start">${r.cliente}</td>
+                let html = rows.map(r => {
+                    let escRuc = (r.ruc || '').replace(/"/g, '&quot;');
+                    let escCliente = r.cliente.replace(/"/g, '&quot;');
+                    return `<tr class="bi-cliente-row" style="cursor:pointer;"
+                            data-ruc="${escRuc}" data-cliente="${escCliente}">
+                    <td class="text-start">
+                        <i class="bi-cliente-icon mdi mdi-chevron-right text-muted me-1"></i>${r.cliente}
+                    </td>
                     <td class="text-start">${r.ruc || ''}</td>
                     <td class="text-end">${r.facturas}</td>
                     <td class="text-end">${fmt2(r.cantidad)}</td>
@@ -297,7 +447,8 @@
                     <td class="text-end">${fmt(r.iva_5)}</td>
                     <td class="text-end">${fmt(r.descuento)}</td>
                     <td class="text-end fw-bold">${fmt(r.total)}</td>
-                </tr>`).join('');
+                </tr>`;
+                }).join('');
                 html += `<tr class="table-dark fw-bold">
                     <td colspan="2">TOTAL</td>
                     <td class="text-end">${tot.facturas}</td>
@@ -311,6 +462,7 @@
                     <td class="text-end">${fmt(tot.total)}</td>
                 </tr>`;
                 tbody.innerHTML = html;
+                bindClienteRows();
                 // Actualizar KPIs con totales del concepto
                 renderKPIs({
                     productos: 1,

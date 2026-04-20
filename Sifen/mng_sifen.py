@@ -219,6 +219,45 @@ class MSifen:
             })
         return {'rows': result}
 
+    def get_bi_concepto_facturas_cliente(self, *args, **kwargs) -> dict:
+        """Facturas de un cliente específico para un concepto dado."""
+        q: dict = kwargs.get('qdict', {})
+        prod_descripcion = q.get('prod_descripcion', '')
+        pdv_ruc = q.get('pdv_ruc', '')
+        fecha_desde = q.get('fecha_desde')
+        fecha_hasta = q.get('fecha_hasta')
+        doc_tipo = q.get('doc_tipo', '')
+        only_aprobado = q.get('only_aprobado', '1') == '1'
+
+        qs = (DocumentDetail.objects
+              .filter(anulado=False, prod_descripcion=prod_descripcion,
+                      documentheaderobj__pdv_ruc=pdv_ruc)
+              .select_related('documentheaderobj'))
+        if fecha_desde:
+            qs = qs.filter(documentheaderobj__doc_fecha__gte=fecha_desde)
+        if fecha_hasta:
+            qs = qs.filter(documentheaderobj__doc_fecha__lte=fecha_hasta)
+        if doc_tipo:
+            qs = qs.filter(documentheaderobj__doc_tipo=doc_tipo)
+        if only_aprobado:
+            qs = qs.filter(documentheaderobj__ek_estado='Aprobado')
+
+        seen = set()
+        result = []
+        for d in qs.order_by('documentheaderobj__doc_fecha'):
+            dh = d.documentheaderobj
+            if dh.id in seen:
+                continue
+            seen.add(dh.id)
+            result.append({
+                'id': dh.id,
+                'doc_numero': dh.doc_numero,
+                'doc_fecha': str(dh.doc_fecha),
+                'doc_tipo': dh.doc_tipo,
+                'ek_estado': dh.ek_estado or '',
+            })
+        return {'rows': result}
+
     def get_contadores_estado(self, *args, **kwargs) -> dict:
         """Obtiene contadores de documentos por estado de lote"""
         base = DocumentHeader.objects.all()
