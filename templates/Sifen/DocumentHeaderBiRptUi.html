@@ -1,5 +1,4 @@
 <div class="bi_rpt_productos_container container-fluid">
-    <div class="bi_rpt_msgs"></div>
 
     <!-- Filtros -->
     <div class="card mb-3">
@@ -42,14 +41,21 @@
                     <button id="btn_bi_exportar" class="btn btn-success btn-sm">
                         <i class="mdi mdi-file-excel"></i> XLSX
                     </button>
-                    <input type="text" id="bi_buscar" class="form-control form-control-sm" placeholder="Filtrar...">
+                </div>
+            </div>
+            <div class="row g-2 align-items-end mt-1">
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold mb-1">Concepto</label>
+                    <select id="bi_concepto_select" class="form-select form-select-sm" style="width:100%">
+                        <option value=""></option>
+                    </select>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- KPIs -->
-    <div class="row g-2 mb-3">
+    <!-- KPIs (solo visibles en modo pivot) -->
+    <div id="bi_kpis_section" class="row g-2 mb-3">
         <div class="col-md-2">
             <div class="card border-primary">
                 <div class="card-body p-2 text-center">
@@ -92,8 +98,38 @@
         </div>
     </div>
 
-    <!-- Tabla -->
-    <div class="card">
+    <!-- Clientes por concepto (visible solo cuando hay concepto seleccionado) -->
+    <div id="bi_concepto_section" class="card mb-3 d-none">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+            <h6 class="mb-0"><i class="mdi mdi-account-group"></i> Clientes — <span id="bi_concepto_section_label"></span></h6>
+            <small class="text-muted" id="bi_concepto_ultima_consulta"></small>
+        </div>
+        <div class="card-body p-0">
+            <div id="bi_concepto_container" class="table-responsive" style="max-height:450px; overflow-y:auto;">
+                <table class="table table-sm table-striped table-hover mb-0">
+                    <thead class="table-dark sticky-top">
+                        <tr>
+                            <th class="text-start">Cliente</th>
+                            <th class="text-start">RUC</th>
+                            <th class="text-end">Facturas</th>
+                            <th class="text-end">Cantidad</th>
+                            <th class="text-end">Exenta</th>
+                            <th class="text-end">Gravada 10%</th>
+                            <th class="text-end">Gravada 5%</th>
+                            <th class="text-end">IVA 10%</th>
+                            <th class="text-end">IVA 5%</th>
+                            <th class="text-end">Descuento</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bi_concepto_tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla pivot (visible solo cuando NO hay concepto seleccionado) -->
+    <div id="bi_pivot_section" class="card">
         <div class="card-header py-2 d-flex justify-content-between align-items-center">
             <h6 class="mb-0">
                 <i class="mdi mdi-chart-bar"></i> Agrupado por Producto
@@ -128,6 +164,7 @@
             </div>
         </div>
     </div>
+
 </div>
 
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
@@ -153,12 +190,47 @@
         document.getElementById('bi_fecha_hasta').value = hoy.toISOString().substring(0, 10);
     })();
 
-    function renderKPIs(t) {
-        document.getElementById('kpi_productos').textContent = t.productos || 0;
-        document.getElementById('kpi_facturas').textContent = t.facturas || 0;
-        document.getElementById('kpi_total').textContent = fmt(t.total);
-        document.getElementById('kpi_iva_10').textContent = fmt(t.iva_10);
-        document.getElementById('kpi_exenta').textContent = fmt(t.exenta);
+    // Select2 de concepto
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#bi_concepto_select',
+        app_name: 'Sifen',
+        model_name: 'DocumentDetail',
+        field_display: ['prod_descripcion'],
+        field_id: ['prod_descripcion'],
+        db_fields: ['prod_descripcion'],
+        distinct: ['prod_descripcion'],
+        sort: [{'dataIndx': 'prod_descripcion', 'dir': 'up'}],
+        endRow: 500,
+        theme: 'bootstrap-5',
+        width: '100%',
+        allowClear: true,
+        placeholder: 'Buscar concepto...',
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        init_select2: true,
+    });
+
+    $('#bi_concepto_select').on('change', function() {
+        let val = $(this).val();
+        if (val) {
+            mostrarModoConcepto(val);
+        } else {
+            mostrarModoPivot();
+        }
+    });
+
+    function mostrarModoConcepto(concepto) {
+        document.getElementById('bi_pivot_section').classList.add('d-none');
+        document.getElementById('bi_concepto_section').classList.remove('d-none');
+        document.getElementById('bi_concepto_section_label').textContent = concepto;
+        cargarClientesConcepto(concepto);
+    }
+
+    function mostrarModoPivot() {
+        document.getElementById('bi_concepto_section').classList.add('d-none');
+        document.getElementById('bi_pivot_section').classList.remove('d-none');
+        renderKPIs(biData.totales || {});
     }
 
     function getFilters() {
@@ -171,7 +243,101 @@
         };
     }
 
-    // ---- Detalle de clientes ----
+    // ---- Clientes por concepto ----
+
+    function cargarClientesConcepto(concepto) {
+        let container = document.getElementById('bi_concepto_container');
+        let tbody = document.getElementById('bi_concepto_tbody');
+        container.classList.add('overlay-container', 'overlay');
+        tbody.innerHTML = '';
+
+        let filters = getFilters();
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'get_bi_rpt_producto_clientes');
+        fdata.append('prod_descripcion', concepto);
+        fdata.append('fecha_desde', filters.fecha_desde);
+        fdata.append('fecha_hasta', filters.fecha_hasta);
+        fdata.append('doc_tipo', filters.doc_tipo);
+        fdata.append('only_aprobado', filters.only_aprobado);
+        fdata.append('dbcon', 'default');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+        }).then((rsp) => {
+            let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+            if (d.error) { UiB.MsgError(d.error); return; }
+            let rows = d.rows || [];
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-3">Sin resultados</td></tr>`;
+            } else {
+                let tot = rows.reduce((acc, r) => ({
+                    facturas: acc.facturas + r.facturas,
+                    cantidad: acc.cantidad + r.cantidad,
+                    exenta: acc.exenta + r.exenta,
+                    gravada_10: acc.gravada_10 + r.gravada_10,
+                    gravada_5: acc.gravada_5 + r.gravada_5,
+                    iva_10: acc.iva_10 + r.iva_10,
+                    iva_5: acc.iva_5 + r.iva_5,
+                    descuento: acc.descuento + r.descuento,
+                    total: acc.total + r.total,
+                }), {facturas:0, cantidad:0, exenta:0, gravada_10:0, gravada_5:0, iva_10:0, iva_5:0, descuento:0, total:0});
+
+                let html = rows.map(r => `<tr>
+                    <td class="text-start">${r.cliente}</td>
+                    <td class="text-start">${r.ruc || ''}</td>
+                    <td class="text-end">${r.facturas}</td>
+                    <td class="text-end">${fmt2(r.cantidad)}</td>
+                    <td class="text-end">${fmt(r.exenta)}</td>
+                    <td class="text-end">${fmt(r.gravada_10)}</td>
+                    <td class="text-end">${fmt(r.gravada_5)}</td>
+                    <td class="text-end">${fmt(r.iva_10)}</td>
+                    <td class="text-end">${fmt(r.iva_5)}</td>
+                    <td class="text-end">${fmt(r.descuento)}</td>
+                    <td class="text-end fw-bold">${fmt(r.total)}</td>
+                </tr>`).join('');
+                html += `<tr class="table-dark fw-bold">
+                    <td colspan="2">TOTAL</td>
+                    <td class="text-end">${tot.facturas}</td>
+                    <td class="text-end">${fmt2(tot.cantidad)}</td>
+                    <td class="text-end">${fmt(tot.exenta)}</td>
+                    <td class="text-end">${fmt(tot.gravada_10)}</td>
+                    <td class="text-end">${fmt(tot.gravada_5)}</td>
+                    <td class="text-end">${fmt(tot.iva_10)}</td>
+                    <td class="text-end">${fmt(tot.iva_5)}</td>
+                    <td class="text-end">${fmt(tot.descuento)}</td>
+                    <td class="text-end">${fmt(tot.total)}</td>
+                </tr>`;
+                tbody.innerHTML = html;
+                // Actualizar KPIs con totales del concepto
+                renderKPIs({
+                    productos: 1,
+                    facturas: tot.facturas,
+                    total: tot.total,
+                    iva_10: tot.iva_10,
+                    exenta: tot.exenta,
+                });
+            }
+            document.getElementById('bi_concepto_ultima_consulta').textContent =
+                `${rows.length} cliente(s) — ${new Date().toLocaleString()}`;
+        }).catch(() => {
+            UiB.MsgError('Error al cargar clientes del concepto');
+        }).finally(() => {
+            container.classList.remove('overlay-container', 'overlay');
+        });
+    }
+
+    // ---- Tabla pivot ----
+
+    function renderKPIs(t) {
+        document.getElementById('kpi_productos').textContent = t.productos || 0;
+        document.getElementById('kpi_facturas').textContent = t.facturas || 0;
+        document.getElementById('kpi_total').textContent = fmt(t.total);
+        document.getElementById('kpi_iva_10').textContent = fmt(t.iva_10);
+        document.getElementById('kpi_exenta').textContent = fmt(t.exenta);
+    }
 
     function renderClientesRows(rows) {
         if (!rows || rows.length === 0) {
@@ -257,8 +423,6 @@
         });
     }
 
-    // ---- Filas de producto ----
-
     function prodRowHtml(r, totalGlobal) {
         let part = totalGlobal > 0 ? (r.total / totalGlobal) * 100 : 0;
         let esc = r.prod_descripcion.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -280,10 +444,7 @@
         </tr>`;
     }
 
-    // ---- Tabla principal ----
-
     function renderTabla(rows, totalGlobal) {
-        let filtro = document.getElementById('bi_buscar').value.trim().toLowerCase();
         let conFuente = document.getElementById('bi_agrupar_fuente').checked;
         let tbody = document.getElementById('bi_tbody');
         clientesCache = {};
@@ -294,14 +455,10 @@
             return;
         }
 
-        let filtradas = filtro ? rows.filter(r => (r.prod_descripcion || '').toLowerCase().includes(filtro)) : rows;
         let html = '';
-
         if (conFuente) {
-            // Nivel 1: sección por fuente → Nivel 2: productos dentro de cada fuente
-            let grupos = {};
-            let orden = [];
-            filtradas.forEach(r => {
+            let grupos = {}, orden = [];
+            rows.forEach(r => {
                 let src = r.source || '(sin fuente)';
                 if (!grupos[src]) { grupos[src] = []; orden.push(src); }
                 grupos[src].push(r);
@@ -317,10 +474,9 @@
                 grupos[src].forEach(r => { html += prodRowHtml(r, totalGlobal); });
             });
         } else {
-            filtradas.forEach(r => { html += prodRowHtml(r, totalGlobal); });
+            rows.forEach(r => { html += prodRowHtml(r, totalGlobal); });
         }
 
-        // Fila total
         let t = biData.totales || {};
         html += `<tr class="table-dark fw-bold">
             <td></td>
@@ -329,15 +485,14 @@
             <td class="text-end">${fmt2(t.cantidad)}</td>
             <td class="text-end">-</td>
             <td class="text-end">${fmt(t.exenta)}</td>
-            <td class="text-end">${fmt(filtradas.reduce((s, r) => s + r.gravada_10, 0))}</td>
-            <td class="text-end">${fmt(filtradas.reduce((s, r) => s + r.gravada_5, 0))}</td>
+            <td class="text-end">${fmt(rows.reduce((s, r) => s + r.gravada_10, 0))}</td>
+            <td class="text-end">${fmt(rows.reduce((s, r) => s + r.gravada_5, 0))}</td>
             <td class="text-end">${fmt(t.iva_10)}</td>
             <td class="text-end">${fmt(t.iva_5)}</td>
-            <td class="text-end">${fmt(filtradas.reduce((s, r) => s + r.descuento, 0))}</td>
+            <td class="text-end">${fmt(rows.reduce((s, r) => s + r.descuento, 0))}</td>
             <td class="text-end">${fmt(t.total)}</td>
             <td class="text-end">100%</td>
         </tr>`;
-
         tbody.innerHTML = html;
 
         tbody.querySelectorAll('.bi-prod-row').forEach(tr => {
@@ -385,34 +540,23 @@
             UiB.MsgError('No hay datos para exportar');
             return;
         }
-
         let wb = XLSX.utils.book_new();
         let conFuente = document.getElementById('bi_agrupar_fuente').checked;
-
         let prodHeaders = ['Producto', 'Facturas', 'Cantidad', 'Precio Promedio',
                            'Exenta', 'Gravada 10', 'Gravada 5', 'IVA 10', 'IVA 5', 'Descuento', 'Total'];
         if (conFuente) prodHeaders.unshift('Fuente');
-
         let prodRows = biData.rows.map(r => {
-            let row = [
-                r.prod_descripcion, r.facturas,
-                parseFloat(r.cantidad.toFixed(2)),
-                parseFloat(r.precio_promedio.toFixed(0)),
-                r.exenta, r.gravada_10, r.gravada_5, r.iva_10, r.iva_5, r.descuento, r.total
-            ];
+            let row = [r.prod_descripcion, r.facturas, parseFloat(r.cantidad.toFixed(2)),
+                       parseFloat(r.precio_promedio.toFixed(0)),
+                       r.exenta, r.gravada_10, r.gravada_5, r.iva_10, r.iva_5, r.descuento, r.total];
             if (conFuente) row.unshift(r.source || '');
             return row;
         });
         let t = biData.totales || {};
-        let totalRow = ['TOTAL', t.facturas, t.cantidad || 0, '',
-                        t.exenta || 0, '', '', t.iva_10 || 0, t.iva_5 || 0, '', t.total || 0];
+        let totalRow = ['TOTAL', t.facturas, t.cantidad || 0, '', t.exenta || 0, '', '', t.iva_10 || 0, t.iva_5 || 0, '', t.total || 0];
         if (conFuente) totalRow.unshift('');
         prodRows.push(totalRow);
-
         let wsProd = XLSX.utils.aoa_to_sheet([prodHeaders, ...prodRows]);
-        wsProd['!cols'] = conFuente
-            ? [{wch: 12}, {wch: 40}, {wch: 10}, {wch: 12}, {wch: 14}, {wch: 14}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 14}]
-            : [{wch: 45}, {wch: 10}, {wch: 12}, {wch: 14}, {wch: 14}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 14}];
         XLSX.utils.book_append_sheet(wb, wsProd, 'Por Producto');
 
         let cachedKeys = Object.keys(clientesCache);
@@ -423,30 +567,20 @@
             cachedKeys.forEach(key => {
                 let prod = key.includes('||') ? key.split('||')[0] : key;
                 (clientesCache[key] || []).forEach(r => {
-                    allClientRows.push([
-                        prod, r.cliente, r.ruc, r.facturas,
+                    allClientRows.push([prod, r.cliente, r.ruc, r.facturas,
                         parseFloat(r.cantidad.toFixed(2)),
-                        r.exenta, r.gravada_10, r.gravada_5, r.iva_10, r.iva_5, r.descuento, r.total
-                    ]);
+                        r.exenta, r.gravada_10, r.gravada_5, r.iva_10, r.iva_5, r.descuento, r.total]);
                 });
             });
             let wsClientes = XLSX.utils.aoa_to_sheet([clientHeaders, ...allClientRows]);
-            wsClientes['!cols'] = [
-                {wch: 40}, {wch: 35}, {wch: 14}, {wch: 10}, {wch: 12},
-                {wch: 14}, {wch: 14}, {wch: 14}, {wch: 12}, {wch: 12}, {wch: 12}, {wch: 14}
-            ];
             XLSX.utils.book_append_sheet(wb, wsClientes, 'Detalle Clientes');
         }
 
-        let fecha = new Date().toISOString().substring(0, 10);
-        XLSX.writeFile(wb, `reporte_productos_${fecha}.xlsx`);
+        XLSX.writeFile(wb, `reporte_productos_${new Date().toISOString().substring(0, 10)}.xlsx`);
     }
 
     document.getElementById('btn_bi_generar').addEventListener('click', generar);
     document.getElementById('btn_bi_exportar').addEventListener('click', exportarXlsx);
-    document.getElementById('bi_buscar').addEventListener('input', () => {
-        renderTabla(biData.rows || [], (biData.totales || {}).total || 0);
-    });
 
     generar();
 })();
