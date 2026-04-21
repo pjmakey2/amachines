@@ -118,7 +118,7 @@ class SoapSifen:
                     'dmsgres': 'Error pagina de SIFEN'
                 }
         if format:
-            rt = self.mxml.fromstring(html.unescape(str(rsp.text)).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
+            rt = self.mxml.fromstring(str(rsp.text).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
             drsp = self.xtodict(rt, 'siConsRUC', clientecod=ruc)
             return drsp
         #self.update_rsp(rsp, sxml.get('sppk'), metodo='siConsRUC', clientecod=clientecod)
@@ -136,7 +136,7 @@ class SoapSifen:
         session = self.set_session()
         rsp = self.send_rq(session, sxml.get('xml').decode('utf-8'), ROUTE_CONSULTA)
         self.update_rsp(rsp, sxml.get('sppk'), cdc=cdc, metodo='SiConsDE')
-        rt = self.mxml.fromstring(html.unescape(str(rsp.text)).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
+        rt = self.mxml.fromstring(str(rsp.text).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
         drsp = self.xtodict(rt, 'qr_cdc')
         if drsp.get('dmsgres') == 'CDC encontrado':
             return {'exitos': drsp.get('dmsgres')}
@@ -298,7 +298,7 @@ class SoapSifen:
     def update_rsp(self, rsp, sppk, cdc=0, metodo='ND', clientecod=None, ppks=[]):
         """This gonna be used to update the soap table with the response that we got from the SET server"""
         try:
-            rt = self.mxml.fromstring(html.unescape(str(rsp.text)).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
+            rt = self.mxml.fromstring(str(rsp.text).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
         except Exception as e:
             #print(e)
             logging.info(e)
