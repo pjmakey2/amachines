@@ -17,7 +17,7 @@ from typing import Literal, Union
 from django.contrib.auth.models import User
 from django.http import QueryDict, HttpRequest
 from django.forms import model_to_dict
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.core.files import File
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -2206,22 +2206,65 @@ class MSifen:
                 pps['doc_saldo'] = 0
         if qs_clientecodigo_id:
             pps['pdv_codigo'] = qs_clientecodigo_id
-        for docobj in DocumentHeader.objects.filter(
-                        **pps
-                ).order_by('doc_numero', 'doc_fecha'):
+        docs = list(DocumentHeader.objects.filter(**pps)
+                    .select_related('retencionobj')
+                    .order_by('doc_numero', 'doc_fecha'))
+        doc_ids = [d.id for d in docs]
+
+        # Agregación bulk de los totales de DocumentDetail por documentheader (1 sola query).
+        # Se replica la exclusión de prod_cod del modelo: si doc_op='GA' se excluye -9, sino se excluye 90000.
+        agg_qs = (DocumentDetail.objects
+                  .filter(documentheaderobj_id__in=doc_ids, anulado=False, bonifica=False)
+                  .exclude(
+                      Q(documentheaderobj__doc_op='GA', prod_cod=-9) |
+                      (~Q(documentheaderobj__doc_op='GA') & Q(prod_cod=90000))
+                  )
+                  .values('documentheaderobj_id')
+                  .annotate(
+                      gravada_10=Sum('gravada_10'),
+                      gravada_5=Sum('gravada_5'),
+                      exenta=Sum('exenta'),
+                      iva_10=Sum('iva_10'),
+                      iva_5=Sum('iva_5'),
+                      base_gravada_10=Sum('base_gravada_10'),
+                      base_gravada_5=Sum('base_gravada_5'),
+                  ))
+        agg_by_id = {a['documentheaderobj_id']: a for a in agg_qs}
+
+        for docobj in docs:
+            if docobj.doc_op == 'RS':
+                # Devoluciones: usar el cálculo original (basado en cantidad_devolucion)
+                gravada_10 = docobj.get_total_gravada_10()
+                iva_10 = docobj.get_ivas_10_master()
+                exento = docobj.get_total_exenta()
+                total = docobj.get_total_operacion_redondeo()
+            else:
+                a = agg_by_id.get(docobj.id, {})
+                gravada_10 = a.get('gravada_10') or 0
+                iva_10 = a.get('iva_10') or 0
+                iva_5 = a.get('iva_5') or 0
+                exento = a.get('exenta') or 0
+                base_g_10 = a.get('base_gravada_10') or 0
+                base_g_5 = a.get('base_gravada_5') or 0
+                totope = exento + (base_g_5 + iva_5) + (base_g_10 + iva_10)
+                redondeo = docobj.doc_redondeo or 0
+                if abs(redondeo):
+                    total = float(totope) + abs(float(redondeo)) if redondeo <= 0 else float(totope) - abs(float(redondeo))
+                else:
+                    total = totope
+
             ndata.append({
                 'dia': docobj.doc_fecha.day,
                 'doc_numero': docobj.get_number_full(),
                 'doc_tipo': docobj.doc_tipo,
                 'pdv_cliente': docobj.pdv_nombrefactura,
                 'pdv_codigo': docobj.pdv_ruc,
-                'gravada_10': docobj.get_total_gravada_10(),
-                'iva_10': docobj.get_ivas_10_master(),
-                'exento': docobj.get_total_exenta(),
-                'total': docobj.get_total_operacion_redondeo(),
+                'gravada_10': gravada_10,
+                'iva_10': iva_10,
+                'exento': exento,
+                'total': total,
                 'redondeo': docobj.doc_redondeo,
                 'retencion': docobj.retencionobj.retencion if docobj.retencionobj else 0
-
             })
         if not ndata:
             return {'error': f'Sin datos en el periodo {f_desce} al {f_hasta}'}
