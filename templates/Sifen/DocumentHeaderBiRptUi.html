@@ -190,25 +190,38 @@
         document.getElementById('bi_fecha_hasta').value = hoy.toISOString().substring(0, 10);
     })();
 
-    // Select2 de concepto
+    // Select2 de concepto (poblado desde Producto.descripcion + opción "Otros" al final)
+    const OTROS_VALUE = '__OTROS__';
+    const OTROS_LABEL = 'Otros (conceptos no listados)';
+
     form_search.se_populate({
         surl: '{% url "iom" %}',
         dele: '#bi_concepto_select',
         app_name: 'Sifen',
-        model_name: 'DocumentDetail',
-        field_display: ['prod_descripcion'],
-        field_id: ['prod_descripcion'],
-        db_fields: ['prod_descripcion'],
-        distinct: ['prod_descripcion'],
-        sort: [{'dataIndx': 'prod_descripcion', 'dir': 'up'}],
-        endRow: 500,
+        model_name: 'Producto',
+        field_display: ['descripcion'],
+        field_id: ['descripcion'],
+        db_fields: ['descripcion'],
+        sort: [{'dataIndx': 'descripcion', 'dir': 'up'}],
+        endRow: 5000,
         theme: 'bootstrap-5',
         width: '100%',
         allowClear: true,
         placeholder: 'Buscar concepto...',
         dbcon: 'default',
         headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
-        init_select2: true,
+        init_select2: false,
+    }).then(() => {
+        // Agregar la opción "Otros" al final y luego inicializar select2
+        $('#bi_concepto_select').append(
+            `<option value="${OTROS_VALUE}">${OTROS_LABEL}</option>`
+        );
+        $('#bi_concepto_select').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            allowClear: true,
+            placeholder: 'Buscar concepto...',
+        });
     });
 
     // ---- Drill-down facturas por cliente ----
@@ -268,8 +281,8 @@
             </tr>`).join('');
     }
 
-    function toggleFacturasCliente(ruc, trElement) {
-        let key = ruc;
+    function toggleFacturasCliente(ruc, concepto, trElement) {
+        let key = `${concepto}||${ruc}`;
         let next = trElement.nextElementSibling;
         while (next && next.classList.contains('bi-facturas-row')) {
             let tmp = next.nextElementSibling;
@@ -306,7 +319,7 @@
         fdata.append('package', 'mng_sifen');
         fdata.append('attr', 'MSifen');
         fdata.append('mname', 'get_bi_concepto_facturas_cliente');
-        fdata.append('prod_descripcion', $('#bi_concepto_select').val() || '');
+        fdata.append('prod_descripcion', concepto);
         fdata.append('pdv_ruc', ruc);
         fdata.append('fecha_desde', filters.fecha_desde);
         fdata.append('fecha_hasta', filters.fecha_hasta);
@@ -349,7 +362,7 @@
         document.getElementById('bi_concepto_tbody').querySelectorAll('.bi-cliente-row').forEach(tr => {
             tr.addEventListener('click', (e) => {
                 if (e.target.closest('.btn-abrir-pdf')) return;
-                toggleFacturasCliente(tr.dataset.ruc, tr);
+                toggleFacturasCliente(tr.dataset.ruc, tr.dataset.concepto, tr);
             });
         });
     }
@@ -367,7 +380,8 @@
         facturasCache = {};
         document.getElementById('bi_pivot_section').classList.add('d-none');
         document.getElementById('bi_concepto_section').classList.remove('d-none');
-        document.getElementById('bi_concepto_section_label').textContent = concepto;
+        let label = (concepto === OTROS_VALUE) ? OTROS_LABEL : concepto;
+        document.getElementById('bi_concepto_section_label').textContent = label;
         cargarClientesConcepto(concepto);
     }
 
@@ -389,7 +403,59 @@
 
     // ---- Clientes por concepto ----
 
+    function clienteRowHtml(r, concepto) {
+        let escRuc = (r.ruc || '').replace(/"/g, '&quot;');
+        let escCliente = r.cliente.replace(/"/g, '&quot;');
+        let escConcepto = concepto.replace(/"/g, '&quot;');
+        return `<tr class="bi-cliente-row" style="cursor:pointer;"
+                data-ruc="${escRuc}" data-cliente="${escCliente}" data-concepto="${escConcepto}">
+            <td class="text-start">
+                <i class="bi-cliente-icon mdi mdi-chevron-right text-muted me-1"></i>${r.cliente}
+            </td>
+            <td class="text-start">${r.ruc || ''}</td>
+            <td class="text-end">${r.facturas}</td>
+            <td class="text-end">${fmt2(r.cantidad)}</td>
+            <td class="text-end">${fmt(r.exenta)}</td>
+            <td class="text-end">${fmt(r.gravada_10)}</td>
+            <td class="text-end">${fmt(r.gravada_5)}</td>
+            <td class="text-end">${fmt(r.iva_10)}</td>
+            <td class="text-end">${fmt(r.iva_5)}</td>
+            <td class="text-end">${fmt(r.descuento)}</td>
+            <td class="text-end fw-bold">${fmt(r.total)}</td>
+        </tr>`;
+    }
+
+    function sumTot(rows) {
+        return rows.reduce((acc, r) => ({
+            facturas: acc.facturas + r.facturas,
+            cantidad: acc.cantidad + r.cantidad,
+            exenta: acc.exenta + r.exenta,
+            gravada_10: acc.gravada_10 + r.gravada_10,
+            gravada_5: acc.gravada_5 + r.gravada_5,
+            iva_10: acc.iva_10 + r.iva_10,
+            iva_5: acc.iva_5 + r.iva_5,
+            descuento: acc.descuento + r.descuento,
+            total: acc.total + r.total,
+        }), {facturas:0, cantidad:0, exenta:0, gravada_10:0, gravada_5:0, iva_10:0, iva_5:0, descuento:0, total:0});
+    }
+
+    function totalRowHtml(label, tot, klass='table-dark fw-bold') {
+        return `<tr class="${klass}">
+            <td colspan="2">${label}</td>
+            <td class="text-end">${tot.facturas}</td>
+            <td class="text-end">${fmt2(tot.cantidad)}</td>
+            <td class="text-end">${fmt(tot.exenta)}</td>
+            <td class="text-end">${fmt(tot.gravada_10)}</td>
+            <td class="text-end">${fmt(tot.gravada_5)}</td>
+            <td class="text-end">${fmt(tot.iva_10)}</td>
+            <td class="text-end">${fmt(tot.iva_5)}</td>
+            <td class="text-end">${fmt(tot.descuento)}</td>
+            <td class="text-end">${fmt(tot.total)}</td>
+        </tr>`;
+    }
+
     function cargarClientesConcepto(concepto) {
+        let isOtros = (concepto === OTROS_VALUE);
         let container = document.getElementById('bi_concepto_container');
         let tbody = document.getElementById('bi_concepto_tbody');
         container.classList.add('overlay-container', 'overlay');
@@ -401,7 +467,8 @@
         fdata.append('package', 'mng_sifen');
         fdata.append('attr', 'MSifen');
         fdata.append('mname', 'get_bi_rpt_producto_clientes');
-        fdata.append('prod_descripcion', concepto);
+        fdata.append('prod_descripcion', isOtros ? '' : concepto);
+        fdata.append('otros', isOtros ? '1' : '0');
         fdata.append('fecha_desde', filters.fecha_desde);
         fdata.append('fecha_hasta', filters.fecha_hasta);
         fdata.append('doc_tipo', filters.doc_tipo);
@@ -416,54 +483,50 @@
             let rows = d.rows || [];
             if (rows.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-3">Sin resultados</td></tr>`;
-            } else {
-                let tot = rows.reduce((acc, r) => ({
-                    facturas: acc.facturas + r.facturas,
-                    cantidad: acc.cantidad + r.cantidad,
-                    exenta: acc.exenta + r.exenta,
-                    gravada_10: acc.gravada_10 + r.gravada_10,
-                    gravada_5: acc.gravada_5 + r.gravada_5,
-                    iva_10: acc.iva_10 + r.iva_10,
-                    iva_5: acc.iva_5 + r.iva_5,
-                    descuento: acc.descuento + r.descuento,
-                    total: acc.total + r.total,
-                }), {facturas:0, cantidad:0, exenta:0, gravada_10:0, gravada_5:0, iva_10:0, iva_5:0, descuento:0, total:0});
-
-                let html = rows.map(r => {
-                    let escRuc = (r.ruc || '').replace(/"/g, '&quot;');
-                    let escCliente = r.cliente.replace(/"/g, '&quot;');
-                    return `<tr class="bi-cliente-row" style="cursor:pointer;"
-                            data-ruc="${escRuc}" data-cliente="${escCliente}">
-                    <td class="text-start">
-                        <i class="bi-cliente-icon mdi mdi-chevron-right text-muted me-1"></i>${r.cliente}
-                    </td>
-                    <td class="text-start">${r.ruc || ''}</td>
-                    <td class="text-end">${r.facturas}</td>
-                    <td class="text-end">${fmt2(r.cantidad)}</td>
-                    <td class="text-end">${fmt(r.exenta)}</td>
-                    <td class="text-end">${fmt(r.gravada_10)}</td>
-                    <td class="text-end">${fmt(r.gravada_5)}</td>
-                    <td class="text-end">${fmt(r.iva_10)}</td>
-                    <td class="text-end">${fmt(r.iva_5)}</td>
-                    <td class="text-end">${fmt(r.descuento)}</td>
-                    <td class="text-end fw-bold">${fmt(r.total)}</td>
-                </tr>`;
-                }).join('');
-                html += `<tr class="table-dark fw-bold">
-                    <td colspan="2">TOTAL</td>
-                    <td class="text-end">${tot.facturas}</td>
-                    <td class="text-end">${fmt2(tot.cantidad)}</td>
-                    <td class="text-end">${fmt(tot.exenta)}</td>
-                    <td class="text-end">${fmt(tot.gravada_10)}</td>
-                    <td class="text-end">${fmt(tot.gravada_5)}</td>
-                    <td class="text-end">${fmt(tot.iva_10)}</td>
-                    <td class="text-end">${fmt(tot.iva_5)}</td>
-                    <td class="text-end">${fmt(tot.descuento)}</td>
-                    <td class="text-end">${fmt(tot.total)}</td>
-                </tr>`;
+                renderKPIs({});
+            } else if (isOtros) {
+                // Agrupar por concepto
+                let grupos = {}, orden = [];
+                rows.forEach(r => {
+                    let k = r.prod_descripcion || '(sin descripción)';
+                    if (!grupos[k]) { grupos[k] = []; orden.push(k); }
+                    grupos[k].push(r);
+                });
+                // Ordenar grupos por total descendente
+                orden.sort((a, b) => {
+                    let ta = grupos[a].reduce((s, r) => s + r.total, 0);
+                    let tb = grupos[b].reduce((s, r) => s + r.total, 0);
+                    return tb - ta;
+                });
+                let html = '';
+                orden.forEach(concepto => {
+                    let gtot = sumTot(grupos[concepto]);
+                    let escConcepto = concepto.replace(/"/g, '&quot;');
+                    html += `<tr class="table-secondary">
+                        <td colspan="11" class="fw-bold ps-2 py-1">
+                            <i class="mdi mdi-tag-text-outline me-1"></i>${concepto}
+                            <small class="text-muted ms-2 fw-normal">${grupos[concepto].length} cliente(s) — ${fmt(gtot.total)}</small>
+                        </td>
+                    </tr>`;
+                    grupos[concepto].forEach(r => { html += clienteRowHtml(r, concepto); });
+                });
+                let tot = sumTot(rows);
+                html += totalRowHtml('TOTAL GENERAL', tot);
                 tbody.innerHTML = html;
                 bindClienteRows();
-                // Actualizar KPIs con totales del concepto
+                renderKPIs({
+                    productos: orden.length,
+                    facturas: tot.facturas,
+                    total: tot.total,
+                    iva_10: tot.iva_10,
+                    exenta: tot.exenta,
+                });
+            } else {
+                let tot = sumTot(rows);
+                let html = rows.map(r => clienteRowHtml(r, concepto)).join('');
+                html += totalRowHtml('TOTAL', tot);
+                tbody.innerHTML = html;
+                bindClienteRows();
                 renderKPIs({
                     productos: 1,
                     facturas: tot.facturas,
@@ -473,7 +536,7 @@
                 });
             }
             document.getElementById('bi_concepto_ultima_consulta').textContent =
-                `${rows.length} cliente(s) — ${new Date().toLocaleString()}`;
+                `${rows.length} fila(s) — ${new Date().toLocaleString()}`;
         }).catch(() => {
             UiB.MsgError('Error al cargar clientes del concepto');
         }).finally(() => {

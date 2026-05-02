@@ -17,7 +17,7 @@ from typing import Literal, Union
 from django.contrib.auth.models import User
 from django.http import QueryDict, HttpRequest
 from django.forms import model_to_dict
-from django.db.models import Sum
+from django.db.models import Sum, Count
 from django.core.files import File
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
@@ -96,7 +96,6 @@ class MSifen:
         """Reporte BI de facturas agrupado por producto (prod_descripcion).
         Filtra por rango de fechas y tipo de documento. Solo incluye docs aprobados por default.
         """
-        from django.db.models import Sum, Count
         q: dict = kwargs.get('qdict', {})
         fecha_desde = q.get('fecha_desde')
         fecha_hasta = q.get('fecha_hasta')
@@ -166,16 +165,24 @@ class MSifen:
         }
 
     def get_bi_rpt_producto_clientes(self, *args, **kwargs) -> dict:
-        """Detalle de clientes para un producto dado, con los mismos filtros del reporte principal."""
-        from django.db.models import Sum, Count
+        """Detalle de clientes para un producto dado, con los mismos filtros del reporte principal.
+        Si otros=1, agrupa por (concepto, cliente) sobre los prod_descripcion que NO existen en Producto.
+        """
         q: dict = kwargs.get('qdict', {})
         prod_descripcion = q.get('prod_descripcion', '')
+        otros = q.get('otros', '0') == '1'
         fecha_desde = q.get('fecha_desde')
         fecha_hasta = q.get('fecha_hasta')
         doc_tipo = q.get('doc_tipo', '')
         only_aprobado = q.get('only_aprobado', '1') == '1'
 
-        qs = DocumentDetail.objects.filter(anulado=False, prod_descripcion=prod_descripcion)
+        qs = DocumentDetail.objects.filter(anulado=False)
+        if otros:
+            productos_descs = list(Producto.objects.values_list('descripcion', flat=True))
+            qs = qs.exclude(prod_descripcion__in=productos_descs)
+        else:
+            qs = qs.filter(prod_descripcion=prod_descripcion)
+
         if fecha_desde:
             qs = qs.filter(documentheaderobj__doc_fecha__gte=fecha_desde)
         if fecha_hasta:
@@ -185,10 +192,11 @@ class MSifen:
         if only_aprobado:
             qs = qs.filter(documentheaderobj__ek_estado='Aprobado')
 
-        agg = qs.values(
-            'documentheaderobj__pdv_nombrefactura',
-            'documentheaderobj__pdv_ruc',
-        ).annotate(
+        group_fields = ['documentheaderobj__pdv_nombrefactura', 'documentheaderobj__pdv_ruc']
+        if otros:
+            group_fields.insert(0, 'prod_descripcion')
+
+        agg = qs.values(*group_fields).annotate(
             cantidad_total=Sum('cantidad'),
             exenta_total=Sum('exenta'),
             gravada_10_total=Sum('gravada_10'),
@@ -203,7 +211,7 @@ class MSifen:
         result = []
         for r in agg:
             total = float((r['exenta_total'] or 0) + (r['gravada_10_total'] or 0) + (r['gravada_5_total'] or 0))
-            result.append({
+            row = {
                 'cliente': r['documentheaderobj__pdv_nombrefactura'] or '(sin nombre)',
                 'ruc': r['documentheaderobj__pdv_ruc'] or '',
                 'cantidad': float(r['cantidad_total'] or 0),
@@ -216,7 +224,10 @@ class MSifen:
                 'total': total,
                 'facturas': r['facturas'],
                 'lineas': r['lineas'],
-            })
+            }
+            if otros:
+                row['prod_descripcion'] = r['prod_descripcion'] or '(sin descripción)'
+            result.append(row)
         return {'rows': result}
 
     def get_bi_concepto_facturas_cliente(self, *args, **kwargs) -> dict:
@@ -360,7 +371,6 @@ class MSifen:
 
     def nominar_doc(self, *args, **kwargs) -> dict:
         """Envía el evento de nominación a SIFEN para un documento innominado."""
-        from Sifen.rq_soap_handler import SoapSifen
         q: dict = kwargs.get('qdict', {})
         doc_id = q.get('doc_id')
         dbcon = q.get('dbcon', 'default')
