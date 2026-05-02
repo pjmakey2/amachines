@@ -2115,7 +2115,7 @@ class MSifen:
         title_fill = io_styles.title_fill(color="D8D8D8")
         swei = wb.active
         swei.title = sname
-        swei.merge_cells('A5:K5')
+        swei.merge_cells('A5:J5')
         
         swei['A5'] = f'LIBRO VENTAS DEL PERIODO {f_desce} AL {f_hasta}'
         swei['A5'].font = title_font
@@ -2147,14 +2147,13 @@ class MSifen:
         swei.merge_cells('B7:B8')
         swei.merge_cells('C7:C8')
         swei.merge_cells('J7:J8')
-        swei.merge_cells('K7:K8')
         swei.merge_cells('D7:E7')
         swei.merge_cells('F7:I7')
 
         header_text = [
             'A7', 'B7', 'C7', 'D7',
             'E7', 'F7', 'G7', 'H7', 'I7',
-            'J7', 'K7'
+            'J7'
         ]
         for tt in titles:
             swei[tt].font = title_font
@@ -2167,7 +2166,7 @@ class MSifen:
         tc = {
             'A7': {'col': 'Dia',  'start': 'A7', 'width': 5.62},
             'B7': {'col': 'Documento Numero',  'start': 'B7', 'width': 10.15},
-            'C7': {'col': 'Tipo',  'start': 'C7', 'width': 7.00},
+            'C7': {'col': 'Tipo',  'start': 'C7', 'width': 14.00},
             'D7': {'col': 'Cliente de Bienes y Servic',  'start': 'D7', 'width': 23.90},
             'D8': {'col': 'R.Soc/Apell./Nomb',  'start': 'D8', 'width': 19.31},
             'E8': {'col': 'RUC',  'start': 'E8', 'width': 10.31},
@@ -2176,8 +2175,7 @@ class MSifen:
             'G8': {'col': 'Iva 10%',  'start': 'G8', 'width': 12.69},
             'H8': {'col': 'Exento',  'start': 'H8', 'width': 12.69},
             'I8': {'col': 'Total',  'start': 'I8', 'width': 12.69},
-            'J7': {'col': 'Redondeo',  'start': 'J7', 'width': 12.69},
-            'K7': {'col': 'Retencion',  'start': 'K7', 'width': 12.69},
+            'J7': {'col': 'Retencion',  'start': 'J7', 'width': 12.69},
         }
         for sc, t in tc.items():
             cf = t.get('start')
@@ -2253,17 +2251,25 @@ class MSifen:
                 else:
                     total = totope
 
+            if docobj.doc_tipo == 'FE':
+                tipo_label = 'F.Contado' if docobj.doc_cre_tipo == 'Contado' else 'F.Crédito'
+            elif docobj.doc_tipo == 'NC':
+                tipo_label = 'Nota de Crédito'
+            elif docobj.doc_tipo == 'ND':
+                tipo_label = 'Nota de Débito'
+            else:
+                tipo_label = docobj.doc_tipo
+
             ndata.append({
                 'dia': docobj.doc_fecha.day,
                 'doc_numero': docobj.get_number_full(),
-                'doc_tipo': docobj.doc_tipo,
+                'doc_tipo': tipo_label,
                 'pdv_cliente': docobj.pdv_nombrefactura,
                 'pdv_codigo': docobj.pdv_ruc,
                 'gravada_10': gravada_10,
                 'iva_10': iva_10,
                 'exento': exento,
                 'total': total,
-                'redondeo': docobj.doc_redondeo,
                 'retencion': docobj.retencionobj.retencion if docobj.retencionobj else 0
             })
         if not ndata:
@@ -2272,7 +2278,7 @@ class MSifen:
             'dia','doc_numero','doc_tipo','pdv_cliente',
             'pdv_codigo','gravada_10',
             'iva_10','exento',
-            'total','redondeo','retencion',
+            'total','retencion',
         ]
         dfp = pd.DataFrame(ndata)
         rows = dataframe_to_rows(dfp[ncols], index=False, header=False)
@@ -2341,7 +2347,7 @@ class MSifen:
         #                     'D4:D10', 'B4:B10']
         # borders['left'] = ['G4:G7','F8:F10','G8:G10', 'J4:J10']
         # borders['left_bottom'] = ['F7:I7']
-        borders['all'] = ['A7:K8']
+        borders['all'] = ['A7:J8']
         
         # if r_idx > 0:
         #     lrow += 2
