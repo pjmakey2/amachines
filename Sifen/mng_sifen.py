@@ -2145,15 +2145,16 @@ class MSifen:
 
         swei.merge_cells('A7:A8')
         swei.merge_cells('B7:B8')
+        swei.merge_cells('C7:C8')
+        swei.merge_cells('J7:J8')
         swei.merge_cells('K7:K8')
-        swei.merge_cells('L7:L8')
-        swei.merge_cells('C7:D7')
-        swei.merge_cells('E7:J7')
+        swei.merge_cells('D7:E7')
+        swei.merge_cells('F7:I7')
 
         header_text = [
             'A7', 'B7', 'C7', 'D7',
             'E7', 'F7', 'G7', 'H7', 'I7',
-            'J7', 'K7','L7'
+            'J7', 'K7'
         ]
         for tt in titles:
             swei[tt].font = title_font
@@ -2166,18 +2167,17 @@ class MSifen:
         tc = {
             'A7': {'col': 'Dia',  'start': 'A7', 'width': 5.62},
             'B7': {'col': 'Documento Numero',  'start': 'B7', 'width': 10.15},
-            'C7': {'col': 'Cliente de Bienes y Servic',  'start': 'C7', 'width': 23.90},
-            'C8': {'col': 'R.Soc/Apell./Nomb',  'start': 'C8', 'width': 19.31},
-            'D8': {'col': 'RUC',  'start': 'D8', 'width': 10.31},
-            'E7': {'col': 'Valores de ventas y servicios',  'start': 'E7', 'width': 40.50},
-            'E8': {'col': 'Grav 10%',  'start': 'E8', 'width': 12.69},
-            'F8': {'col': 'Grav 5%',  'start': 'F8', 'width': 12.69},
+            'C7': {'col': 'Tipo',  'start': 'C7', 'width': 7.00},
+            'D7': {'col': 'Cliente de Bienes y Servic',  'start': 'D7', 'width': 23.90},
+            'D8': {'col': 'R.Soc/Apell./Nomb',  'start': 'D8', 'width': 19.31},
+            'E8': {'col': 'RUC',  'start': 'E8', 'width': 10.31},
+            'F7': {'col': 'Valores de ventas y servicios',  'start': 'F7', 'width': 40.50},
+            'F8': {'col': 'Grav 10%',  'start': 'F8', 'width': 12.69},
             'G8': {'col': 'Iva 10%',  'start': 'G8', 'width': 12.69},
-            'H8': {'col': 'Iva 5%',  'start': 'H8', 'width': 12.69},
-            'I8': {'col': 'Exento',  'start': 'I8', 'width': 12.69},
-            'J8': {'col': 'Total',  'start': 'J8', 'width': 12.69},
-            'K7': {'col': 'Redondeo',  'start': 'K7', 'width': 12.69},
-            'L7': {'col': 'Retencion',  'start': 'L7', 'width': 12.69},
+            'H8': {'col': 'Exento',  'start': 'H8', 'width': 12.69},
+            'I8': {'col': 'Total',  'start': 'I8', 'width': 12.69},
+            'J7': {'col': 'Redondeo',  'start': 'J7', 'width': 12.69},
+            'K7': {'col': 'Retencion',  'start': 'K7', 'width': 12.69},
         }
         for sc, t in tc.items():
             cf = t.get('start')
@@ -2212,24 +2212,23 @@ class MSifen:
             ndata.append({
                 'dia': docobj.doc_fecha.day,
                 'doc_numero': docobj.get_number_full(),
+                'doc_tipo': docobj.doc_tipo,
                 'pdv_cliente': docobj.pdv_nombrefactura,
                 'pdv_codigo': docobj.pdv_ruc,
                 'gravada_10': docobj.get_total_gravada_10(),
-                'gravada_5': docobj.get_total_gravada_5(),
                 'iva_10': docobj.get_ivas_10_master(),
-                'iva_5': docobj.get_ivas_5_master(),
                 'exento': docobj.get_total_exenta(),
                 'total': docobj.get_total_operacion_redondeo(),
                 'redondeo': docobj.doc_redondeo,
                 'retencion': docobj.retencionobj.retencion if docobj.retencionobj else 0
-                
+
             })
         if not ndata:
             return {'error': f'Sin datos en el periodo {f_desce} al {f_hasta}'}
         ncols = [
-            'dia','doc_numero','pdv_cliente',
-            'pdv_codigo','gravada_10','gravada_5',
-            'iva_10','iva_5','exento',
+            'dia','doc_numero','doc_tipo','pdv_cliente',
+            'pdv_codigo','gravada_10',
+            'iva_10','exento',
             'total','redondeo','retencion',
         ]
         dfp = pd.DataFrame(ndata)
@@ -2299,7 +2298,7 @@ class MSifen:
         #                     'D4:D10', 'B4:B10']
         # borders['left'] = ['G4:G7','F8:F10','G8:G10', 'J4:J10']
         # borders['left_bottom'] = ['F7:I7']
-        borders['all'] = ['A7:L8']
+        borders['all'] = ['A7:K8']
         
         # if r_idx > 0:
         #     lrow += 2
