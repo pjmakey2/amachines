@@ -529,8 +529,7 @@ class MFLFacturacion:
                 filtros['clientenombre'] = q.get('clientenombre')
             if q.get('facturaemitida'):
                 filtros['facturaemitida'] = q.get('facturaemitida')
-            if q.get('fecha_desde'):
-                filtros['fecha_desde'] = q.get('fecha_desde')
+            filtros['fecha_desde'] = q.get('fecha_desde') or '2026-03-31'
             if q.get('fecha_hasta'):
                 filtros['fecha_hasta'] = q.get('fecha_hasta')
 
