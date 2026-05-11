@@ -342,7 +342,8 @@ class Egf(object):
             self.mxml.create_SubElement(gcamae, 'cCiuProv', _text=ciuobj.codigo_ciudad)
             self.mxml.create_SubElement(gcamae, 'dDesCiuProv', _text=ciuobj.nombre_ciudad)
             self.condope_de(gdtipde, headerobj)
-
+        if headerobj.doc_tipo in ['NR', 'NRE']:
+            self.gcamnre_de(gdtipde, headerobj)
         if headerobj.doc_tipo == 'RE':
             #To implement
             pass        
