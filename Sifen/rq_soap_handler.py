@@ -139,8 +139,8 @@ class SoapSifen:
         rt = self.mxml.fromstring(str(rsp.text).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
         drsp = self.xtodict(rt, 'qr_cdc')
         if drsp.get('dmsgres') == 'CDC encontrado':
-            return {'exitos': drsp.get('dmsgres')}
-        return {'error': drsp.get('dmsgres')}
+            return {'exitos': drsp.get('dmsgres'), 'xml': rsp.text}
+        return {'error': drsp.get('dmsgres'), 'xml': rsp.text}
 
     def qr_lote(self, lote):
         sxml = soap_schemas_xml.SiResultLoteDE(lote)
@@ -488,10 +488,11 @@ class SoapSifen:
                     qr_link=dCarQR
                 )
                 logging.info(f'Actualizando DocumentHeader ek_cdc={cdc} con estado {dMsgRes} msg {dMsgRes}')
-                DocumentHeader.objects.filter(ek_cdc=cdc).update(
-                    lote_estado = dEstRes,
-                    lote_msg = dMsgRes
-                )
+                upps = {'lote_msg': dMsgRes}
+                if dMsgRes == 'CDC encontrado':
+                    upps['lote_estado'] = 'Aprobado'
+                    upps['ek_estado'] = 'Aprobado'
+                DocumentHeader.objects.filter(ek_cdc=cdc).update(**upps)
             if cltag == 'rretenvide':
                 soup = BeautifulSoup(self.mxml.to_string_xml(a), 'xml')
                 logging.info(self.mxml.to_string_xml(a))
