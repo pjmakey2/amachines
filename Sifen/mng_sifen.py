@@ -3087,17 +3087,18 @@ class MSifen:
             })
             eser.set_data_ekuatia(qdict=qek)
             eser.send_pending_signedxml([docobj.prof_number])
-        if docobj.pdv_email is not None and docobj.pdv_email.strip():
-            send_task('Sifen.tasks.send_invoice',
-                kwargs={
-                    'username': userobj.username,
-                    'qdict': {
-                        'dbcon': dbcon,
-                        'docpk': docobj.id,
-                        'from_console': False
-                    }
-                }
-            )
+        # TODO: No enviar hasta regularizar colision
+        # if docobj.pdv_email is not None and docobj.pdv_email.strip():
+        #     send_task('Sifen.tasks.send_invoice',
+        #         kwargs={
+        #             'username': userobj.username,
+        #             'qdict': {
+        #                 'dbcon': dbcon,
+        #                 'docpk': docobj.id,
+        #                 'from_console': False
+        #             }
+        #         }
+        #     )
         return {'success': 'Documento enviado a SIFEN exitosamente', 'record_id': docobj.id}
 
     def delete_documentheader(self, *args, **kwargs) -> dict:
