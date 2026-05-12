@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from Sifen import mng_sifen_masters, ekuatia_gf, ekuatia_serials, mng_sifen_ruc_mapper, mng_sifen
 from Sifen.models import DocumentHeader, Clientes
+from Sifen.rq_soap_handler import SoapSifen
 from OptsIO.models import Apps
 from tqdm import tqdm
 
@@ -22,6 +23,8 @@ class Command(BaseCommand):
         parser.add_argument('--sync_rucs', action='store_true', help='Download and sync RUC data from DNIT')
         parser.add_argument('--create_core_apps', action='store_true', help='Create core apps entries')
         parser.add_argument('--classify_clients', action='store_true', help='Classify clients as B2B or B2C based on RUC')
+        parser.add_argument('--consultar_cdcs', action='store_true', help='Consultar CDCs en SIFEN para documentos no aprobados en un rango de fechas')
+        parser.add_argument('--dates', nargs='+', help='Rango de fechas: --dates YYYY-MM-DD YYYY-MM-DD')
 
         parser.add_argument('--ruc', nargs='?')
         parser.add_argument('--dv', nargs='?')
@@ -181,6 +184,9 @@ class Command(BaseCommand):
 
         if options['classify_clients']:
             self.classify_clients()
+
+        if options['consultar_cdcs']:
+            self.consultar_cdcs(options.get('dates') or [])
 
     def create_core_apps(self):
         """Create core apps entries if they don't exist"""
@@ -493,6 +499,50 @@ class Command(BaseCommand):
         self.stdout.write(f"  - Created: {created_count}")
         self.stdout.write(f"  - Already existed: {existing_count}")
         self.stdout.write(f"  - Total: {len(apps_core)}")
+
+    def consultar_cdcs(self, dates):
+        if len(dates) != 2:
+            self.stdout.write(self.style.ERROR('--dates requiere dos fechas: --dates YYYY-MM-DD YYYY-MM-DD'))
+            return
+        fecha_desde, fecha_hasta = dates[0], dates[1]
+        self.stdout.write(self.style.SUCCESS(f'Consultando CDCs entre {fecha_desde} y {fecha_hasta}...'))
+        dobjs = DocumentHeader.objects.filter(
+            doc_fecha__gte=fecha_desde,
+            doc_fecha__lte=fecha_hasta,
+            ek_cdc__isnull=False,
+        ).exclude(ek_estado='Aprobado').exclude(ek_cdc='')
+        count = dobjs.count()
+        if count == 0:
+            self.stdout.write(self.style.WARNING('No hay documentos para consultar'))
+            return
+        self.stdout.write(f'  - Encontrados {count} documentos a consultar')
+        rr = SoapSifen()
+        aprobados = 0
+        no_existen = 0
+        errores = 0
+        for docobj in tqdm(dobjs, desc='Consultando CDCs'):
+            try:
+                drsp = rr.qr_cdc(docobj.ek_cdc)
+                if drsp.get('exitos') == 'CDC encontrado':
+                    DocumentHeader.objects.filter(pk=docobj.pk).update(
+                        ek_estado='Aprobado',
+                        lote_estado='Aprobado',
+                    )
+                    aprobados += 1
+                else:
+                    DocumentHeader.objects.filter(pk=docobj.pk).update(
+                        ek_estado=None,
+                        lote_estado=None,
+                    )
+                    no_existen += 1
+            except Exception as e:
+                errores += 1
+                self.stdout.write(self.style.ERROR(f'  ⚠ Doc {docobj.doc_numero}: {e}'))
+        self.stdout.write('')
+        self.stdout.write(self.style.SUCCESS('Consulta completada:'))
+        self.stdout.write(f'  - Aprobados: {aprobados}')
+        self.stdout.write(f'  - No existen / Rechazados: {no_existen}')
+        self.stdout.write(f'  - Errores: {errores}')
 
     def classify_clients(self):
         """
