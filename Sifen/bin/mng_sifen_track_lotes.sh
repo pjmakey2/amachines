@@ -4,5 +4,4 @@
 
 FIVE_DAYS_AGO=$(date -d "5 day ago" +'%Y-%m-%d')
 
-cd /app
 python manage.py mng_sifen_mainline --track_lotes --date "${FIVE_DAYS_AGO}"
