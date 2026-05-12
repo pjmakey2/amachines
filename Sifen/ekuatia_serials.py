@@ -3,6 +3,7 @@ from boltons import iterutils
 from django.http import QueryDict
 from django.forms import model_to_dict
 from django.db.models import Q
+from django.db import transaction
 from datetime import datetime, date
 from tqdm import tqdm
 from Sifen.models import Etimbrado, Enumbers, TrackLote, DocumentRecibo, DocumentHeader, Business, SoapMsg
@@ -299,9 +300,7 @@ class Eserial(object):
     def set_number(self, *args, **kwargs):
         logging.info('Running set_numbert')
         qdict = kwargs.get('qdict')
-        ahora = date.today()
-        ahoraf = ahora.strftime('%Y-%m-%d')
-        invoicedate = ahora
+        invoicedate = date.today()
         ruc = qdict.get('ruc')
         timbrado = qdict.get('timbrado')
         establecimiento = qdict.get('establecimiento')
@@ -309,79 +308,73 @@ class Eserial(object):
         prof_number = qdict.getlist('prof_number')
         tipo = qdict.get('tipo')
         sign_document = qdict.get('sign_document', True)
-        #viene por query dict, pero es un proceso interno despues del ruteo
-        #por eso ya esta como lista
-        recobjs = DocumentHeader.objects.filter(prof_number__in=prof_number, doc_tipo=tipo, doc_numero__isnull=True).order_by('prof_number')
-        if not recobjs: return {'error': 'No se puede asignar numero de documentos a los pedidos'}
-        numeros_necesarios = recobjs.count()
-        logging.info('We need upto {} numbers for type {}'.format(numeros_necesarios, tipo))
-        qed = QueryDict(mutable=True)
-        logging.info('Get available timbrado for {} and establishment {}'.format(
-            ruc, establecimiento
-        ))
-        timp = {'ruc': ruc,'establecimiento': establecimiento }
-        
-        #timbradoobj = self.get_available_timbrado(qdict=timp)
+
         timbradoobj = Etimbrado.objects.get(timbrado=timbrado)
-        
-        # if timbradoobj.get('error'):
-        #     raise ValueError(timbradoobj.get('error'))
-        
+        expobj = timbradoobj.eestablecimiento_set.get(establecimiento=establecimiento)
         serie = timbradoobj.serie
         vigencia = timbradoobj.inicio
         fcsc = timbradoobj.fcsc
         scsc = timbradoobj.scsc
         venct = timbradoobj.vencimiento
-        logging.info(f'Get available numbers for timbrado {timbradoobj.timbrado} establishment {establecimiento} type {tipo}')
-
-        enumobjs = self.get_available_numbers(qdict={
-            'timbrado': timbradoobj.timbrado,
-            'establecimiento': establecimiento,
-            'tipo': tipo
-        })
-        logging.info('Response of get_available_numbers timbrado {} estaclemiento {} tipo {}'.format(
-            enumobjs.get('timbrado'),
-            enumobjs.get('establecimiento'),
-            enumobjs.get('tipo'),
-        ))
-        if enumobjs.get('error'):
-            raise ValueError(enumobjs.get('error'))
-        
-        if len(enumobjs.get('numeros')) < numeros_necesarios:
-            raise ValueError('IMPOSIBLE GENERAR LA ORDEN DE IMPRESION, LA CANTIDAD DE NUMEROS ES INSUFICIENTE')
         impreso_caja = expd
         impreso_sucursal = establecimiento
-        numbers = enumobjs.get('numeros')
+
+        enum_tipo = 'PD' if tipo == 'MI' else tipo
+
         aorde = QueryDict(mutable=True)
-        tcount = 0
-        for recobj in recobjs:
-            # if pedobj.pedidos_set.all().count() == pedobj.pedidos_set.filter(anulado_040=True).count():
-            #     continue
-            enum, tipo, timbrado = numbers.pop()
-            if not enum:
-                return {'error': 'No hay numeros disponibles'}
-            
-            vencimiento = venct
-            logging.info('Set number {} for type {} and attrib doc_numero'.format(
-                enum, tipo
-            ))
-            recobj.doc_fecha = invoicedate
-            recobj.doc_numero = enum
-            #recobj.doc_op = tipo
-            #recobj.doc_tipo = recobj.pedido_tipo
-            recobj.ek_serie =  serie
-            recobj.ek_timbrado = timbrado
-            recobj.ek_timbrado_vencimiento = vencimiento
-            recobj.ek_timbrado_vigencia = vigencia
-            recobj.doc_expedicion = impreso_caja
-            recobj.doc_establecimiento = impreso_sucursal
-            recobj.impx_nombre = 'GENERICO'
-            recobj.ek_idcsc = fcsc
-            recobj.ek_idscsc = scsc
-            recobj.save()
-            aorde.update({'prof_number': recobj.prof_number})
-            tcount += 1
-            qed.update({'numero': enum})
+        qed = QueryDict(mutable=True)
+
+        with transaction.atomic():
+            recobjs = list(
+                DocumentHeader.objects
+                .select_for_update()
+                .filter(prof_number__in=prof_number, doc_tipo=tipo, doc_numero__isnull=True)
+                .order_by('prof_number')
+            )
+            if not recobjs:
+                return {'error': 'No se puede asignar numero de documentos a los pedidos'}
+            numeros_necesarios = len(recobjs)
+            logging.info(f'We need upto {numeros_necesarios} numbers for type {tipo}')
+
+            # Lockear sin slicing: skip_locked + LIMIT en PG/Django pierde filas
+            # cuando el "top" esta lockeado. Iteramos en orden y consumimos N
+            # filas no-lockeadas usando .iterator() + chunk_size.
+            enum_qs = (
+                Enumbers.objects
+                .select_for_update(skip_locked=True, of=('self',))
+                .filter(expobj=expobj, estado='L', tipo=enum_tipo)
+                .order_by('numero')
+            )
+            enum_rows = []
+            for er in enum_qs.iterator(chunk_size=numeros_necesarios * 4 + 8):
+                enum_rows.append(er)
+                if len(enum_rows) >= numeros_necesarios:
+                    break
+            if len(enum_rows) < numeros_necesarios:
+                raise ValueError('IMPOSIBLE GENERAR LA ORDEN DE IMPRESION, LA CANTIDAD DE NUMEROS ES INSUFICIENTE')
+
+            for recobj, enum_row in zip(recobjs, enum_rows):
+                enum = enum_row.numero
+                logging.info(f'Set number {enum} for type {tipo} and attrib doc_numero')
+                recobj.doc_fecha = invoicedate
+                recobj.doc_numero = enum
+                recobj.ek_serie = serie
+                recobj.ek_timbrado = timbradoobj.timbrado
+                recobj.ek_timbrado_vencimiento = venct
+                recobj.ek_timbrado_vigencia = vigencia
+                recobj.doc_expedicion = impreso_caja
+                recobj.doc_establecimiento = impreso_sucursal
+                recobj.impx_nombre = 'GENERICO'
+                recobj.ek_idcsc = fcsc
+                recobj.ek_idscsc = scsc
+                recobj.save()
+
+                enum_row.estado = 'R'
+                enum_row.save(update_fields=['estado'])
+
+                aorde.update({'prof_number': recobj.prof_number})
+                qed.update({'numero': enum})
+
         qed.update({
             'timbrado': timbradoobj.timbrado,
             'establecimiento': establecimiento,
@@ -390,10 +383,8 @@ class Eserial(object):
             'expd': expd,
             'state': 'R'
         })
-        aorde.update({
-            'ruc': ruc
-        })
-        self.set_state_numbers(qdict=qed)
+        aorde.update({'ruc': ruc})
+
         if sign_document:
             self.set_data_ekuatia(qdict=aorde)
         return {'success': 'Done', 
