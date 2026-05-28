@@ -798,6 +798,12 @@ form_validation = {
             e.target.value = e.target.value.slice(0, -1); // Remove last character
         }
     },
+    just_number_with_optional_letter: (e) => {
+        const pattern = /^\d*[a-zA-Z]?$/;
+        if (!pattern.test(e.target.value)) {
+            e.target.value = e.target.value.slice(0, -1); // Remove last character
+        }
+    },
     justNumberAndLetters: (e) => {
         const pattern = /^[a-zA-Z0-9]*$/;
         if (!pattern.test(e.target.value)) {

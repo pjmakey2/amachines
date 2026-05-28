@@ -44,7 +44,7 @@
                         name="pdv_ruc"
                         class="form-control"
                         placeholder="RUC"
-                        oninput="form_validation.just_number(event)"
+                        oninput="form_validation.just_number_with_optional_letter(event)"
                         {% if mobj %} value="{{ mobj.pdv_ruc }}" {% endif %}
                     />
                     <label>RUC</label>

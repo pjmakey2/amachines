@@ -139,6 +139,9 @@ yarn-error.log
 # Generated invoice XML files
 Sifen/invoice_xml/
 
+# Archivos CSV del gobierno (set ventas/compras SIFEN)
+Sifen/rf/*.csv
+
 # Archivos temporales de templates
 templates/tmp/
 templates/rpts/
