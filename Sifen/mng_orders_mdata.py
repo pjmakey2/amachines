@@ -37,24 +37,32 @@ class Morders:
         eobj = Business.objects.get(ruc=ruc)
         pedobj = DocumentHeader.objects.get(prof_number=ped_nu)
         mgdata = mng_gmdata.Gdata()
-        error_gen = False
-        # codseg = int(pedobj.ek_cod_seg)
-        # if codseg == 0:
-        #     error_gen = True
-        error_gen = True
-        while error_gen:
-            codseg = str(mgdata.gen_codseg()).zfill(9)
-            try:
-                CSeg.objects.create(
-                    codigo_seguridad=codseg,
-                    asignado_model='ND',
-                    asignado_doc=0
-                )
-            except:
-                continue
-            else:
-                error_gen = False
-            logging.info('Generate cod_seg {}'.format(codseg))
+        # Reusar ek_cod_seg si ya existe; regenerar solo cuando no hay uno
+        # asignado todavia. Evita que reintentos (cron send_pending) produzcan
+        # un CDC distinto para el mismo doc_numero y SIFEN devuelva
+        # "Documento electronico duplicado".
+        try:
+            codseg_existente = int(pedobj.ek_cod_seg or 0)
+        except (TypeError, ValueError):
+            codseg_existente = 0
+        if codseg_existente:
+            codseg = str(codseg_existente).zfill(9)
+            logging.info('Reusing existing cod_seg {} for prof_number {}'.format(codseg, ped_nu))
+        else:
+            error_gen = True
+            while error_gen:
+                codseg = str(mgdata.gen_codseg()).zfill(9)
+                try:
+                    CSeg.objects.create(
+                        codigo_seguridad=codseg,
+                        asignado_model='ND',
+                        asignado_doc=0
+                    )
+                except:
+                    continue
+                else:
+                    error_gen = False
+                logging.info('Generate cod_seg {}'.format(codseg))
         
         if pedobj.doc_tipo == 'FE':
             tipo_doc = '01'
