@@ -6,6 +6,7 @@ integrándose con SIFEN para facturación electrónica.
 """
 
 import logging
+import re
 import requests
 from decimal import Decimal
 from datetime import datetime
@@ -828,11 +829,10 @@ class MFLFacturacion:
             if ruc_cliente:
                 ruc_cliente = ruc_cliente.replace('.', '').replace('-', '')
 
-            # VALIDAR que el RUC sea solo números (sin el dígito verificador)
-            ruc_sin_dv = ruc_cliente.split('-')[0] if '-' in ruc_cliente else ruc_cliente
-            if ruc_sin_dv and ruc_sin_dv not in ['0', '']:
-                if not ruc_sin_dv.isdigit():
-                    return {'error': f'El RUC debe contener solo números. RUC ingresado: {ruc_frontend}'}
+            # VALIDAR formato del RUC: digitos con opcionalmente una letra al final
+            if ruc_cliente and ruc_cliente not in ['0', '']:
+                if not re.match(r'^\d+[A-Za-z]?$', ruc_cliente):
+                    return {'error': f'El RUC debe contener solo dígitos, opcionalmente con una letra al final. RUC ingresado: {ruc_frontend}'}
 
             if nombre_frontend:
                 nombre_cliente = nombre_frontend

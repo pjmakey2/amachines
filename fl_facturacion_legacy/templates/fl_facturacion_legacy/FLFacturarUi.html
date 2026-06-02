@@ -470,7 +470,12 @@
     // Validar RUC contra SIFEN
     async function validarRucSifen() {
         const rucInput = document.getElementById('fl_ruc_factura');
-        rucInput.value = rucInput.value.replace(/\D/g, '');
+        // Permitir digitos + opcionalmente una sola letra al final (igual que
+        // el oninput just_number_with_optional_letter). Acepta pegado con
+        // puntos/guiones y normaliza al patron \d+[A-Za-z]?
+        const _cleaned = rucInput.value.replace(/[^\dA-Za-z]/g, '');
+        const _m = _cleaned.match(/\d+[A-Za-z]?/);
+        rucInput.value = _m ? _m[0] : '';
         const ruc = rucInput.value.trim();
 
         const checkIcon = document.getElementById('fl_ruc_check');
@@ -491,8 +496,8 @@
             return;
         }
 
-        // Validar formato básico (debe tener al menos algunos dígitos)
-        if (!/^\d+(-\d)?$/.test(ruc) && !/^\d{6,}$/.test(ruc)) {
+        // Validar formato básico: digitos (>=6) con letra opcional al final
+        if (!/^\d{6,}[A-Za-z]?$/.test(ruc)) {
             return;
         }
 
@@ -851,12 +856,11 @@
         const nombreFactura = document.getElementById('fl_nombre_factura').value.trim();
         const correoFactura = document.getElementById('fl_correo_factura').value.trim();
 
-        // Validar que el RUC sea solo números
+        // Validar formato del RUC: digitos con opcionalmente una letra al final
         if (rucFactura && rucFactura !== '0') {
             const rucLimpio = rucFactura.replace(/\./g, '').replace(/-/g, '');
-            const rucSinDV = rucLimpio.split('-')[0];
-            if (!/^\d+$/.test(rucSinDV)) {
-                Swal.fire('Aviso', 'El RUC debe contener solo números', 'warning');
+            if (!/^\d+[A-Za-z]?$/.test(rucLimpio)) {
+                Swal.fire('Aviso', 'El RUC debe contener solo dígitos, opcionalmente con una letra al final', 'warning');
                 document.getElementById('fl_ruc_factura').focus();
                 return;
             }
