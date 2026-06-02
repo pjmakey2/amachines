@@ -43,7 +43,7 @@
                         <span id="fl_ruc_loading" class="spinner-border spinner-border-sm text-primary ms-1" style="display: none;"></span>
                     </label>
                     <div class="d-flex gap-1">
-                        <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC" oninput="form_validation.just_number(event)">
+                        <input type="text" id="fl_ruc_factura" class="form-control" placeholder="RUC" oninput="form_validation.just_number_with_optional_letter(event)">
                         <input type="text" id="fl_ruc_dv" class="form-control bg-light" placeholder="DV" readonly style="max-width: 50px;">
                     </div>
                     <small id="fl_ruc_nombre_sifen" class="text-muted" style="display: none;"></small>
