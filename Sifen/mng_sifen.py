@@ -3053,27 +3053,28 @@ class MSifen:
         rtype = q.get('rtype')
         docobj = DocumentHeader.objects.using(dbcon).get(pk=pk)
         timbradoobj = Etimbrado.objects.get(timbrado=docobj.ek_timbrado)
-        if rtype == 'create':
-            rsp = self.set_number(
-                timbradoobj.timbrado,
-                [docobj.prof_number],
-                1,
-                docobj.doc_establecimiento,
-                sign_document=True,
-                doc_tipo=docobj.doc_tipo
-            )
-            if not rsp.get('success'): return rsp
-        if rtype == 'update' and not docobj.doc_numero:
-            rsp = self.set_number(
-                timbradoobj.timbrado,
-                [docobj.prof_number],
-                1,
-                docobj.doc_establecimiento,
-                sign_document=True,
-                doc_tipo=docobj.doc_tipo
-            )
-            if not rsp.get('success'): return rsp
+        # set_number asigna doc_numero (commit dentro de su propia transaccion) y
+        # luego llama set_data_ekuatia (firma/QR). Si la firma revienta el numero
+        # ya quedo asignado: devolvemos success y el cron retoma la firma.
+        needs_number = (rtype == 'create') or (rtype == 'update' and not docobj.doc_numero)
+        if needs_number:
+            try:
+                rsp = self.set_number(
+                    timbradoobj.timbrado,
+                    [docobj.prof_number],
+                    1,
+                    docobj.doc_establecimiento,
+                    sign_document=True,
+                    doc_tipo=docobj.doc_tipo
+                )
+                if not rsp.get('success'): return rsp
+            except Exception as e:
+                logging.warning(f'set_number fallo para prof_number={docobj.prof_number}: {e}. Doc queda pendiente para el cron.')
+                return {'success': 'Documento creado, pendiente de envio a SIFEN', 'record_id': docobj.id, 'sifen_warning': str(e)}
         #send file to the sifen.
+        # Si la firma/envio falla (SIFEN caido, error de archivos, etc.) el doc
+        # ya esta guardado con numero asignado: queda pendiente y el cron
+        # send_pending_docs lo retoma cuando SIFEN este disponible.
         if not docobj.ek_estado:
             #Por si es que es tipo create y se ha asignado numero.
             docobj = DocumentHeader.objects.using(dbcon).get(pk=pk)
@@ -3085,8 +3086,16 @@ class MSifen:
                 'prof_number': docobj.prof_number,
                 'ruc': docobj.ek_bs_ruc,
             })
-            eser.set_data_ekuatia(qdict=qek)
-            eser.send_pending_signedxml([docobj.prof_number])
+            try:
+                eser.set_data_ekuatia(qdict=qek)
+            except Exception as e:
+                logging.warning(f'set_data_ekuatia fallo para prof_number={docobj.prof_number}: {e}. Doc queda pendiente para el cron.')
+                return {'success': 'Documento creado, pendiente de envio a SIFEN', 'record_id': docobj.id, 'sifen_warning': str(e)}
+            try:
+                eser.send_pending_signedxml([docobj.prof_number])
+            except Exception as e:
+                logging.warning(f'send_pending_signedxml fallo para prof_number={docobj.prof_number}: {e}. Doc queda pendiente para el cron.')
+                return {'success': 'Documento creado, pendiente de envio a SIFEN', 'record_id': docobj.id, 'sifen_warning': str(e)}
         # TODO: No enviar hasta regularizar colision
         # if docobj.pdv_email is not None and docobj.pdv_email.strip():
         #     send_task('Sifen.tasks.send_invoice',
