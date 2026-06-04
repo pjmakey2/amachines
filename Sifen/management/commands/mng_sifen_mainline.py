@@ -3,7 +3,7 @@ from django.core.cache import caches
 from django.http import QueryDict
 from django.contrib.auth.models import User
 from django.db.models import Q
-from Sifen import mng_sifen_masters, ekuatia_gf, ekuatia_serials, mng_sifen_ruc_mapper, mng_sifen
+from Sifen import mng_sifen_masters, ekuatia_gf, ekuatia_serials, mng_sifen_ruc_mapper, mng_sifen, mng_orders_mdata
 from Sifen.models import DocumentHeader, Clientes
 from Sifen.rq_soap_handler import SoapSifen
 from OptsIO.models import Apps
@@ -41,6 +41,7 @@ class Command(BaseCommand):
         parser.add_argument('--nend', nargs='+', type=int)
         parser.add_argument('--set_number',nargs='+', help='Pasar el numero de un pedido para firmarlo')
         parser.add_argument('--generate_numbers_timbrado',action='store_true', help='Generar numeros a tipos de documentos')
+        parser.add_argument('--reset_codseg', nargs='+', help='Resetear cod_seg/CDC/XML de uno o mas prof_number para forzar regeneracion en el siguiente envio')
 
     def handle(self, *args, **options):
         if options['load_actividades']:
@@ -84,6 +85,18 @@ class Command(BaseCommand):
                     except Exception as e:
                         self.stdout.write(self.style.ERROR(f'  - Doc {docobj.doc_numero}: Error - {str(e)}'))
             self.stdout.write(self.style.SUCCESS('Track lotes completed'))
+
+        if options['reset_codseg']:
+            self.stdout.write(self.style.SUCCESS('Reseteando cod_seg/CDC/XML...'))
+            morm = mng_orders_mdata.Morders()
+            result = morm.reset_ek_data(options['reset_codseg'])
+            for pn in result['reseteados']:
+                self.stdout.write(self.style.SUCCESS(f'  - prof_number {pn}: reseteado'))
+            for pn in result['no_encontrados']:
+                self.stdout.write(self.style.WARNING(f'  - prof_number {pn}: no encontrado'))
+            for pn in result['omitidos_aprobados']:
+                self.stdout.write(self.style.WARNING(f'  - prof_number {pn}: omitido (ya Aprobado)'))
+            self.stdout.write(self.style.SUCCESS(f'Total reseteados: {len(result["reseteados"])}'))
 
         if options['send_pending_docs']:
             self.stdout.write(self.style.SUCCESS('Sending pending documents to Sifen...'))

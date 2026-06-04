@@ -9,6 +9,47 @@ from Sifen.models import DocumentHeader
 from Sifen.models import Business, CSeg
 
 class Morders:
+    def reset_ek_data(self, prof_numbers):
+        """Resetea cod_seg, CDC y XML/QR para forzar regeneracion en el
+        siguiente envio. Util cuando SIFEN devuelve la respuesta cacheada
+        para una combinacion (cod_seg, numero) previamente rechazada.
+
+        Tras este reset, la proxima corrida de --send_pending_docs hara
+        que generate_pmeta genere un nuevo cod_seg y CDC (porque el guard
+        de reuso solo aplica si ek_cod_seg != 0).
+        """
+        if not isinstance(prof_numbers, (list, tuple)):
+            prof_numbers = [prof_numbers]
+        prof_numbers = [str(p) for p in prof_numbers]
+        result = {'reseteados': [], 'no_encontrados': [], 'omitidos_aprobados': []}
+        for ped_nu in prof_numbers:
+            try:
+                pedobj = DocumentHeader.objects.get(prof_number=ped_nu)
+            except DocumentHeader.DoesNotExist:
+                result['no_encontrados'].append(ped_nu)
+                continue
+            if pedobj.ek_estado == 'Aprobado':
+                # No tocar documentos ya aprobados — su CDC es definitivo
+                result['omitidos_aprobados'].append(ped_nu)
+                continue
+            pedobj.ek_cod_seg = 0
+            pedobj.ek_cdc = None
+            pedobj.ek_cdc_dv = 0
+            pedobj.ek_xml_ekua = False
+            pedobj.ek_xml_file = None
+            pedobj.ek_xml_file_signed = None
+            pedobj.ek_qr_link = None
+            pedobj.ek_qr_img = None
+            pedobj.ek_estado = None
+            pedobj.ek_transacion = None
+            pedobj.ek_date = None
+            pedobj.lote = 0
+            pedobj.lote_estado = None
+            pedobj.save()
+            logging.info('Reset ek_data for prof_number {}'.format(ped_nu))
+            result['reseteados'].append(ped_nu)
+        return result
+
     def track_order_state(self, *args, **kwargs):
         qdict = kwargs.get('qdict', {})
         fecha = qdict.get('fecha')

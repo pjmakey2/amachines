@@ -23,7 +23,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 from Sifen.models import DocumentHeader, DocumentDetail, Business, Etimbrado, Eestablecimiento, DocumentRecibo, DocumentReciboDetail, Departamentos, Distrito, Ciudades, Retencion, Cotizacion, Producto, Clientes
-from Sifen import fl_sifen_conf, ekuatia_serials, e_kude, mng_gmdata
+from Sifen import fl_sifen_conf, ekuatia_serials, e_kude, mng_gmdata, mng_orders_mdata
 from OptsIO.models import UserProfile, UserBusiness
 from Finance import f_calcs
 from celery.execute import send_task
@@ -3200,7 +3200,30 @@ class MSifen:
         mobj.save()
 
         return {'success': f'Lote reinicializado para documento {mobj.doc_numero}. Ahora puede ser reenviado a SIFEN.'}
-        
+
+    def reset_codseg_from_ui(self, *args, **kwargs) -> dict:
+        """Resetea cod_seg, CDC y XML/QR para un documento desde la UI.
+        Util cuando SIFEN devuelve respuestas cacheadas (mismo cod_seg ->
+        misma respuesta). Tras el reset, el siguiente envio regenerara
+        cod_seg y CDC.
+        """
+        q: dict = kwargs.get('qdict', {})
+        pk = q.get('id')
+        dbcon = q.get('dbcon', 'default')
+        if not pk:
+            return {'error': 'Falta el ID del documento'}
+        try:
+            mobj = DocumentHeader.objects.using(dbcon).get(pk=pk)
+        except DocumentHeader.DoesNotExist:
+            return {'error': f'Documento {pk} no encontrado'}
+        if mobj.ek_estado == 'Aprobado':
+            return {'error': 'No se puede resetear un documento ya Aprobado por SIFEN'}
+        morm = mng_orders_mdata.Morders()
+        result = morm.reset_ek_data([mobj.prof_number])
+        if not result['reseteados']:
+            return {'error': f'No se pudo resetear el documento {mobj.doc_numero}'}
+        return {'success': f'Documento {mobj.doc_numero} reseteado. El proximo envio regenerara cod_seg y CDC.'}
+
 
     def get_documentdetails(self, *args, **kwargs) -> dict:
         """Get details for a DocumentHeader - used when editing"""

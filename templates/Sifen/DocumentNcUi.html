@@ -104,6 +104,7 @@
                         }
                         if (rowobj.ek_cdc) {
                             icons += `<i title="Consultar CDC en SIFEN" class="tr-doc-query-cdc fs-5 mdi mdi-qrcode-scan text-secondary me-2 cursor-pointer"></i>`;
+                            icons += `<i title="Resetear cod_seg/CDC" class="tr-doc-reset-codseg fs-5 mdi mdi-key-change text-danger me-2 cursor-pointer"></i>`;
                         }
                         if (!rowobj.ek_estado && (rowobj.doc_moneda === 'GS' || rowobj.doc_moneda === 'USD')) {
                             let title = rowobj.doc_moneda === 'GS' ? 'Convertir a USD' : 'Convertir a GS';
@@ -519,6 +520,33 @@
             let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
             if (d.success) { UiB.MsgSuccess(d.success); $(`#${t_documentnc}`).DataTable().ajax.reload(null, false); }
             else { UiB.MsgError(d.error || 'Error al consultar CDC'); }
+        });
+    });
+
+    $(`#${t_documentnc} tbody`).on('click', '.tr-doc-reset-codseg', function() {
+        let rowobj = $(`#${t_documentnc}`).DataTable().row($(this).closest('tr')).data();
+        UiB.MsgSwall({
+            msg: `¿Resetear cod_seg y CDC del documento ${rowobj.doc_numero}? El proximo envio generara un nuevo cod_seg y CDC. Util cuando SIFEN devuelve respuestas cacheadas.`,
+            ttype: 'warning'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let fdata = new FormData();
+            fdata.append('module', 'Sifen');
+            fdata.append('package', 'mng_sifen');
+            fdata.append('attr', 'MSifen');
+            fdata.append('mname', 'reset_codseg_from_ui');
+            fdata.append('id', rowobj.id);
+            fdata.append('dbcon', 'default');
+            axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                let d = Array.isArray(rsp.data) ? rsp.data[0] : rsp.data;
+                if (d.success) { UiB.MsgSuccess(d.success); $(`#${t_documentnc}`).DataTable().ajax.reload(null, false); }
+                else { UiB.MsgError(d.error || 'Error al resetear cod_seg'); }
+            }).catch((err) => {
+                log.error(`Error al resetear cod_seg: ${jfy(err)}`);
+                UiB.MsgError('Ocurrio un error al resetear cod_seg.');
+            });
         });
     });
 
