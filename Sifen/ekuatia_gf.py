@@ -196,7 +196,7 @@ class Egf(object):
             'B2F':4,
         }
         self.mxml.create_SubElement(gdatrec, 'iNatRec', _text=1 if headerobj.pdv_es_contribuyente else 2)
-        print(headerobj.pdv_type_business, 'put carajo')
+        #print(headerobj.pdv_type_business, 'put carajo')
         if headerobj.pdv_type_business:
             self.mxml.create_SubElement(gdatrec, 'iTiOpe', _text=tb.get(headerobj.pdv_type_business))
         else:
