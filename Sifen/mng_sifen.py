@@ -480,7 +480,12 @@ class MSifen:
             return {'error': 'El documento no tiene CDC asignado'}
         soap_sifen = SoapSifen()
         rsp = soap_sifen.qr_cdc(headerobj.ek_cdc)
-        if rsp.get('exitos'):
+        if rsp.get('exitos') == 'CDC encontrado':
+            DocumentHeader.objects.using(dbcon).filter(pk=doc_id).update(
+                ek_estado='Aprobado',
+                lote_estado='Aprobado',
+                lote_msg='CDC encontrado',
+            )
             headerobj.refresh_from_db()
             return {'success': 'CDC encontrado — documento marcado como Aprobado', 'ek_estado': headerobj.ek_estado}
         return {'error': rsp.get('error', 'Sin respuesta de SIFEN')}

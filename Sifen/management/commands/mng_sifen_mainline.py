@@ -98,7 +98,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f'  - prof_number {pn}: omitido (ya Aprobado)'))
             self.stdout.write(self.style.SUCCESS(f'Total reseteados: {len(result["reseteados"])}'))
 
-        if options['send_pending_docs']:
+        if options['']:
             self.stdout.write(self.style.SUCCESS('Sending pending documents to Sifen...'))
             dobjs = DocumentHeader.objects.filter(
                 ~Q(pdv_ruc='0'),
