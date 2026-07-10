@@ -2255,7 +2255,7 @@ class MSifen:
             pps['pdv_codigo'] = qs_clientecodigo_id
         docs = list(DocumentHeader.objects.filter(**pps)
                     .select_related('retencionobj')
-                    .order_by('doc_numero', 'doc_fecha'))
+                    .order_by('doc_numero', 'doc_fecha').exclude(lote_estado='Cancelado'))
         doc_ids = [d.id for d in docs]
 
         # Agregación bulk de los totales de DocumentDetail por documentheader (1 sola query).
