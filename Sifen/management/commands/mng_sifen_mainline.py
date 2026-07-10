@@ -529,19 +529,19 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('No hay documentos para consultar'))
             return
         self.stdout.write(f'  - Encontrados {count} documentos a consultar')
-        rr = SoapSifen()
+        msifen = mng_sifen.MSifen()
         aprobados = 0
+        cancelados = 0
         no_existen = 0
         errores = 0
         for docobj in tqdm(dobjs, desc='Consultando CDCs'):
             try:
-                drsp = rr.qr_cdc(docobj.ek_cdc)
-                if drsp.get('exitos') == 'CDC encontrado':
-                    DocumentHeader.objects.filter(pk=docobj.pk).update(
-                        ek_estado='Aprobado',
-                        lote_estado='Aprobado',
-                    )
-                    aprobados += 1
+                rsp = msifen.consultar_estado_cdc(qdict={'cdc': docobj.ek_cdc})
+                if rsp.get('exitos') == 'Hecho':
+                    if rsp.get('evento_cancelacion'):
+                        cancelados += 1
+                    else:
+                        aprobados += 1
                 else:
                     DocumentHeader.objects.filter(pk=docobj.pk).update(
                         ek_estado=None,
@@ -554,6 +554,7 @@ class Command(BaseCommand):
         self.stdout.write('')
         self.stdout.write(self.style.SUCCESS('Consulta completada:'))
         self.stdout.write(f'  - Aprobados: {aprobados}')
+        self.stdout.write(f'  - Cancelados: {cancelados}')
         self.stdout.write(f'  - No existen / Rechazados: {no_existen}')
         self.stdout.write(f'  - Errores: {errores}')
 

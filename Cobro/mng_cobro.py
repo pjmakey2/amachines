@@ -35,7 +35,7 @@ class MCobro:
         facturas = DocumentHeader.objects.filter(
             doc_tipo='FE',
             doc_cre_tipo_cod=2,  # Crédito
-        )
+        ).exclude(lote_estado='Cancelado')
 
         # Aplicar filtro de estado
         if filtro_estado == 'pendientes':
