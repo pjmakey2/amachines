@@ -523,7 +523,7 @@ class Command(BaseCommand):
             doc_fecha__gte=fecha_desde,
             doc_fecha__lte=fecha_hasta,
             ek_cdc__isnull=False,
-        ).exclude(ek_estado='Aprobado').exclude(ek_cdc='')
+        ).exclude(ek_estado='Aprobado').exclude(lote_estado='Cancelado').exclude(ek_cdc='')
         count = dobjs.count()
         if count == 0:
             self.stdout.write(self.style.WARNING('No hay documentos para consultar'))
