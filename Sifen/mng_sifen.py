@@ -1,4 +1,4 @@
-import uuid, os
+import uuid, os, re, html
 from Sifen.rq_soap_handler import SoapSifen
 from Sifen.models import SoapMsg
 import requests
@@ -442,9 +442,53 @@ class MSifen:
         rsp = soap_sifen.cancelar_xde(headerobj.doc_fecha.strftime('%Y-%m-%d'), headerobj.ek_cdc, motivo)
         logging.info(f'cancelar_doc cdc={headerobj.ek_cdc} rsp={rsp.text}')
         if 'Evento registrado correctamente' in rsp.text:
-            DocumentHeader.objects.using(dbcon).filter(pk=doc_id).update(ek_estado='Cancelado')
+            DocumentHeader.objects.using(dbcon).filter(pk=doc_id).update(ek_estado='Cancelado', lote_estado='Cancelado')
             return {'success': f'Documento {headerobj.doc_numero} cancelado correctamente en SIFEN'}
         return {'success': f'Cancelación enviada para el documento {headerobj.doc_numero}'}
+
+    def consultar_estado_cdc(self, *args, **kwargs) -> dict:
+        """Consulta un CDC en SIFEN y sincroniza ek_estado/lote_estado.
+
+        - Si el CDC esta encontrado y NO tiene evento de cancelacion -> Aprobado.
+        - Si tiene evento de cancelacion (rGeVeCan) -> Cancelado.
+        """
+        q: dict = kwargs.get('qdict', {})
+        cdc = q.get('cdc')
+        dbcon = q.get('dbcon', 'default')
+        if not cdc:
+            return {'error': 'Falta el CDC'}
+
+        soap_sifen = SoapSifen()
+        rsp = soap_sifen.qr_cdc(cdc)
+        if rsp.get('exitos') != 'CDC encontrado':
+            return {'error': rsp.get('error', 'Sin respuesta de SIFEN')}
+
+        xml = rsp.get('xml') or ''
+        m = re.search(r'<[^:>]*:xContenDE>(.*?)</[^:>]*:xContenDE>', xml, re.DOTALL)
+        xcontende = html.unescape(m.group(1)) if m else ''
+        m2 = re.search(r'<xContEv>(.*?)</xContEv>', xcontende, re.DOTALL)
+        xcontev = m2.group(1) if m2 else ''
+        tiene_cancelacion = '<rGeVeCan' in xcontev
+
+        if tiene_cancelacion:
+            nuevo_estado = 'Cancelado'
+            lote_msg = 'Cancelado por evento SIFEN'
+        else:
+            nuevo_estado = 'Aprobado'
+            lote_msg = 'CDC encontrado'
+
+        actualizados = DocumentHeader.objects.using(dbcon).filter(ek_cdc=cdc).update(
+            ek_estado=nuevo_estado,
+            lote_estado=nuevo_estado,
+            lote_msg=lote_msg,
+        )
+        return {
+            'exitos': 'Hecho',
+            'cdc': cdc,
+            'estado': nuevo_estado,
+            'evento_cancelacion': tiene_cancelacion,
+            'documentos_actualizados': actualizados,
+        }
 
     def trace_lote_doc(self, *args, **kwargs) -> dict:
         """Consulta el estado del lote de un documento por su ID."""

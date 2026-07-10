@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="256" height="256" role="img" aria-label="Alta Machines apex icon">
+  <title>Alta Machines — apex mark</title>
+  <path d="M20 84 L50 22" fill="none" stroke="#1E2A33" stroke-width="9" stroke-linecap="round"/>
+  <path d="M50 22 L80 84" fill="none" stroke="#17A17C" stroke-width="9" stroke-linecap="round"/>
+  <path d="M39 48 L50 33 L61 48" fill="none" stroke="#1E2A33" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+  <path d="M35 63 H45 M55 63 H65" fill="none" stroke="#1E2A33" stroke-width="5.5" stroke-linecap="round"/>
+  <circle cx="50" cy="17" r="6" fill="#17A17C"/>
+</svg>
