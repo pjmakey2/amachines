@@ -150,3 +150,7 @@ templates/rpts/
 .setup_completed
 .setup_admin_config.json
 setup_temp.sqlite3
+
+# Django migrations (cada entorno genera las suyas)
+*/migrations/*.py
+!*/migrations/__init__.py
