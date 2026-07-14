@@ -1,0 +1,176 @@
+<div id="ReciboList">
+    <h2 class="text text-left">Recibos</h2>
+
+    <!-- Filtros y buscador -->
+    <div class="d-flex mb-3 flex-wrap align-items-center">
+        <div class="p-2 flex-grow-1">
+            <input type="text" id="search_recibo" class="form-control"
+                   placeholder="Buscar por numero de recibo, razon social o RUC...">
+        </div>
+        <div class="p-2">
+            <button id="btn-buscar-recibo" class="btn btn-primary"><i class="mdi mdi-magnify"></i> Buscar</button>
+            <button id="btn-refresh-recibo" class="btn btn-secondary"><i class="mdi mdi-refresh"></i></button>
+        </div>
+    </div>
+
+    <!-- Tabla de recibos -->
+    <div id="table_container_Recibo"></div>
+</div>
+
+<script type="text/javascript">
+var t_ofh_recibo = `dtable_${OptsIO.s4generate()}`;
+
+$(document).ready(function() {
+    inicializarTablaRecibos();
+});
+
+function recibo_builder_be(data, settings) {
+    var tt = qelem(`#table_container_Recibo`);
+    tt.classList.add('overlay-container');
+    tt.classList.add('overlay');
+
+    var crdata = Object.assign({}, settings.ajax.initquery);
+    var search = $('#search_recibo').val();
+    if (search) {
+        crdata.search = search;
+    }
+    return Object.assign(data, crdata);
+}
+
+function inicializarTablaRecibos() {
+    Grid.datatables_wrapper({
+        t_guid: t_ofh_recibo,
+        url_exec: '{% url "iom" %}',
+        url_tmpl: '{% url "dtmpl" %}',
+        with_crud: false,
+        with_gsearch: false,
+        title: '',
+        tselector: 'table_container_Recibo',
+        app_name: 'Cobro',
+        model_name: 'Recibo',
+        model_pk: 'id',
+        cls_table: 'cell-border row-border table table-sm',
+        cls_thead: 'border-gray-900',
+        dbcon: 'default',
+        plength: 100,
+        custom_module: 'Cobro',
+        custom_package: 'mng_cobro',
+        custom_attr: 'MCobro',
+        custom_mname: 'get_recibos',
+        t_opts: {
+            select: { style: 'os' },
+            dom: 'it',
+            fixedHeader: false,
+            responsive: null,
+            scrollCollapse: true,
+            scrollX: true,
+            scrollY: 500,
+            paging: true,
+            order: [[3, 'desc']],
+            rowId: function(row) {
+                return `tr_recibo_${row.id}`;
+            }
+        },
+        builder_be: recibo_builder_be,
+        columns: [
+            {
+                fdis: true, gre: false, btyp: 'loc', idx: 'id', tit: 'Acc', dtyp: 'str', dfl: '', nord: true,
+                render: (data, type, row) => {
+                    return `<i title="Imprimir recibo" class="tr-recibo-print fs-extra-lg text text-info mdi mdi-printer cursor-pointer"></i>`;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'id', tit: 'ID', cls: 'align-left', dtyp: 'str', hide: true },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_numero', tit: 'Numero', cls: 'align-left', dtyp: 'str', hide: false },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'doc_fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'str', hide: false,
+                render: (data) => moment(data).format('DD/MM/YY')
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'doc_establecimiento', tit: 'Suc.', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_nombrefactura', tit: 'Cliente', cls: 'align-left', dtyp: 'str', hide: false },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'pdv_ruc', tit: 'RUC', cls: 'align-left', dtyp: 'str', hide: false },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'doc_total_factura', tit: 'Facturas', cls: 'align-right', dtyp: 'str', hide: false,
+                render: (data, dtype, row) => {
+                    if (row.doc_moneda === 'USD') return `<span>$ </span>${UiN.formatNumberU(data.toFixed(2))}`;
+                    return `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`;
+                }
+            },
+            {
+                fdis: true, gre: true, btyp: 'fdb', idx: 'doc_cobrado', tit: 'Cobrado', cls: 'align-right', dtyp: 'str', hide: false,
+                render: (data, dtype, row) => {
+                    if (row.doc_moneda === 'USD') return `<span>$ </span>${UiN.formatNumberU(data.toFixed(2))}`;
+                    return `<span>Gs </span>${UiN.formatNumberU(data.toFixed(0))}`;
+                }
+            },
+            { fdis: true, gre: true, btyp: 'fdb', idx: 'source', tit: 'Origen', cls: 'align-left', dtyp: 'str', hide: false },
+        ]
+    });
+
+    // Imprimir / regenerar PDF
+    $(`#${t_ofh_recibo} tbody`).on('click', '.tr-recibo-print', function() {
+        var row = $(this).closest('tr');
+        var rowData = $(`#${t_ofh_recibo}`).DataTable().row(row).data();
+        regenerarYAbrirPdf(rowData.id);
+    });
+
+    // Quitar overlay al terminar el draw
+    $(`#${t_ofh_recibo}`).on('draw.dt', function() {
+        var tt = qelem(`#table_container_Recibo`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    });
+}
+
+function regenerarYAbrirPdf(reciboId) {
+    Swal.fire({
+        title: 'Generando PDF del recibo...',
+        text: 'Por favor espere',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => { Swal.showLoading(); }
+    });
+
+    let gbe = new FormData();
+    gbe.append('module', 'Sifen');
+    gbe.append('package', 'mng_sifen');
+    gbe.append('attr', 'MSifen');
+    gbe.append('mname', 'generando_documentrecibo');
+    gbe.append('dbcon', 'default');
+    gbe.append('id', reciboId);
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.success) {
+            let link = document.createElement('a');
+            link.href = rsp.data.documentrecibo_urls.recibo_pdf_file;
+            link.target = '_blank';
+            link.click();
+            Swal.close();
+            $(`#${t_ofh_recibo}`).DataTable().ajax.reload(null, false);
+        } else {
+            Swal.close();
+            UiB.MsgError(rsp.data.error || 'No se pudo generar el PDF');
+        }
+    }).catch(() => {
+        Swal.close();
+        UiB.MsgError('Error al generar el PDF');
+    }).finally(() => { Swal.hideLoading(); });
+}
+
+// Buscar
+$('#btn-buscar-recibo').on('click', function() {
+    $(`#${t_ofh_recibo}`).DataTable().ajax.reload();
+});
+$('#search_recibo').on('keypress', function(e) {
+    if (e.which === 13) {
+        $(`#${t_ofh_recibo}`).DataTable().ajax.reload();
+    }
+});
+
+// Refrescar
+$('#btn-refresh-recibo').on('click', function() {
+    $('#search_recibo').val('');
+    $(`#${t_ofh_recibo}`).DataTable().ajax.reload();
+});
+</script>

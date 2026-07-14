@@ -2164,8 +2164,8 @@ class MSifen:
         title_fill = io_styles.title_fill(color="D8D8D8")
         swei = wb.active
         swei.title = sname
-        swei.merge_cells('A5:J5')
-        
+        swei.merge_cells('A5:M5')
+
         swei['A5'] = f'LIBRO VENTAS DEL PERIODO {f_desce} AL {f_hasta}'
         swei['A5'].font = title_font
         swei['A5'].fill = title_fill
@@ -2189,20 +2189,23 @@ class MSifen:
         titles = [
             'A6', 'B6', 'C6',
             'D6', 'F6', 'G6',
-            'I6', 'J6'
+            'I6', 'J6', 'K6', 'L6', 'M6'
         ]
 
         swei.merge_cells('A7:A8')
         swei.merge_cells('B7:B8')
         swei.merge_cells('C7:C8')
         swei.merge_cells('J7:J8')
+        swei.merge_cells('K7:K8')
+        swei.merge_cells('L7:L8')
+        swei.merge_cells('M7:M8')
         swei.merge_cells('D7:E7')
         swei.merge_cells('F7:I7')
 
         header_text = [
             'A7', 'B7', 'C7', 'D7',
             'E7', 'F7', 'G7', 'H7', 'I7',
-            'J7'
+            'J7', 'K7', 'L7', 'M7'
         ]
         for tt in titles:
             swei[tt].font = title_font
@@ -2225,6 +2228,9 @@ class MSifen:
             'H8': {'col': 'Exento',  'start': 'H8', 'width': 12.69},
             'I8': {'col': 'Total',  'start': 'I8', 'width': 12.69},
             'J7': {'col': 'Retencion',  'start': 'J7', 'width': 12.69},
+            'K7': {'col': 'Estado', 'start': 'K7', 'width': 12.69},
+            'L7': {'col': 'Estado Cobro', 'start': 'L7', 'width': 12.69},
+            'M7': {'col': 'Recibo', 'start': 'M7', 'width': 15.00},
         }
         for sc, t in tc.items():
             cf = t.get('start')
@@ -2255,7 +2261,7 @@ class MSifen:
             pps['pdv_codigo'] = qs_clientecodigo_id
         docs = list(DocumentHeader.objects.filter(**pps)
                     .select_related('retencionobj')
-                    .order_by('doc_numero', 'doc_fecha').exclude(lote_estado='Cancelado'))
+                    .order_by('doc_numero', 'doc_fecha'))
         doc_ids = [d.id for d in docs]
 
         # Agregación bulk de los totales de DocumentDetail por documentheader (1 sola query).
@@ -2277,6 +2283,17 @@ class MSifen:
                       base_gravada_5=Sum('base_gravada_5'),
                   ))
         agg_by_id = {a['documentheaderobj_id']: a for a in agg_qs}
+
+        prof_numbers = [d.prof_number for d in docs if d.prof_number]
+        recibos_by_prof: dict = {}
+        if prof_numbers:
+            for rd in (DocumentReciboDetail.objects
+                       .filter(prof_number__in=prof_numbers, saldo=0)
+                       .select_related('recobj')
+                       .values('prof_number', 'recobj__doc_numero')):
+                recibos_by_prof.setdefault(rd['prof_number'], []).append(
+                    rd['recobj__doc_numero']
+                )
 
         for docobj in docs:
             if docobj.doc_op == 'RS':
@@ -2309,6 +2326,14 @@ class MSifen:
             else:
                 tipo_label = docobj.doc_tipo
 
+            if docobj.doc_cre_tipo_cod == 2:
+                estado_cobro = 'Pendiente' if (docobj.doc_saldo or 0) > 0 else 'Cobrado'
+            else:
+                estado_cobro = 'Cobrado'
+
+            recibos_nums = recibos_by_prof.get(docobj.prof_number, [])
+            recibo_txt = ', '.join(str(n) for n in recibos_nums)
+
             ndata.append({
                 'dia': docobj.doc_fecha.day,
                 'doc_numero': docobj.get_number_full(),
@@ -2319,7 +2344,10 @@ class MSifen:
                 'iva_10': iva_10,
                 'exento': exento,
                 'total': total,
-                'retencion': docobj.retencionobj.retencion if docobj.retencionobj else 0
+                'retencion': docobj.retencionobj.retencion if docobj.retencionobj else 0,
+                'ek_estado': docobj.ek_estado or '',
+                'estado_cobro': estado_cobro,
+                'recibo': recibo_txt,
             })
         if not ndata:
             return {'error': f'Sin datos en el periodo {f_desce} al {f_hasta}'}
@@ -2328,6 +2356,7 @@ class MSifen:
             'pdv_codigo','gravada_10',
             'iva_10','exento',
             'total','retencion',
+            'ek_estado','estado_cobro','recibo',
         ]
         dfp = pd.DataFrame(ndata)
         rows = dataframe_to_rows(dfp[ncols], index=False, header=False)
@@ -2396,7 +2425,7 @@ class MSifen:
         #                     'D4:D10', 'B4:B10']
         # borders['left'] = ['G4:G7','F8:F10','G8:G10', 'J4:J10']
         # borders['left_bottom'] = ['F7:I7']
-        borders['all'] = ['A7:J8']
+        borders['all'] = ['A7:M8']
         
         # if r_idx > 0:
         #     lrow += 2

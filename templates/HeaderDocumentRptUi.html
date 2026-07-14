@@ -5,7 +5,19 @@
         <img style="width: 150px; height: 30px;" src="file://{% business_logo_invoice_path %}" alt="{% business_name %}" class="mx-3"/>
     </div>
     <div class="title">
-            <div class="t-title">KuDE de Factura Electronica</div>
+            {% if mobj.doc_tipo == "FE" %}
+                <div class="t-title">KuDE de Factura Electronica</div>
+            {% elif mobj.doc_tipo == "NC" %}
+                <div class="t-title">KuDE de Nota de Credito Electronica</div>
+            {% elif mobj.doc_tipo == "ND" %}
+                <div class="t-title">KuDE de Nota de Debito Electronica</div>
+            {% elif mobj.doc_tipo == "AF" %}
+                <div class="t-title">KuDE de Autofactura Electronica</div>
+            {% elif mobj.doc_tipo == "RC" %}
+                <div class="t-title">KuDE de Recibo Electronico</div>
+            {% else %}
+                <div class="t-title">KuDE de Factura Electronica</div>
+            {% endif %}
             {% if nombrefactura %}
                 <div class="m-title">{{ nombrefactura|upper }}</div>
                 <div class="m-title">{{ denominacion|upper }}</div>

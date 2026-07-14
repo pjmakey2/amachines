@@ -106,18 +106,36 @@
                                         <th class="am-row-border" style="text-align: left;width: 220px;">TOTAL FACTURAS</th>
                                         <th class="am-row-border" style="text-align: right;width: 220px;">{{ mobj.doc_total_factura|floatformat:0|intcomma }}</th>
                                     </tr>
+                                    {% if mobj.doc_retencion %}
                                     <tr>
                                         <th class="am-row-border" style="text-align: left;width: 220px;">RETENCION</th>
                                         <th class="am-row-border" style="text-align: right;width: 220px;">{{ mobj.doc_retencion|floatformat:0|intcomma }}</th>
                                     </tr>
+                                    {% endif %}
+                                    {% if mobj.doc_efectivo %}
                                     <tr>
                                         <th class="am-row-border" style="text-align: left;width: 220px;">EFECTIVO</th>
                                         <th class="am-row-border" style="text-align: right;width: 220px;">{{ mobj.doc_efectivo|floatformat:0|intcomma }}</th>
                                     </tr>
+                                    {% endif %}
+                                    {% if mobj.doc_transferencia %}
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px">TRANSFERENCIA</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px">{{ mobj.doc_transferencia|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                    {% endif %}
+                                    {% if mobj.doc_cheque %}
                                     <tr>
                                         <th class="am-row-border" style="text-align: left;width: 220px">CHEQUE</th>
                                         <th class="am-row-border" style="text-align: right;width: 220px">{{ mobj.doc_cheque|floatformat:0|intcomma }}</th>
                                     </tr>
+                                    {% endif %}
+                                    {% if mobj.doc_tarjeta %}
+                                    <tr>
+                                        <th class="am-row-border" style="text-align: left;width: 220px">TARJETA</th>
+                                        <th class="am-row-border" style="text-align: right;width: 220px">{{ mobj.doc_tarjeta|floatformat:0|intcomma }}</th>
+                                    </tr>
+                                    {% endif %}
                                     <tr>
                                         <th class="am-row-border" style="text-align: left;width: 220px">TOTAL COBRADO</th>
                                         <th class="am-row-border" style="text-align: right;width: 220px">{{ mobj.doc_cobrado|floatformat:0|intcomma }}</th>

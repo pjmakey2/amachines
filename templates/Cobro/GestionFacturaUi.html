@@ -1,13 +1,15 @@
 <style>
-    .factura-vencida {
-        background-color: #F709FFB2 !important;
-    }
-    .factura-pendiente {
-        background-color: #FCFF648A !important;
-    }
-    .factura-pagada {
-        background-color: #90EE9066 !important;
-    }
+    .factura-vencida    { background-color: rgba(220, 53, 69, 0.10); }
+    .factura-pendiente  { background-color: rgba(255, 193, 7, 0.10); }
+    .factura-pagada     { background-color: rgba(25, 135, 84, 0.10); }
+
+    table.dataTable > tbody > tr.factura-vencida    > * { box-shadow: inset 0 0 0 9999px rgba(220, 53, 69, 0.10) !important; }
+    table.dataTable > tbody > tr.factura-pendiente  > * { box-shadow: inset 0 0 0 9999px rgba(255, 193, 7, 0.10) !important; }
+    table.dataTable > tbody > tr.factura-pagada     > * { box-shadow: inset 0 0 0 9999px rgba(25, 135, 84, 0.10) !important; }
+
+    [data-bs-theme=dark] table.dataTable > tbody > tr.factura-vencida    > * { box-shadow: inset 0 0 0 9999px rgba(220, 53, 69, 0.20) !important; }
+    [data-bs-theme=dark] table.dataTable > tbody > tr.factura-pendiente  > * { box-shadow: inset 0 0 0 9999px rgba(255, 193, 7, 0.20) !important; }
+    [data-bs-theme=dark] table.dataTable > tbody > tr.factura-pagada     > * { box-shadow: inset 0 0 0 9999px rgba(25, 135, 84, 0.20) !important; }
 </style>
 
 <div class="scroll pe-5 mt-2"
@@ -73,6 +75,9 @@
                 <button id="btn-select-all-cobro" class="btn btn-outline-secondary"><i class="mdi mdi-check-all"></i> Sel. Todo</button>
             </div>
             <div class="p-2">
+                <button id="btn-cargar-pagos-multi" class="btn btn-warning d-none">
+                    <i class="mdi mdi-cash-multiple"></i> Cargar Pagos (<span id="pagos-multi-count">0</span>)
+                </button>
                 <button id="btn-generar-recibo" class="btn btn-success d-none">
                     <i class="mdi mdi-file-document-outline"></i> Generar Recibo (<span id="recibo-count">0</span>)
                 </button>
@@ -350,32 +355,45 @@ function abrirReciboHistorial(factura) {
     });
 }
 
-// Validar seleccion de checkboxes para recibo
+// Validar seleccion de checkboxes para recibo y cobro multiple
 function checkReciboSelection() {
     var checked = $(`#${t_ofh_cobro} .chk-cobro-row:checked`);
-    var btn = $('#btn-generar-recibo');
+    var btnRecibo = $('#btn-generar-recibo');
+    var btnPagos = $('#btn-cargar-pagos-multi');
 
     if (checked.length === 0) {
-        btn.addClass('d-none');
+        btnRecibo.addClass('d-none');
+        btnPagos.addClass('d-none');
         return;
     }
 
     // Verificar que todos tengan el mismo RUC
     var rucs = new Set();
+    var pendientes = 0;
     checked.each(function() {
         rucs.add($(this).data('ruc'));
+        if (parseFloat($(this).data('saldo')) > 0) pendientes++;
     });
 
     if (rucs.size > 1) {
-        btn.addClass('d-none');
+        btnRecibo.addClass('d-none');
+        btnPagos.addClass('d-none');
         UiB.MsgError('Solo puede seleccionar facturas del mismo cliente');
         // Desmarcar el ultimo checkbox seleccionado
         checked.last().prop('checked', false);
         return;
     }
 
-    btn.removeClass('d-none');
+    btnRecibo.removeClass('d-none');
     $('#recibo-count').text(checked.length);
+
+    // Cargar Pagos: solo si todas las seleccionadas tienen saldo > 0
+    if (pendientes === checked.length) {
+        btnPagos.removeClass('d-none');
+        $('#pagos-multi-count').text(checked.length);
+    } else {
+        btnPagos.addClass('d-none');
+    }
 }
 
 // Abrir offcanvas con resumen de recibo
@@ -424,12 +442,59 @@ function abrirReciboResumen() {
 function limpiarSeleccionRecibo() {
     $(`#${t_ofh_cobro} .chk-cobro-row`).prop('checked', false);
     $('#btn-generar-recibo').addClass('d-none');
+    $('#btn-cargar-pagos-multi').addClass('d-none');
 }
 window.limpiarSeleccionRecibo = limpiarSeleccionRecibo;
+
+// Abrir offcanvas para cargar pagos multiples
+function abrirCobroMultiple() {
+    var checked = $(`#${t_ofh_cobro} .chk-cobro-row:checked`);
+    var ids = [];
+    checked.each(function() {
+        ids.push($(this).data('id'));
+    });
+    if (!ids.length) return;
+
+    window.cobroMultipleData = ids;
+
+    let tps = {
+        model_app_name: 'Cobro',
+        model_name: 'CobroMultiple',
+        dbcon: 'default',
+        url: '{% url "dtmpl" %}',
+        dattrs: {
+            title: 'Cargar Pagos Multiples',
+            t_guid: t_ofh_cobro,
+            offcanvasglobal: true
+        },
+        template: 'Cobro/GestionCobroMultipleUi.html',
+        raw: true,
+    };
+
+    OptsIO.getTmpl(tps).then((rsp) => {
+        let data = rsp.data;
+        $('#offcanvasGlobalUiBody').html(data);
+        let bsOffcanvas = new bootstrap.Offcanvas('#offcanvasGlobalUi');
+        bsOffcanvas.show();
+
+        let tmpOffcanvas = document.getElementById('offcanvasGlobalUi');
+        tmpOffcanvas.addEventListener('hidden.bs.offcanvas', event => {
+            $('#offcanvasGlobalUiBody').html('');
+            delete window.cobroMultipleData;
+        }, { once: true });
+
+        UiB.kILLLoaderAjax();
+    });
+}
 
 // Boton generar recibo
 $('#btn-generar-recibo').on('click', function() {
     abrirReciboResumen();
+});
+
+// Boton cargar pagos multiples
+$('#btn-cargar-pagos-multi').on('click', function() {
+    abrirCobroMultiple();
 });
 
 // Busqueda

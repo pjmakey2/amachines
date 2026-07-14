@@ -12,6 +12,7 @@ class Pago(models.Model):
         ('transferencia', 'Transferencia Bancaria'),
         ('cheque', 'Cheque'),
         ('tarjeta', 'Tarjeta de Crédito/Débito'),
+        ('retencion', 'Retención'),
         ('otro', 'Otro'),
     ]
 

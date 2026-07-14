@@ -1,0 +1,286 @@
+<style>
+    #tabla_cobro_multiple tbody td { vertical-align: middle; }
+    #tbl_metodos_pago tbody td { vertical-align: middle; }
+    #tbl_metodos_pago input.metodo-monto { text-align: right; }
+    .cobro-multi-total-diff-ok { color: #198754; font-weight: bold; }
+    .cobro-multi-total-diff-err { color: #dc3545; font-weight: bold; }
+</style>
+
+<div class="container-fluid p-3">
+    <h5 class="mb-3">Cargar Pagos Multiples</h5>
+
+    <!-- Info del cliente -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="cm_cliente_nombre" class="form-control" readonly>
+                <label>Cliente</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-floating form-floating-sm">
+                <input type="text" id="cm_cliente_ruc" class="form-control" readonly>
+                <label>RUC</label>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="form-floating form-floating-sm">
+                <input type="date" id="cm_fecha_pago" class="form-control">
+                <label>Fecha de Pago *</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de facturas -->
+    <h6>Facturas seleccionadas</h6>
+    <div class="table-responsive mb-3">
+        <table class="table table-sm table-striped" id="tabla_cobro_multiple">
+            <thead>
+                <tr>
+                    <th>Numero</th>
+                    <th>Fecha</th>
+                    <th>Plazo</th>
+                    <th class="text-center">Dias Venc.</th>
+                    <th class="text-end">Total Factura</th>
+                    <th class="text-end">Saldo</th>
+                </tr>
+            </thead>
+            <tbody id="cm_facturas_body">
+                <tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <th colspan="5" class="text-end">TOTAL SALDO A COBRAR</th>
+                    <th class="text-end" id="cm_total_saldo">Gs 0</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <hr>
+
+    <!-- Inputs por metodo de pago -->
+    <h6>Formas de pago</h6>
+    <div class="table-responsive mb-3">
+        <table class="table table-sm table-bordered" id="tbl_metodos_pago">
+            <thead>
+                <tr>
+                    <th style="width:25%">Metodo</th>
+                    <th style="width:25%">Monto (Gs)</th>
+                    <th>Referencia (Nro cheque, transferencia, retencion, etc.)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Efectivo</td>
+                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="efectivo" value="0"></td>
+                    <td><input type="text" class="form-control form-control-sm" data-ref="efectivo"></td>
+                </tr>
+                <tr>
+                    <td>Transferencia Bancaria</td>
+                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="transferencia" value="0"></td>
+                    <td><input type="text" class="form-control form-control-sm" data-ref="transferencia" placeholder="Nro. de transferencia"></td>
+                </tr>
+                <tr>
+                    <td>Cheque</td>
+                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="cheque" value="0"></td>
+                    <td><input type="text" class="form-control form-control-sm" data-ref="cheque" placeholder="Nro. de cheque"></td>
+                </tr>
+                <tr>
+                    <td>Tarjeta de Credito/Debito</td>
+                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="tarjeta" value="0"></td>
+                    <td><input type="text" class="form-control form-control-sm" data-ref="tarjeta" placeholder="Nro. de autorizacion / cupon"></td>
+                </tr>
+                <tr>
+                    <td>Retencion</td>
+                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="retencion" value="0"></td>
+                    <td><input type="text" class="form-control form-control-sm" data-ref="retencion" placeholder="Nro. de comprobante de retencion"></td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <td class="text-end">Total Ingresado</td>
+                    <td class="text-end" id="cm_total_ingresado">Gs 0</td>
+                    <td class="text-end">
+                        <span>Diferencia vs saldo: </span>
+                        <span id="cm_diferencia" class="cobro-multi-total-diff-err">Gs 0</span>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-success btn-lg" id="btn-confirmar-cobro-multi" disabled>
+            <i class="mdi mdi-content-save"></i> Registrar Pagos y Generar Recibo
+        </button>
+    </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+    // Fecha por defecto
+    document.getElementById('cm_fecha_pago').valueAsDate = new Date();
+
+    let facturaIds = window.cobroMultipleData || [];
+    if (!facturaIds.length) {
+        $('#cm_facturas_body').html('<tr><td colspan="6" class="text-center text-danger">No hay facturas seleccionadas</td></tr>');
+        return;
+    }
+
+    var totalSaldo = 0;
+
+    // Cargar facturas
+    let gbe = new FormData();
+    gbe.append('module', 'Cobro');
+    gbe.append('package', 'mng_cobro');
+    gbe.append('attr', 'MCobro');
+    gbe.append('mname', 'get_facturas_para_cobro_multiple');
+    gbe.append('dbcon', 'default');
+    facturaIds.forEach(id => gbe.append('facturas[]', id));
+
+    axios.post('{% url "iom" %}', gbe, {
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+    }).then((rsp) => {
+        if (rsp.data.error) {
+            $('#cm_facturas_body').html(`<tr><td colspan="6" class="text-center text-danger">${rsp.data.error}</td></tr>`);
+            return;
+        }
+        if (!rsp.data.success) return;
+
+        let d = rsp.data;
+        $('#cm_cliente_nombre').val(d.cliente.pdv_nombrefactura);
+        $('#cm_cliente_ruc').val(d.cliente.pdv_ruc);
+
+        let tbody = $('#cm_facturas_body');
+        tbody.empty();
+        d.facturas.forEach((f) => {
+            let diasBadge = f.dias_vencido > 0
+                ? `<span class="badge bg-danger">${f.dias_vencido}</span>`
+                : '<span class="badge bg-success">Al dia</span>';
+            tbody.append(`
+                <tr>
+                    <td>${f.doc_numero}</td>
+                    <td>${moment(f.doc_fecha).format('DD/MM/YY')}</td>
+                    <td>${f.doc_cre_plazo || '-'}</td>
+                    <td class="text-center">${diasBadge}</td>
+                    <td class="text-end">Gs ${UiN.formatNumberU(f.total_factura.toFixed(0))}</td>
+                    <td class="text-end fw-bold text-danger">Gs ${UiN.formatNumberU(f.doc_saldo.toFixed(0))}</td>
+                </tr>
+            `);
+        });
+
+        totalSaldo = d.total_saldo;
+        $('#cm_total_saldo').text('Gs ' + UiN.formatNumberU(totalSaldo.toFixed(0)));
+        actualizarTotales();
+    });
+
+    function actualizarTotales() {
+        let totalIngresado = 0;
+        $('.metodo-monto').each(function() {
+            let v = parseFloat($(this).val()) || 0;
+            if (v < 0) v = 0;
+            totalIngresado += v;
+        });
+
+        $('#cm_total_ingresado').text('Gs ' + UiN.formatNumberU(totalIngresado.toFixed(0)));
+
+        let diff = totalIngresado - totalSaldo;
+        let $diff = $('#cm_diferencia');
+        $diff.text('Gs ' + UiN.formatNumberU(diff.toFixed(0)));
+
+        // Habilitar boton solo si el total ingresado == saldo total (y >0)
+        if (totalSaldo > 0 && Math.abs(diff) < 0.5 && totalIngresado > 0) {
+            $diff.removeClass('cobro-multi-total-diff-err').addClass('cobro-multi-total-diff-ok');
+            $('#btn-confirmar-cobro-multi').prop('disabled', false);
+        } else {
+            $diff.removeClass('cobro-multi-total-diff-ok').addClass('cobro-multi-total-diff-err');
+            $('#btn-confirmar-cobro-multi').prop('disabled', true);
+        }
+    }
+
+    $(document).on('input change', '.metodo-monto', actualizarTotales);
+
+    // Confirmar
+    $('#btn-confirmar-cobro-multi').off('click').on('click', function() {
+        Swal.fire({
+            title: 'Registrar pagos y generar recibo?',
+            text: 'Se cargaran los pagos por metodo y se emitira un unico recibo por las facturas seleccionadas',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Si, confirmar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            let gbe2 = new FormData();
+            gbe2.append('module', 'Cobro');
+            gbe2.append('package', 'mng_cobro');
+            gbe2.append('attr', 'MCobro');
+            gbe2.append('mname', 'registrar_pagos_multiple_y_recibo');
+            gbe2.append('dbcon', 'default');
+
+            facturaIds.forEach(id => gbe2.append('facturas[]', id));
+            gbe2.append('fecha_pago', $('#cm_fecha_pago').val());
+
+            $('.metodo-monto').each(function() {
+                let m = $(this).data('metodo');
+                let v = parseFloat($(this).val()) || 0;
+                gbe2.append('monto_' + m, v);
+            });
+            $('[data-ref]').each(function() {
+                let m = $(this).data('ref');
+                gbe2.append('ref_' + m, $(this).val() || '');
+            });
+
+            $('#btn-confirmar-cobro-multi').prop('disabled', true);
+
+            Swal.fire({
+                title: 'Generando recibo...',
+                text: 'Registrando pagos y creando el recibo, por favor espere',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            axios.post('{% url "iom" %}', gbe2, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            }).then((rsp) => {
+                if (rsp.data.success) {
+                    if (rsp.data.pdf_url) {
+                        let link = document.createElement('a');
+                        link.href = rsp.data.pdf_url;
+                        link.target = '_blank';
+                        link.click();
+                    }
+                    Swal.close();
+                    UiB.MsgSuccess(rsp.data.message);
+
+                    let offcanvasEl = document.getElementById('offcanvasGlobalUi');
+                    let bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasEl);
+                    if (bsOffcanvas) bsOffcanvas.hide();
+
+                    if (typeof window.cobroTableGuid !== 'undefined') {
+                        $(`#${window.cobroTableGuid}`).DataTable().ajax.reload();
+                    }
+                    if (typeof window.cargarResumenCobros === 'function') {
+                        window.cargarResumenCobros();
+                    }
+                    if (typeof window.limpiarSeleccionRecibo === 'function') {
+                        window.limpiarSeleccionRecibo();
+                    }
+                } else if (rsp.data.error) {
+                    Swal.close();
+                    UiB.MsgError(rsp.data.error);
+                    $('#btn-confirmar-cobro-multi').prop('disabled', false);
+                }
+            }).catch(() => {
+                Swal.close();
+                $('#btn-confirmar-cobro-multi').prop('disabled', false);
+            }).finally(() => { Swal.hideLoading(); });
+        });
+    });
+})();
+</script>

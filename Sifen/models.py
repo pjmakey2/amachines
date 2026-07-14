@@ -894,6 +894,8 @@ class DocumentRecibo(models.Model):
     doc_retencion = models.DecimalField(**cct)
     doc_efectivo = models.DecimalField(**cct)
     doc_cheque = models.DecimalField(**cct)
+    doc_transferencia = models.DecimalField(default=0, **cct)
+    doc_tarjeta = models.DecimalField(default=0, **cct)
     doc_cobrado = models.DecimalField(**cct)
     pdv_innominado = models.BooleanField(default=False)
     pdv_pais_cod = models.CharField(max_length=10, null=True)

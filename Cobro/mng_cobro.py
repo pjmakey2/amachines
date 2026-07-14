@@ -541,7 +541,31 @@ class MCobro:
         ).get('total') or 0
         recobj.doc_total_factura = total_fe
         recobj.doc_cobrado = total_cobrado
-        recobj.doc_efectivo = total_cobrado
+
+        # Distribuir el total cobrado por metodo. Consumimos los Pagos
+        # desde el mas reciente hacia atras hasta agotar total_cobrado.
+        # Asi respetamos el "cobrado incremental" cuando hubo recibos previos.
+        totales_metodo = {
+            'efectivo': Decimal('0'),
+            'transferencia': Decimal('0'),
+            'cheque': Decimal('0'),
+            'tarjeta': Decimal('0'),
+            'retencion': Decimal('0'),
+        }
+        restante = total_cobrado
+        for p in Pago.objects.filter(documentheaderobj__in=fobjs).order_by('-cargado_fecha', '-id'):
+            if restante <= 0:
+                break
+            tomar = min(p.monto, restante)
+            m = p.metodo_pago if p.metodo_pago in totales_metodo else 'efectivo'
+            totales_metodo[m] += tomar
+            restante -= tomar
+
+        recobj.doc_efectivo = totales_metodo['efectivo']
+        recobj.doc_transferencia = totales_metodo['transferencia']
+        recobj.doc_cheque = totales_metodo['cheque']
+        recobj.doc_tarjeta = totales_metodo['tarjeta']
+        recobj.doc_retencion = totales_metodo['retencion']
         recobj.save()
 
         # Marcar numero de recibo como usado
@@ -604,3 +628,208 @@ class MCobro:
             'recibos': recibos,
             'total_recibos': len(recibos),
         }
+
+    def get_facturas_para_cobro_multiple(self, *args, **kwargs) -> dict:
+        """
+        Devuelve el detalle de un conjunto de facturas seleccionadas para carga
+        de pagos multiples. Valida que sean del mismo cliente y con saldo > 0.
+        """
+        q = kwargs.get('qdict', {})
+        facturas_ids = q.getlist('facturas[]') if hasattr(q, 'getlist') else q.get('facturas', [])
+
+        if not facturas_ids:
+            return {'error': 'Debe seleccionar al menos una factura'}
+
+        fobjs = list(DocumentHeader.objects.filter(pk__in=facturas_ids)
+                     .order_by('doc_fecha', 'doc_numero'))
+        if not fobjs:
+            return {'error': 'No se encontraron las facturas seleccionadas'}
+
+        rucs = set(f.pdv_ruc for f in fobjs)
+        if len(rucs) > 1:
+            return {'error': 'Todas las facturas deben ser del mismo cliente'}
+
+        sin_saldo = [f.doc_numero for f in fobjs if (f.doc_saldo or 0) <= 0]
+        if sin_saldo:
+            return {'error': f'Las facturas {sin_saldo} no tienen saldo pendiente'}
+
+        result = []
+        total_saldo = Decimal('0')
+        for f in fobjs:
+            saldo = f.doc_saldo or Decimal('0')
+            total_saldo += saldo
+            result.append({
+                'id': f.id,
+                'doc_numero': f.doc_numero,
+                'doc_fecha': f.doc_fecha.strftime('%Y-%m-%d') if f.doc_fecha else '',
+                'total_factura': float(f.doc_total or 0),
+                'doc_saldo': float(saldo),
+                'doc_cre_plazo': f.doc_cre_plazo or '',
+                'dias_vencido': self._calcular_dias_vencido(f),
+            })
+
+        fobj = fobjs[0]
+        return {
+            'success': True,
+            'cliente': {
+                'pdv_ruc': fobj.pdv_ruc,
+                'pdv_nombrefactura': fobj.pdv_nombrefactura,
+            },
+            'facturas': result,
+            'total_saldo': float(total_saldo),
+        }
+
+    def registrar_pagos_multiple_y_recibo(self, *args, **kwargs) -> dict:
+        """
+        Carga pagos por tipo (Efectivo, Transferencia, Cheque, Tarjeta,
+        Retencion, Otro) sobre un conjunto de facturas del mismo cliente,
+        y genera un unico recibo al finalizar.
+
+        - Valida que la suma de los pagos sea igual a la suma de saldos.
+        - Distribuye por factura en orden de fecha ascendente, consumiendo
+          cada pool de metodo hasta cancelar cada factura.
+        - Cada factura queda con doc_saldo = 0.
+        - Reutiliza crear_recibo_cobro() para emitir el recibo.
+        """
+        q = kwargs.get('qdict', {})
+        userobj = kwargs.get('userobj')
+
+        facturas_ids = q.getlist('facturas[]') if hasattr(q, 'getlist') else q.get('facturas', [])
+        if not facturas_ids:
+            return {'error': 'Debe seleccionar al menos una factura'}
+
+        metodos_orden = ['efectivo', 'transferencia', 'cheque', 'tarjeta', 'retencion']
+
+        def _dec(v):
+            try:
+                return Decimal(str(v)) if v not in (None, '') else Decimal('0')
+            except Exception:
+                return Decimal('0')
+
+        pool = {m: _dec(q.get(f'monto_{m}', 0)) for m in metodos_orden}
+        refs = {m: (q.get(f'ref_{m}', '') or '').strip() for m in metodos_orden}
+        fecha_pago_str = q.get('fecha_pago') or date.today().strftime('%Y-%m-%d')
+        try:
+            fecha_pago = datetime.strptime(fecha_pago_str, '%Y-%m-%d').date()
+        except Exception:
+            fecha_pago = date.today()
+
+        for m, v in pool.items():
+            if v < 0:
+                return {'error': f'El monto de {m} no puede ser negativo'}
+        total_pagos = sum(pool.values())
+        if total_pagos <= 0:
+            return {'error': 'Debe cargar al menos un monto mayor a 0'}
+
+        fobjs = list(DocumentHeader.objects.filter(pk__in=facturas_ids)
+                     .order_by('doc_fecha', 'doc_numero'))
+        if not fobjs:
+            return {'error': 'No se encontraron las facturas seleccionadas'}
+
+        rucs = set(f.pdv_ruc for f in fobjs)
+        if len(rucs) > 1:
+            return {'error': 'Todas las facturas deben ser del mismo cliente'}
+
+        sin_saldo = [f.doc_numero for f in fobjs if (f.doc_saldo or 0) <= 0]
+        if sin_saldo:
+            return {'error': f'Las facturas {sin_saldo} no tienen saldo pendiente'}
+
+        total_saldo = sum((f.doc_saldo or Decimal('0')) for f in fobjs)
+        if total_pagos != total_saldo:
+            return {
+                'error': (
+                    f'La suma de los pagos ({total_pagos:,.0f}) no coincide '
+                    f'con el saldo total de las facturas ({total_saldo:,.0f})'
+                )
+            }
+
+        pagos_creados = 0
+        for f in fobjs:
+            saldo_rem = f.doc_saldo or Decimal('0')
+            for m in metodos_orden:
+                if saldo_rem <= 0:
+                    break
+                disponible = pool[m]
+                if disponible <= 0:
+                    continue
+                aplicar = min(disponible, saldo_rem)
+                Pago.objects.create(
+                    documentheaderobj=f,
+                    monto=aplicar,
+                    fecha_pago=fecha_pago,
+                    metodo_pago=m,
+                    numero_referencia=refs.get(m) or None,
+                    observaciones='Cobro multiple',
+                    cargado_usuario=userobj,
+                )
+                pagos_creados += 1
+                pool[m] -= aplicar
+                saldo_rem -= aplicar
+
+        rec_result = self.crear_recibo_cobro(qdict={'facturas': [str(f.id) for f in fobjs]}, userobj=userobj)
+        if rec_result.get('error'):
+            return {
+                'error': f'Pagos registrados pero fallo la generacion del recibo: {rec_result["error"]}',
+                'pagos_creados': pagos_creados,
+            }
+
+        recibo_id = rec_result.get('recibo_id')
+        pdf_url = None
+        try:
+            from Sifen import mng_sifen
+            msifen = mng_sifen.MSifen()
+            pdf_rsp = msifen.generando_documentrecibo(
+                qdict={'id': recibo_id, 'dbcon': 'default'},
+                userobj=userobj,
+            )
+            if isinstance(pdf_rsp, dict):
+                pdf_url = (pdf_rsp.get('documentrecibo_urls') or {}).get('recibo_pdf_file')
+        except Exception as e:
+            logger.warning(f'No se pudo generar PDF del recibo {recibo_id}: {e}')
+
+        return {
+            'success': True,
+            'message': rec_result.get('message', 'Recibo generado'),
+            'recibo_id': recibo_id,
+            'pagos_creados': pagos_creados,
+            'pdf_url': pdf_url,
+        }
+
+    def get_recibos(self, *args, **kwargs) -> dict:
+        """
+        Lista los recibos con busqueda por numero o cliente (razon social / ruc).
+        Formato compatible con DataTables (io_grid.py): {'trows':..., 'qs':...}.
+        """
+        q = kwargs.get('qdict', {})
+
+        recibos = DocumentRecibo.objects.filter(doc_tipo='RC').order_by('-doc_fecha', '-doc_numero')
+
+        search = q.get('search', '')
+        if search:
+            search = search.strip()
+            filters = Q(pdv_nombrefactura__icontains=search) | Q(pdv_ruc__icontains=search)
+            if search.isdigit():
+                filters = filters | Q(doc_numero=int(search))
+            recibos = recibos.filter(filters)
+
+        total_count = recibos.count()
+
+        result = []
+        for r in recibos:
+            has_pdf = bool(r.pdf_file) if r.pdf_file else False
+            result.append({
+                'id': r.id,
+                'doc_numero': r.doc_numero,
+                'doc_fecha': r.doc_fecha.strftime('%Y-%m-%d') if r.doc_fecha else '',
+                'doc_establecimiento': r.doc_establecimiento,
+                'pdv_nombrefactura': r.pdv_nombrefactura or '',
+                'pdv_ruc': r.pdv_ruc or '',
+                'doc_moneda': r.doc_moneda,
+                'doc_total_factura': float(r.doc_total_factura or 0),
+                'doc_cobrado': float(r.doc_cobrado or 0),
+                'source': r.source or '',
+                'has_pdf': has_pdf,
+                'pdf_url': r.pdf_file.url if has_pdf else '',
+            })
+
+        return {'trows': total_count, 'qs': result}
