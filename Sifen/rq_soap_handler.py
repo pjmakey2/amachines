@@ -35,6 +35,8 @@ class SoapSifen:
             self.business = Business.objects.order_by('-id').first()
         self._pfx_path = None
         self._pfx_pass = None
+        self._session = None
+        self._session_pfx_key = None
 
     def _get_certificate_credentials(self):
         """
@@ -63,27 +65,39 @@ class SoapSifen:
         self._pfx_pass = PASS
         return self._pfx_path, self._pfx_pass
 
-    def set_session(self, business=None):
+    def set_session(self, business=None, reuse=False):
         """
         Crea una sesión con el certificado apropiado.
 
         Args:
             business: Objeto Business para obtener certificado específico.
                       Si no se proporciona, usa self.business o fl_sifen_conf.
+            reuse: Si True y ya existe una session cacheada con el mismo
+                   certificado, la reutiliza para aprovechar HTTP keep-alive
+                   (evita rehacer TLS handshake). Default False preserva
+                   el comportamiento previo (session nueva en cada llamada).
         """
-        session = requests.Session()
-
         # Actualizar business si se proporciona
         if business:
             self.business = business
             self._pfx_path = None  # Reset cache
             self._pfx_pass = None
+            self._session = None   # invalidar session cacheada si cambio business
 
         pfx_path, pfx_pass = self._get_certificate_credentials()
+
+        if reuse and self._session is not None and self._session_pfx_key == pfx_path:
+            return self._session
+
+        session = requests.Session()
         msgl = f'set_session: URL={URL}, PFX={pfx_path}'
         print(msgl)
         logging.info(msgl)
         session.mount(URL, Pkcs12Adapter(pkcs12_filename=pfx_path, pkcs12_password=pfx_pass))
+
+        if reuse:
+            self._session = session
+            self._session_pfx_key = pfx_path
         return session
 
     def send_rq(self,session, pload, SRV, fake=False):
@@ -133,7 +147,7 @@ class SoapSifen:
 
     def qr_cdc(self, cdc):
         sxml = soap_schemas_xml.SiConsDE(cdc)
-        session = self.set_session()
+        session = self.set_session(reuse=True)
         rsp = self.send_rq(session, sxml.get('xml').decode('utf-8'), ROUTE_CONSULTA)
         self.update_rsp(rsp, sxml.get('sppk'), cdc=cdc, metodo='SiConsDE')
         rt = self.mxml.fromstring(str(rsp.text).replace('<?xml version="1.0" encoding="UTF-8"?>', ''))
