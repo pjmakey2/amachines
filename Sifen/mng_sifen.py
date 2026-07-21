@@ -663,10 +663,10 @@ class MSifen:
         # if response.status_code != 200:
         #     logging.error(f'Error enviando email: {response.status_code} - {response.text}')
         #     raise Exception(f'Error Mailgun: {response.status_code} - {response.text}')
-
-        docobj.enviado_cliente = True
-        docobj.enviado_cliente_fecha = datetime.now()
-        docobj.save()
+        if not custom_email:
+            docobj.enviado_cliente = True
+            docobj.enviado_cliente_fecha = datetime.now()
+            docobj.save()
         return {'success': f'Notificado al cliente factura {docobj.doc_numero}'}, args, kwargs
 
 
