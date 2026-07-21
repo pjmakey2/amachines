@@ -555,6 +555,7 @@ class MSifen:
     def send_invoice(self, *args: list, **kwargs: dict) -> tuple:
         q: dict = kwargs.get('qdict', {})
         force_send = q.get('force_send', False)
+        custom_email = q.get('custom_email', False)
         userobj = kwargs.get('userobj')
         if not userobj:
             userobj = User.objects.first()
@@ -631,6 +632,8 @@ class MSifen:
         #temail = 'atfrontliner@gmail.com'
         if settings.DEBUG:
             temail = 'atfrontliner@gmail.com'
+        if custom_email:
+            temail = custom_email
         subject = f'Frontliner S.A. {tipo} {docobj.doc_numero} generada'
         email = EmailMultiAlternatives(subject=subject, 
                                     body=subject, 

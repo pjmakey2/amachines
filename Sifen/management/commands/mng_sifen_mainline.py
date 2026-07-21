@@ -98,7 +98,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(f'  - prof_number {pn}: omitido (ya Aprobado)'))
             self.stdout.write(self.style.SUCCESS(f'Total reseteados: {len(result["reseteados"])}'))
 
-        if options['']:
+        if options['send_pending_docs']:
             self.stdout.write(self.style.SUCCESS('Sending pending documents to Sifen...'))
             dobjs = DocumentHeader.objects.filter(
                 ~Q(pdv_ruc='0'),
@@ -113,20 +113,20 @@ class Command(BaseCommand):
             count = dobjs.count()
             if count == 0:
                 self.stdout.write(self.style.WARNING('No pending documents found'))
-                return
-            self.stdout.write(f'  - Found {count} pending documents')
-            dobjs.update(ek_xml_ekua=False)
-            eser = ekuatia_serials.Eserial()
-            qek = QueryDict(mutable=True)
-            profs = []
-            for docobj in dobjs:
-                qek.update({
-                    'prof_number': str(docobj.prof_number),
-                    'ruc': docobj.ek_bs_ruc,
-                })
-                profs.append(str(docobj.prof_number))
-            eser.set_data_ekuatia(qdict=qek)
-            eser.send_pending_signedxml(profs)
+            else:
+                self.stdout.write(f'  - Found {count} pending documents')
+                dobjs.update(ek_xml_ekua=False)
+                eser = ekuatia_serials.Eserial()
+                qek = QueryDict(mutable=True)
+                profs = []
+                for docobj in dobjs:
+                    qek.update({
+                        'prof_number': str(docobj.prof_number),
+                        'ruc': docobj.ek_bs_ruc,
+                    })
+                    profs.append(str(docobj.prof_number))
+                eser.set_data_ekuatia(qdict=qek)
+                eser.send_pending_signedxml(profs)
             self.stdout.write(self.style.SUCCESS(f'Sent {count} documents to Sifen'))
 
         if options['send_email']:
