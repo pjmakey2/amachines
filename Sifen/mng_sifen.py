@@ -2292,11 +2292,16 @@ class MSifen:
         if prof_numbers:
             for rd in (DocumentReciboDetail.objects
                        .filter(prof_number__in=prof_numbers, saldo=0)
-                       .select_related('recobj')
-                       .values('prof_number', 'recobj__doc_numero')):
-                recibos_by_prof.setdefault(rd['prof_number'], []).append(
-                    rd['recobj__doc_numero']
+                       .values('prof_number',
+                               'recobj__doc_establecimiento',
+                               'recobj__doc_expedicion',
+                               'recobj__doc_numero')):
+                numero_full = '{}-{}-{}'.format(
+                    str(rd['recobj__doc_establecimiento']).zfill(3),
+                    str(rd['recobj__doc_expedicion']).zfill(3),
+                    str(rd['recobj__doc_numero']).zfill(7),
                 )
+                recibos_by_prof.setdefault(rd['prof_number'], []).append(numero_full)
 
         for docobj in docs:
             if docobj.doc_op == 'RS':

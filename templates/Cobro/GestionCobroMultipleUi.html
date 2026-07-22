@@ -1,7 +1,5 @@
 <style>
     #tabla_cobro_multiple tbody td { vertical-align: middle; }
-    #tbl_metodos_pago tbody td { vertical-align: middle; }
-    #tbl_metodos_pago input.metodo-monto { text-align: right; }
     .cobro-multi-total-diff-ok { color: #198754; font-weight: bold; }
     .cobro-multi-total-diff-err { color: #dc3545; font-weight: bold; }
 </style>
@@ -59,55 +57,32 @@
 
     <hr>
 
-    <!-- Inputs por metodo de pago -->
-    <h6>Formas de pago</h6>
-    <div class="table-responsive mb-3">
-        <table class="table table-sm table-bordered" id="tbl_metodos_pago">
-            <thead>
-                <tr>
-                    <th style="width:25%">Metodo</th>
-                    <th style="width:25%">Monto (Gs)</th>
-                    <th>Referencia (Nro cheque, transferencia, retencion, etc.)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Efectivo</td>
-                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="efectivo" value="0"></td>
-                    <td><input type="text" class="form-control form-control-sm" data-ref="efectivo"></td>
-                </tr>
-                <tr>
-                    <td>Transferencia Bancaria</td>
-                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="transferencia" value="0"></td>
-                    <td><input type="text" class="form-control form-control-sm" data-ref="transferencia" placeholder="Nro. de transferencia"></td>
-                </tr>
-                <tr>
-                    <td>Cheque</td>
-                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="cheque" value="0"></td>
-                    <td><input type="text" class="form-control form-control-sm" data-ref="cheque" placeholder="Nro. de cheque"></td>
-                </tr>
-                <tr>
-                    <td>Tarjeta de Credito/Debito</td>
-                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="tarjeta" value="0"></td>
-                    <td><input type="text" class="form-control form-control-sm" data-ref="tarjeta" placeholder="Nro. de autorizacion / cupon"></td>
-                </tr>
-                <tr>
-                    <td>Retencion</td>
-                    <td><input type="number" step="1" min="0" class="form-control form-control-sm metodo-monto" data-metodo="retencion" value="0"></td>
-                    <td><input type="text" class="form-control form-control-sm" data-ref="retencion" placeholder="Nro. de comprobante de retencion"></td>
-                </tr>
-            </tbody>
-            <tfoot>
-                <tr class="fw-bold">
-                    <td class="text-end">Total Ingresado</td>
-                    <td class="text-end" id="cm_total_ingresado">Gs 0</td>
-                    <td class="text-end">
-                        <span>Diferencia vs saldo: </span>
-                        <span id="cm_diferencia" class="cobro-multi-total-diff-err">Gs 0</span>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
+    <!-- Forma de pago -->
+    <h6>Forma de pago</h6>
+    <div class="row g-2 mb-2 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Metodo *</label>
+            <select id="cm_metodo_pago" class="form-select form-select-sm">
+                <option value="">Seleccionar...</option>
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia Bancaria</option>
+                <option value="cheque">Cheque</option>
+                <option value="tarjeta">Tarjeta Credito/Debito</option>
+                <option value="retencion">Retencion</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small mb-1">Monto (Gs) *</label>
+            <input type="number" step="1" min="0" id="cm_monto" class="form-control form-control-sm text-end" value="0" disabled>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label small mb-1">Referencia</label>
+            <input type="text" id="cm_referencia" class="form-control form-control-sm" placeholder="Seleccione un metodo primero" disabled>
+        </div>
+    </div>
+    <div class="mb-3 small text-end">
+        <span>Diferencia vs saldo: </span>
+        <span id="cm_diferencia" class="cobro-multi-total-diff-err">Gs 0</span>
     </div>
 
     <div class="d-flex justify-content-end mt-3">
@@ -175,22 +150,27 @@
         actualizarTotales();
     });
 
+    // Placeholders de referencia por metodo
+    const cm_ref_placeholders = {
+        efectivo:      'Opcional',
+        transferencia: 'Nro. de transferencia',
+        cheque:        'Nro. de cheque',
+        tarjeta:       'Nro. de autorizacion / cupon',
+        retencion:     'Nro. de comprobante de retencion'
+    };
+
     function actualizarTotales() {
-        let totalIngresado = 0;
-        $('.metodo-monto').each(function() {
-            let v = parseFloat($(this).val()) || 0;
-            if (v < 0) v = 0;
-            totalIngresado += v;
-        });
+        let metodo = $('#cm_metodo_pago').val();
+        let monto = parseFloat($('#cm_monto').val()) || 0;
+        if (monto < 0) monto = 0;
 
-        $('#cm_total_ingresado').text('Gs ' + UiN.formatNumberU(totalIngresado.toFixed(0)));
-
-        let diff = totalIngresado - totalSaldo;
+        let diff = monto - totalSaldo;
         let $diff = $('#cm_diferencia');
         $diff.text('Gs ' + UiN.formatNumberU(diff.toFixed(0)));
 
-        // Habilitar boton solo si el total ingresado == saldo total (y >0)
-        if (totalSaldo > 0 && Math.abs(diff) < 0.5 && totalIngresado > 0) {
+        // Habilitar boton solo si: hay metodo, hay monto y coincide con el saldo total
+        let ok = (!!metodo) && (totalSaldo > 0) && (monto > 0) && (Math.abs(diff) < 0.5);
+        if (ok) {
             $diff.removeClass('cobro-multi-total-diff-err').addClass('cobro-multi-total-diff-ok');
             $('#btn-confirmar-cobro-multi').prop('disabled', false);
         } else {
@@ -199,7 +179,27 @@
         }
     }
 
-    $(document).on('input change', '.metodo-monto', actualizarTotales);
+    // Al elegir metodo: habilitar monto+referencia, prefill del monto con saldo total,
+    // placeholder segun metodo. Bindeo directo (no delegado) para que al recargar el
+    // template los listeners viejos se destruyan junto con el elemento anterior y
+    // no queden pisando el `totalSaldo` de la carga previa.
+    $('#cm_metodo_pago').off('change').on('change', function() {
+        let metodo = $(this).val();
+        let hay = !!metodo;
+        $('#cm_monto').prop('disabled', !hay);
+        $('#cm_referencia').prop('disabled', !hay);
+        $('#cm_referencia').attr('placeholder', hay ? (cm_ref_placeholders[metodo] || '') : 'Seleccione un metodo primero');
+        if (hay) {
+            let m = parseFloat($('#cm_monto').val()) || 0;
+            if (m <= 0 && totalSaldo > 0) $('#cm_monto').val(Math.round(totalSaldo));
+        } else {
+            $('#cm_monto').val(0);
+            $('#cm_referencia').val('');
+        }
+        actualizarTotales();
+    });
+
+    $('#cm_monto').off('input change').on('input change', actualizarTotales);
 
     // Confirmar
     $('#btn-confirmar-cobro-multi').off('click').on('click', function() {
@@ -225,14 +225,13 @@
             facturaIds.forEach(id => gbe2.append('facturas[]', id));
             gbe2.append('fecha_pago', $('#cm_fecha_pago').val());
 
-            $('.metodo-monto').each(function() {
-                let m = $(this).data('metodo');
-                let v = parseFloat($(this).val()) || 0;
-                gbe2.append('monto_' + m, v);
-            });
-            $('[data-ref]').each(function() {
-                let m = $(this).data('ref');
-                gbe2.append('ref_' + m, $(this).val() || '');
+            // Un solo metodo: enviamos el elegido con su monto/ref, resto en 0/''
+            let metodo_sel = $('#cm_metodo_pago').val();
+            let monto_sel = parseFloat($('#cm_monto').val()) || 0;
+            let ref_sel = $('#cm_referencia').val() || '';
+            ['efectivo','transferencia','cheque','tarjeta','retencion'].forEach(m => {
+                gbe2.append('monto_' + m, m === metodo_sel ? monto_sel : 0);
+                gbe2.append('ref_' + m,   m === metodo_sel ? ref_sel   : '');
             });
 
             $('#btn-confirmar-cobro-multi').prop('disabled', true);

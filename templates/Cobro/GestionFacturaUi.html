@@ -203,7 +203,7 @@ function inicializarTablaCobros() {
                 render: (data, type, row) => {
                     let icons = '';
                     if (data > 0) {
-                        icons += `<i title="Registrar pago" class="tr-cobro-pago fs-extra-lg text text-success mdi mdi-cash-plus cursor-pointer me-2"></i>`;
+                        icons += `<i title="Registrar pago" class="tr-cobro-pago fs-extra-lg text text-success mdi mdi-cash-plus cursor-pointer me-2 d-none"></i>`;
                     } else {
                         icons += `<i title="Ver historial de pagos" class="tr-cobro-historial fs-extra-lg text text-success mdi mdi-check-circle cursor-pointer me-2"></i>`;
                     }
@@ -384,8 +384,9 @@ function checkReciboSelection() {
         return;
     }
 
-    btnRecibo.removeClass('d-none');
-    $('#recibo-count').text(checked.length);
+    // Boton "Generar Recibo" oculto (funcionalidad desactivada; el flujo va por Cargar Pagos)
+    // btnRecibo.removeClass('d-none');
+    // $('#recibo-count').text(checked.length);
 
     // Cargar Pagos: solo si todas las seleccionadas tienen saldo > 0
     if (pendientes === checked.length) {
