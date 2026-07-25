@@ -3082,14 +3082,14 @@ class MSifen:
                 updated = True
             if uc_fields.get('pdv_tipocontribuyente') and clobj.pdv_tipocontribuyente != uc_fields['pdv_tipocontribuyente']:
                 clobj.pdv_tipocontribuyente = uc_fields['pdv_tipocontribuyente']
-            if clobj.pdv_tipocontribuyente in [1, 2]:
-                clobj.pdv_es_contribuyente = True
-            else:
-                clobj.pdv_es_contribuyente = False
-            updated = True
-            # if clobj.pdv_es_contribuyente != uc_fields.get('pdv_es_contribuyente', True):
-            #     clobj.pdv_es_contribuyente = uc_fields.get('pdv_es_contribuyente', True)
-            #     updated = True
+                updated = True
+            # Respetar pdv_es_contribuyente que viene desde uc_fields (validate_ruc o
+            # generar_factura_sifen ya sabe si el RUC esta en el padron SIFEN).
+            # No derivarlo del tipocontribuyente aca — la comparacion previa era buggy
+            # (str vs int, siempre False, dejaba a todos como no contribuyente).
+            if 'pdv_es_contribuyente' in uc_fields and clobj.pdv_es_contribuyente != uc_fields['pdv_es_contribuyente']:
+                clobj.pdv_es_contribuyente = uc_fields['pdv_es_contribuyente']
+                updated = True
             logging.info(f'Cliente actualizado: con RUC {clobj.pdv_ruc}, cambios realizados: {updated}')
             if updated:
                 clobj.save()
@@ -3394,6 +3394,7 @@ class MSifen:
                 'pdv_email': clobj.pdv_email,
                 'pdv_type_business': clobj.pdv_type_business,
                 'pdv_tipocontribuyente': clobj.pdv_tipocontribuyente,
+                'pdv_es_contribuyente': bool(clobj.pdv_es_contribuyente),
                 'doc_por_ws': clobj.doc_por_ws,
             }
         rsp = eser.qr_ruc(ruc, business=self.bsobj)
@@ -3407,6 +3408,7 @@ class MSifen:
             'pdv_nombrefactura': rsp.get('drazcons').strip(),
             'pdv_celular': '',
             'pdv_email': '',
+            'pdv_es_contribuyente': True,
         }
 
     def trace_lote(self, *args, **kwargs) -> dict:

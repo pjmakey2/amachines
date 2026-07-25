@@ -466,6 +466,9 @@
 
     // Variable para evitar validaciones duplicadas
     let ultimoRucValidado = '';
+    // Cache del ultimo resultado exitoso de validate_ruc (para que generarFactura no
+    // tenga que consultar SIFEN de nuevo: reusa lo que ya vino en el blur del input).
+    let ultimaRucValidacion = null;
 
     // Validar RUC contra SIFEN
     async function validarRucSifen() {
@@ -521,24 +524,41 @@
 
             if (response.data.success) {
                 // RUC válido
-                if (response.data.success == 'RUC SET') { 
+                if (response.data.success == 'RUC SET') {
                     checkIcon.style.display = 'inline';
                 }
                 ultimoRucValidado = ruc;
+                // Cache para reusar en generarFactura
+                ultimaRucValidacion = {
+                    ruc: ruc,
+                    success: response.data.success,
+                    pdv_tipocontribuyente: response.data.pdv_tipocontribuyente || '',
+                    pdv_es_contribuyente: response.data.pdv_es_contribuyente
+                };
 
                 // Poblar DV
                 if (response.data.pdv_ruc_dv !== undefined && response.data.pdv_ruc_dv !== null) {
                     document.getElementById('fl_ruc_dv').value = response.data.pdv_ruc_dv;
                 }
 
-                // Mostrar nombre de SIFEN debajo del input
+                // Mostrar linea con: "<RUC SET|LOCAL> <badge CONTRIBUYENTE|NO CONTRIBUYENTE> - <nombre factura>"
                 if (response.data.pdv_nombrefactura) {
-                    nombreSifen.textContent =  response.data.success + ' ' + response.data.pdv_nombrefactura;
+                    const esContrib = response.data.pdv_es_contribuyente === true
+                                   || response.data.pdv_es_contribuyente === 'true';
+                    const badgeStyle = esContrib
+                        ? 'background: rgba(25,135,84,0.18); color:#146c43;'   // verde tenue
+                        : 'background: rgba(255,165,0,0.20); color:#b36b00;';  // naranja tenue
+                    const badgeStyleFull = badgeStyle + ' padding: 1px 6px; border-radius: 3px; font-weight: 600; font-size: 0.9em;';
+                    const badgeTxt = esContrib ? 'CONTRIBUYENTE' : 'NO CONTRIBUYENTE';
+                    nombreSifen.innerHTML =
+                        response.data.success +
+                        ' <span style="' + badgeStyleFull + '">' + badgeTxt + '</span> - ' +
+                        response.data.pdv_nombrefactura;
                     nombreSifen.style.display = 'block';
                     // Actualizar campo nombre con datos de SIFEN
                     const nombreInput = document.getElementById('fl_nombre_factura');
                     nombreInput.value = response.data.pdv_nombrefactura;
-                    if (response.data.success == 'RUC SET') { 
+                    if (response.data.success == 'RUC SET') {
                         nombreCheck.style.display = 'inline';
                     }
                 }
@@ -593,6 +613,7 @@
                 rucInput.classList.remove('is-valid');
                 rucInput.classList.add('is-invalid');
                 ultimoRucValidado = '';
+                ultimaRucValidacion = null;
             }
 
         } catch (error) {
@@ -600,6 +621,7 @@
             console.error('Error validando RUC:', error);
             // No mostrar error, solo no validar
             ultimoRucValidado = '';
+            ultimaRucValidacion = null;
         }
     }
 
@@ -945,6 +967,13 @@
             fdata.append('doc_vencimiento', document.getElementById('fl_doc_vencimiento').value);
             fdata.append('doc_por_ws', docPorWs ? 'true' : 'false');
             fdata.append('celular_ws', celularWs);
+            // Reusar resultado del validate_ruc que ya se disparo en el blur del input,
+            // asi el backend no vuelve a consultar a SIFEN por lo mismo.
+            if (ultimaRucValidacion && ultimaRucValidacion.ruc === rucFactura.replace(/[^\dA-Za-z]/g, '').match(/\d+[A-Za-z]?/)?.[0]) {
+                fdata.append('ruc_validado_status', ultimaRucValidacion.success);
+                fdata.append('ruc_validado_tipocontribuyente', ultimaRucValidacion.pdv_tipocontribuyente || '');
+                fdata.append('ruc_validado_es_contribuyente', ultimaRucValidacion.pdv_es_contribuyente ? 'true' : 'false');
+            }
 
             const response = await axios.post('/io/iom/', fdata, {
                 headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
@@ -1010,6 +1039,7 @@
         facturaActual = null;
         pagoConfirmado = false;
         ultimoRucValidado = '';
+        ultimaRucValidacion = null;
 
         // Restaurar buscador y ocultar acuse seleccionado
         document.getElementById('fl_buscar_acuse_div').style.display = 'block';

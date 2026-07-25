@@ -818,6 +818,11 @@ class MFLFacturacion:
             correo_frontend = q.get('correo_factura', '').strip()
             doc_por_ws = q.get('doc_por_ws') in (True, 'true', '1', 'on')
             celular_ws = q.get('celular_ws', '').strip()
+            # Resultado de validate_ruc precalculado en el frontend (blur del input RUC).
+            # Si vino con la request lo usamos y evitamos re-consultar SIFEN.
+            ruc_validado_status = q.get('ruc_validado_status', '').strip()
+            ruc_validado_tipocontribuyente = q.get('ruc_validado_tipocontribuyente', '').strip()
+            ruc_validado_es_contribuyente = q.get('ruc_validado_es_contribuyente')
 
             # Usar valores del frontend si están disponibles
             if ruc_frontend:
@@ -845,15 +850,44 @@ class MFLFacturacion:
                 ruc_dv = self.gdata.calculate_dv(ruc_cliente)
 
             # Determinar tipo de contribuyente
-            # Si no tiene RUC válido, es innominado/no contribuyente
+            # - Sin RUC valido -> innominado / no contribuyente (tipo '3')
+            # - Con RUC -> el frontend ya llamo a validate_ruc en el blur y nos manda el
+            #   resultado en ruc_validado_*. Usar ese cache y evitar re-consultar SIFEN.
+            #   Fallback: si el frontend no envio la info, consultamos aca.
             if not ruc_cliente or ruc_cliente in ['0', '']:
                 pdv_tipocontribuyente = '3'  # No contribuyente
                 pdv_es_contribuyente = False
                 pdv_innominado = True
             else:
-                pdv_tipocontribuyente = '1'  # Persona física por defecto
+                pdv_tipocontribuyente = '1'
                 pdv_es_contribuyente = True
                 pdv_innominado = False
+                if ruc_validado_status in ('RUC SET', 'RUC LOCAL'):
+                    # Precalculado por el frontend
+                    if ruc_validado_tipocontribuyente:
+                        pdv_tipocontribuyente = str(ruc_validado_tipocontribuyente)
+                    if ruc_validado_status == 'RUC SET':
+                        pdv_es_contribuyente = True
+                    else:  # RUC LOCAL
+                        pdv_es_contribuyente = ruc_validado_es_contribuyente in (True, 'true', '1', 'on')
+                else:
+                    # Fallback: el frontend no envio el resultado; consultar aca.
+                    try:
+                        rsp_vr = MSifen().validate_ruc(qdict={'ruc': ruc_cliente})
+                    except Exception as e:
+                        logger.warning(f"validate_ruc lanzo excepcion para RUC {ruc_cliente}: {e}. "
+                                       "Fallback a default (Persona Fisica contribuyente).")
+                        rsp_vr = None
+                    if isinstance(rsp_vr, dict):
+                        if rsp_vr.get('error'):
+                            return {'error': f'RUC no encontrado en padron SIFEN: {rsp_vr.get("error")}'}
+                        tipo_padron = rsp_vr.get('pdv_tipocontribuyente')
+                        if tipo_padron:
+                            pdv_tipocontribuyente = str(tipo_padron)
+                        if rsp_vr.get('success') == 'RUC SET':
+                            pdv_es_contribuyente = True
+                        elif rsp_vr.get('success') == 'RUC LOCAL':
+                            pdv_es_contribuyente = bool(rsp_vr.get('pdv_es_contribuyente', True))
 
             # Preparar detalles de la factura
             tasa = float(factura.get('dolar_venta', 1) or 1)
