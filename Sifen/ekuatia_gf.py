@@ -253,7 +253,7 @@ class Egf(object):
             headerobj.pdv_celular = '0'
         self.mxml.create_SubElement(gdatrec, 'dCelRec', _text=headerobj.pdv_celular)
         if headerobj.pdv_email:
-            self.mxml.create_SubElement(gdatrec, 'dEmailRec', _text=headerobj.pdv_email.split(',')[0].strip())
+            self.mxml.create_SubElement(gdatrec, 'dEmailRec', _text=headerobj.pdv_email.split(',')[0].strip().replace('+', ''))
         self.mxml.create_SubElement(gdatrec, 'dCodCliente', _text=headerobj.pdv_ruc if headerobj.pdv_ruc != '0' else '999')
         return de_xml
     
