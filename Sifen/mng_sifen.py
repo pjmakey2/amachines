@@ -1145,6 +1145,74 @@ class MSifen:
             })
         return {'success': 'Documento creado', 'record_id': docobj.id}, args, kwargs
 
+    def generando_documentheader_ticket(self, *args: list, **kwargs: dict) -> dict:
+        """Genera la factura en formato ticket (impresora termica 80mm).
+
+        version 1..4: variantes de layout en evaluacion; cuando el negocio
+        decida cual usar, queda la elegida y este parametro fijo.
+        """
+        from django.core.files.storage import default_storage
+        userobj = kwargs.get('userobj')
+        q: dict = kwargs.get('qdict', {})
+        dbcon = q.get('dbcon')
+        id = q.get('id')
+        version = str(q.get('version', '1'))
+        if version not in ('1', '2', '3', '4'):
+            return {'error': f'Version de ticket invalida: {version}'}
+
+        docobj = DocumentHeader.objects.using(dbcon).get(pk=id)
+
+        # Info multitenant del negocio (mismo patron que generando_documentheader)
+        dattrs = {'media_path': True, 'ticket_version': version}
+        try:
+            bobj = Business.objects.get(ruc=docobj.ek_bs_ruc)
+            bobj_dict = model_to_dict(bobj, exclude=['contribuyenteobj', 'actividadecoobj'])
+            bobj_dict['contribuyente'] = bobj.contribuyenteobj.tipo
+            bobj_dict['ciudad'] = bobj.ciudadobj.nombre_ciudad
+            bobj_dict['denominacion'] = bobj.actividadecoobj.nombre_actividad
+            dattrs.update(bobj_dict)
+        except Business.DoesNotExist:
+            pass
+
+        # Alto del ticket segun cantidad de items (mm)
+        items = docobj.documentdetail_set.filter(anulado=False, bonifica=False).count()
+        page_height = max(165, 130 + items * 10)
+
+        mq = QueryDict(mutable=True)
+        mq.update({
+            'tmpl': f'Sifen/DocumentHeaderTicketV{version}RptUi.html',
+            'model_app_name': 'Sifen',
+            'model_name': 'DocumentHeader',
+            'pk': id,
+            'dattrs': to_json(dattrs),
+            'dbcon': 'default',
+            'surround': 'BaseStaticReportBS5.html',
+            'g_pdf': 0,
+            'g_pdf_kit': 1,
+            'orientation': 'Portrait',
+            'page-height': str(page_height),
+            'page-width': '80',
+            'margin-top': '2',
+            'margin-right': '2',
+            'margin-bottom': '2',
+            'margin-left': '2',
+            'no-outline': None,
+        })
+        mrq = HttpRequest()
+        mrq.user = userobj
+        mrq.method = 'GET'
+        mrq.GET = mq
+        io_rpt = IoRpt()
+        rp = io_rpt.rpt_view(mrq)
+        pdf_file = rp.get('pdf_file')
+        with open(pdf_file, 'rb') as f:
+            name = default_storage.save(
+                f'invoicing_files/ticket_v{version}_{docobj.id}.pdf', File(f))
+        return {
+            'success': f'Ticket v{version} del documento {docobj.id} creado con exito',
+            'ticket_pdf_file': f'{settings.MEDIA_URL}{name}',
+        }
+
     def generando_documentheader(self, *args: list, **kwargs: dict) -> dict:
         userobj = kwargs.get('userobj')
         q: dict = kwargs.get('qdict', {})

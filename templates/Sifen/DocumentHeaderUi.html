@@ -144,11 +144,13 @@
                 dfcon: `
                     <i title="Ver/Editar" class="tr-documentheader-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
                     <i title="Descargar PDF" class="tr-documentheader-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                    <i title="Genera factura en formato ticket" data-version="1" class="tr-documentheader-ticket text fs-5 mdi mdi-printer-pos text-info me-2"></i>
                 `,
                 render: (data, type, rowobj) => {
                     let icons = `
                         <i title="Ver/Editar" class="tr-documentheader-query text fs-5 mdi mdi-archive-eye-outline me-2"></i>
                         <i title="Descargar PDF" class="tr-documentheader-pdf text fs-5 mdi mdi-file-pdf-box text-danger me-2"></i>
+                        <i title="Genera factura en formato ticket" data-version="1" class="tr-documentheader-ticket text fs-5 mdi mdi-printer-pos text-info me-2"></i>
                         <i title="Enviar Email" class="tr-documentheader-email text fs-5 mdi mdi-email-outline text-primary me-2"></i>
                     `;
                     if (rowobj.ek_xml_file_signed) {
@@ -365,6 +367,48 @@
         }).catch((err) => {
             log.error(`Error al generar PDF: ${jfy(err)}`);
             UiB.MsgError('Ocurrió un error al generar el PDF.');
+        }).finally(() => {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        });
+    })
+
+    $(`#${t_documentheader} tbody`).on('click', '.tr-documentheader-ticket', function() {
+        let elerow = $(this).closest('tr');
+        let rowobj = $(`#${t_documentheader}`).DataTable().row( elerow ).data();
+        let version = $(this).data('version') || '1';
+
+        let fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'generando_documentheader_ticket');
+        fdata.append('id', rowobj.id);
+        fdata.append('version', version);
+        fdata.append('dbcon', 'default');
+
+        let tt = qelem(`#table_documentheader_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        axios.post('{% url "iom" %}', fdata, {
+            headers: {
+                'X-CSRFToken': OptsIO.getCookie('csrftoken')
+            }
+        }).then((rsp) => {
+            let data = rsp.data;
+            if (data.success) {
+                let link = document.createElement("a");
+                link.href = data.ticket_pdf_file;
+                link.target = "_blank";
+                link.click();
+                UiB.MsgSuccess(data.success);
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        }).catch((err) => {
+            log.error(`Error al generar ticket: ${jfy(err)}`);
+            UiB.MsgError('Ocurrió un error al generar el ticket.');
         }).finally(() => {
             tt.classList.remove('overlay-container');
             tt.classList.remove('overlay');

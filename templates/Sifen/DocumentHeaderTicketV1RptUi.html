@@ -1,0 +1,76 @@
+{% load static humanize %}
+{% comment %} Ticket termico 80mm - VERSION 1 "Clasico": courier + separadores punteados {% endcomment %}
+<style>
+    .tkt1 { width: 72mm; margin: 0 auto; font-family: 'Courier New', Courier, monospace;
+            font-size: 9.5px; color: #000; line-height: 1.35; }
+    .tkt1 .c { text-align: center; }
+    .tkt1 .b { font-weight: bold; }
+    .tkt1 .sep { border-top: 1px dashed #000; margin: 4px 0; height: 0; }
+    .tkt1 table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+    .tkt1 td { padding: 1px 0; vertical-align: top; }
+    .tkt1 .num { text-align: right; white-space: nowrap; }
+    .tkt1 .tot { font-size: 12px; font-weight: bold; }
+    .tkt1 .cdc { word-break: break-all; font-size: 8px; }
+    .tkt1 img.qr { width: 24mm; height: 24mm; }
+</style>
+<div class="tkt1">
+    <div class="c b" style="font-size: 13px;">{{ nombrefactura|default:"" }}</div>
+    {% if direccion %}<div class="c">{{ direccion }}</div>{% endif %}
+    {% if ciudad %}<div class="c">{{ ciudad }} - Paraguay</div>{% endif %}
+    {% if web %}<div class="c">{{ web }}</div>{% endif %}
+    <div class="sep"></div>
+    <div class="c">RUC: {{ ruc|default:mobj.ek_bs_ruc }}{% if ruc_dv %}-{{ ruc_dv }}{% endif %}</div>
+    <div class="c">TIMBRADO N&deg; {{ mobj.ek_timbrado }}</div>
+    <div class="c b" style="margin-top: 3px;">
+        {% if mobj.doc_tipo == "FE" %}FACTURA ELECTRONICA{% elif mobj.doc_tipo == "NC" %}NOTA DE CREDITO ELECTRONICA{% elif mobj.doc_tipo == "AF" %}AUTOFACTURA ELECTRONICA{% elif mobj.doc_tipo == "ND" %}NOTA DE DEBITO ELECTRONICA{% else %}{{ mobj.doc_tipo }}{% endif %}
+    </div>
+    <div class="c b">{{ mobj.doc_expedicion|stringformat:"03d" }}-{{ mobj.doc_establecimiento|stringformat:"03d" }}-{{ mobj.doc_numero|stringformat:"07d" }}</div>
+    <div class="sep"></div>
+    <table>
+        <tr><td>FECHA:</td><td class="num">{{ mobj.doc_fecha|date:"d/m/Y" }}</td></tr>
+        <tr><td>CONDICION:</td><td class="num">{{ mobj.doc_cre_tipo|default:"Contado"|upper }}</td></tr>
+        <tr><td>MONEDA:</td><td class="num">{{ mobj.doc_moneda }}</td></tr>
+    </table>
+    <div class="sep"></div>
+    <div>CLIENTE: {{ mobj.pdv_nombrefactura }}</div>
+    <div>RUC/CI: {{ mobj.pdv_ruc }}{% if mobj.pdv_ruc_dv %}-{{ mobj.pdv_ruc_dv }}{% endif %}</div>
+    <div class="sep"></div>
+    <table>
+        <tr class="b"><td style="width: 12%;">CANT</td><td>DESCRIPCION</td><td class="num" style="width: 26%;">IMPORTE</td></tr>
+        {% for d in mobj.get_documentdetail %}
+        <tr>
+            <td>{{ d.get_cantidad }}</td>
+            <td>{{ d.prod_descripcion }}</td>
+            <td class="num">
+                {% if mobj.doc_moneda == "USD" %}{{ d.get_total_linea|floatformat:"2"|intcomma }}{% else %}{{ d.get_total_linea|floatformat:"0"|intcomma }}{% endif %}
+            </td>
+        </tr>
+        <tr><td></td><td colspan="2" style="font-size: 8.5px;">P.UNIT:
+            {% if mobj.doc_moneda == "USD" %}{{ d.precio_unitario|floatformat:"2"|intcomma }}{% else %}{{ d.precio_unitario|floatformat:"0"|intcomma }}{% endif %}
+        </td></tr>
+        {% endfor %}
+    </table>
+    <div class="sep"></div>
+    <table>
+        <tr><td>EXENTA:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_total_exenta|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_total_exenta|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+        <tr><td>GRAVADA 5%:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_total_gravada_5|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_total_gravada_5|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+        <tr><td>GRAVADA 10%:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_total_gravada_10|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_total_gravada_10|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+        <tr class="tot"><td>TOTAL {{ mobj.doc_moneda }}:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_total_venta|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_total_venta|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+    </table>
+    <div class="sep"></div>
+    <table>
+        <tr><td>IVA 5%:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_ivas_5_master|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_ivas_5_master|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+        <tr><td>IVA 10%:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_ivas_10_master|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_ivas_10_master|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+        <tr><td>TOTAL IVA:</td><td class="num">{% if mobj.doc_moneda == "USD" %}{{ mobj.get_ivas_master|floatformat:"2"|intcomma }}{% else %}{{ mobj.get_ivas_master|floatformat:"0"|intcomma }}{% endif %}</td></tr>
+    </table>
+    <div class="sep"></div>
+    <div style="font-size: 8.5px;">SON: {{ mobj.get_total_ventaword }}{% if mobj.doc_moneda != "USD" %} GUARANIES{% else %} DOLARES AMERICANOS{% endif %}</div>
+    <div class="sep"></div>
+    <div class="c" style="font-size: 8px;">Consulte la validez de este documento en:</div>
+    <div class="c" style="font-size: 8px;">https://ekuatia.set.gov.py/consultas</div>
+    <div class="c cdc" style="margin-top: 2px;">CDC: {{ mobj.ek_cdc }}</div>
+    {% if mobj.ek_qr_img %}
+    <div class="c" style="margin-top: 3px;"><img class="qr" src="file://{{ mobj.ek_qr_img.path }}"></div>
+    {% endif %}
+    <div class="c" style="margin-top: 3px; font-size: 8.5px;">GRACIAS POR SU PREFERENCIA</div>
+</div>

@@ -390,6 +390,9 @@
                         <button class="btn btn-sm btn-danger fl-ver-pdf" data-dh-id="${f.documentheader_id}" title="Descargar PDF">
                             <i class="mdi mdi-file-pdf-box"></i>
                         </button>
+                        <button class="btn btn-sm btn-info fl-ver-ticket" data-dh-id="${f.documentheader_id}" data-version="1" title="Genera factura en formato ticket">
+                            <i class="mdi mdi-printer-pos"></i>
+                        </button>
                     `;
                 }
             }
@@ -437,6 +440,14 @@
             btn.addEventListener('click', (e) => {
                 const dhId = e.currentTarget.dataset.dhId;
                 descargarPdf(dhId);
+            });
+        });
+
+        document.querySelectorAll('.fl-ver-ticket').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const dhId = e.currentTarget.dataset.dhId;
+                const version = e.currentTarget.dataset.version || '1';
+                descargarTicket(dhId, version);
             });
         });
 
@@ -654,6 +665,43 @@
         } catch (err) {
             console.error('Error al generar PDF:', err);
             UiB.MsgError('Ocurrió un error al generar el PDF.');
+        } finally {
+            tt.classList.remove('overlay-container');
+            tt.classList.remove('overlay');
+        }
+    }
+
+    async function descargarTicket(dhId, version) {
+        const fdata = new FormData();
+        fdata.append('module', 'Sifen');
+        fdata.append('package', 'mng_sifen');
+        fdata.append('attr', 'MSifen');
+        fdata.append('mname', 'generando_documentheader_ticket');
+        fdata.append('id', dhId);
+        fdata.append('version', version || '1');
+        fdata.append('dbcon', 'default');
+
+        const tt = qelem('#fl_tabla_facturas');
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+
+        try {
+            const rsp = await axios.post('{% url "iom" %}', fdata, {
+                headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}
+            });
+            const data = rsp.data;
+            if (data.success) {
+                let link = document.createElement('a');
+                link.href = data.ticket_pdf_file;
+                link.target = '_blank';
+                link.click();
+                UiB.MsgSuccess(data.success);
+            } else if (data.error) {
+                UiB.MsgError(data.error);
+            }
+        } catch (err) {
+            console.error('Error al generar ticket:', err);
+            UiB.MsgError('Ocurrió un error al generar el ticket.');
         } finally {
             tt.classList.remove('overlay-container');
             tt.classList.remove('overlay');

@@ -767,6 +767,9 @@ class DocumentDetail(models.Model):
             return round(float(self.cantidad), 2)
         return int(self.cantidad)
 
+    def get_total_linea(self):
+        return (self.exenta or 0) + (self.gravada_5 or 0) + (self.gravada_10 or 0)
+
     def get_ivas(self):
         return [self.iva_5, self.iva_10]
         # cantidad = self.cantidad
