@@ -1,0 +1,110 @@
+<div class="container-fluid" id="conta_config_{{ rr }}">
+    <h5 class="mb-3"><i class="mdi mdi-cog-outline"></i> Configuración contable</h5>
+    <div class="row g-2 mb-3">
+        <div class="col-12 col-lg-7"><div class="card shadow-sm h-100"><div class="card-body">
+            <h6>Plantilla de plan de cuentas</h6>
+            <p class="text-muted small mb-2">Aplicar una plantilla crea las cuentas, roles y formatos de asiento que falten. Nunca pisa lo existente:
+                se puede re-aplicar o sumar otra plantilla, y después extender el plan a mano.</p>
+            <div name="plantillas"></div>
+        </div></div></div>
+        <div class="col-12 col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
+            <h6>Arranque y reproceso</h6>
+            <label class="small">La contabilidad corre desde</label>
+            <div class="input-group mb-3">
+                <input type="date" name="fecha_inicio" class="form-control">
+                <button class="btn btn-outline-primary" name="btn_fecha_inicio">Guardar</button>
+            </div>
+            <label class="small">Reprocesar operaciones ya cerradas (no duplica asientos)</label>
+            <div class="input-group">
+                <input type="date" name="rep_desde" class="form-control"><input type="date" name="rep_hasta" class="form-control">
+                <button class="btn btn-outline-success" name="btn_reprocesar"><i class="mdi mdi-refresh"></i> Reprocesar</button>
+            </div>
+            <small class="text-muted">Útil si se configuró la contabilidad después de operar o tras corregir un rol o formato.</small>
+        </div></div></div>
+    </div>
+    <div class="row g-2">
+        <div class="col-12 col-lg-6"><div class="card shadow-sm"><div class="card-body">
+            <h6>Roles: qué cuenta usa cada función de los asientos automáticos</h6>
+            <table class="table table-sm mb-0"><thead><tr><th>Rol</th><th style="width: 55%;">Cuenta</th></tr></thead><tbody name="tbody_roles"></tbody></table>
+        </div></div></div>
+        <div class="col-12 col-lg-6"><div class="card shadow-sm"><div class="card-body">
+            <h6>Cuentas propias por banco, caja y categoría de gasto</h6>
+            <p class="text-muted small mb-2">Sin cuenta propia se usa la del rol (Bancos, Caja, Gastos Varios).</p>
+            <table class="table table-sm mb-0"><thead><tr><th>Registro</th><th style="width: 55%;">Cuenta</th></tr></thead><tbody name="tbody_mapeos"></tbody></table>
+        </div></div></div>
+    </div>
+</div>
+<script type="text/javascript">
+(function() {
+    const root = qelem('#conta_config_{{ rr }}');
+    const esc = (v) => $('<span>').text(v == null ? '' : v).html();
+    const TIPOS = {cuenta_bancaria: 'Banco', caja: 'Caja', categoria_gasto: 'Gasto'};
+
+    function post(mname, extra) {
+        let gbe = new FormData();
+        gbe.append('module', 'Contabilidad');
+        gbe.append('package', 'mng_contabilidad');
+        gbe.append('attr', 'MContabilidad');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) UiB.MsgError(rsp.data.error);
+            else if (mname !== 'get_config' && rsp.data.success) UiB.MsgSuccess(rsp.data.success);
+            return rsp.data;
+        });
+    }
+
+    function selectCuenta(cuentas, actual, vacio) {
+        let sel = document.createElement('select');
+        sel.className = 'form-control form-control-sm';
+        sel.add(new Option(vacio, ''));
+        cuentas.forEach((c) => sel.add(new Option(c.text, c.id)));
+        sel.value = actual || '';
+        return sel;
+    }
+
+    function cargar() {
+        post('get_config').then((d) => {
+            if (!d.success) return;
+            root.querySelector('[name=fecha_inicio]').value = d.fecha_inicio;
+            root.querySelector('[name=plantillas]').innerHTML = d.plantillas.map((p) => `
+                <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
+                    <div><b>${esc(p.nombre)}</b> ${d.plantilla === p.clave ? '<span class="badge bg-success">aplicada</span>' : ''}<br>
+                        <small class="text-muted">${esc(p.descripcion)} (${p.cuentas} cuentas)</small></div>
+                    <button class="btn btn-sm btn-primary" data-plantilla="${p.clave}">Aplicar</button>
+                </div>`).join('');
+            root.querySelectorAll('[data-plantilla]').forEach((btn) => btn.addEventListener('click', () => {
+                UiB.MsgSwall({ msg: '¿Aplicar la plantilla? Solo agrega lo que falta.', ttype: 'info' }).then((result) => {
+                    if (!result.isConfirmed) return;
+                    post('aplicar_plantilla', {plantilla: btn.dataset.plantilla, fecha_inicio: root.querySelector('[name=fecha_inicio]').value}).then(cargar);
+                });
+            }));
+            let tbRoles = root.querySelector('[name=tbody_roles]');
+            tbRoles.innerHTML = '';
+            d.roles.forEach((r) => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td><b>${r.rol}</b><br><small class="text-muted">${esc(r.descripcion)}</small></td><td></td>`;
+                let sel = selectCuenta(d.cuentas, r.cuenta_id, '(sin cuenta)');
+                sel.addEventListener('change', () => post('set_rol', {rol: r.rol, cuenta_id: sel.value}));
+                tr.children[1].appendChild(sel);
+                tbRoles.appendChild(tr);
+            });
+            let tbMap = root.querySelector('[name=tbody_mapeos]');
+            tbMap.innerHTML = d.mapeables.length ? '' : '<tr><td colspan="2" class="text-muted text-center">No hay bancos, cajas ni categorías cargadas</td></tr>';
+            d.mapeables.forEach((m) => {
+                let tr = document.createElement('tr');
+                tr.innerHTML = `<td><span class="badge bg-secondary">${TIPOS[m.tipo]}</span> ${esc(m.ref_desc)}</td><td></td>`;
+                let sel = selectCuenta(d.cuentas, m.cuenta_id, '(usa la cuenta del rol)');
+                sel.addEventListener('change', () => post('set_mapeo', {tipo: m.tipo, ref_id: m.ref_id, cuenta_id: sel.value}));
+                tr.children[1].appendChild(sel);
+                tbMap.appendChild(tr);
+            });
+        });
+    }
+    root.querySelector('[name=btn_fecha_inicio]').addEventListener('click', () => post('set_fecha_inicio', {fecha_inicio: root.querySelector('[name=fecha_inicio]').value}));
+    root.querySelector('[name=btn_reprocesar]').addEventListener('click', () => post('reprocesar_eventos', {
+        desde: root.querySelector('[name=rep_desde]').value, hasta: root.querySelector('[name=rep_hasta]').value}));
+    cargar();
+})();
+</script>

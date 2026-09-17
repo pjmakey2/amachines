@@ -50,6 +50,31 @@ Leer estos documentos (todos en `.claude/`) antes de codificar. Cada uno describ
 - Cada handler se ejecuta con éxito una sola vez por evento, en la misma transacción que su efecto. Aun así, un handler debe ser idempotente por sí mismo (ej: `MTesoreria.registrar_movimiento(clave=...)`).
 - Suscripción en `plugin.py` con `get_event_handlers()`; acepta comodines (`'*.aprobado'`).
 
+### Eventos publicados
+
+| Evento | Lo emite | Lo escuchan |
+|--------|----------|-------------|
+| `sifen.documento.aprobado` / `.cancelado` | Core Sifen (`Sifen/sifen_events.py`, al cerrar el tracking de lotes o consultar un CDC) | Contabilidad (venta / NC / reverso) |
+| `cobro.recibo.aprobado` | Cobro, al generar el recibo | Deposito (depósitos pendientes), Contabilidad |
+| `deposito.deposito.<estado>` | Deposito (workflow) | Contabilidad |
+| `egreso.gasto.<estado>`, `egreso.gasto.rendido` | Egreso | Contabilidad |
+| `egreso.pago.<estado>`, `egreso.transferencia.<estado>` | Egreso | Contabilidad |
+| `<plugin>.<modelo>.anulado` | `WorkflowMixin.anular()` | Contabilidad (contra-asiento) |
+
+El payload lleva todo lo que el oyente necesita (montos, ids de cuenta/caja/categoría, número, fecha): un plugin
+oyente no importa modelos del emisor.
+
+## Contabilidad
+
+- Plan de cuentas por **plantillas** (`Contabilidad/plantillas/planes.py`): idempotentes, combinables y extensibles a mano.
+- Los **formatos de asiento** (`plantillas/formatos.py` → `FormatoAsiento`, editables por negocio) hablan de **roles**
+  (`clientes`, `iva_debito_10`, `banco`...) y de **claves de monto** que calcula el handler del evento. `CuentaRol` asigna
+  la cuenta de cada rol; `MapeoCuenta` da cuenta propia a un banco, caja o categoría de gasto.
+- `MotorAsientos.generar()` es idempotente (`Asiento.clave`), asienta siempre en guaraníes y deja el evento en error si
+  falta configuración; `MContabilidad.reprocesar_eventos` lo recupera sin duplicar.
+- Para que un plugin nuevo asiente: emitir su evento de cierre con el payload, agregar un handler en
+  `Contabilidad/handlers.py`, su formato en `plantillas/formatos.py` y suscribirlo en `Contabilidad/plugin.py`.
+
 ## Directrices de código (resumen; el detalle está en `context.md` y `crud_patterm.md`)
 
 - Imports siempre al inicio del archivo, nunca dentro de métodos.

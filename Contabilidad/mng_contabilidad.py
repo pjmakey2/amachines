@@ -17,7 +17,7 @@ from django.db.models import Q, Sum
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
-from Contabilidad import handlers
+from Contabilidad import handlers, rg90
 from Contabilidad.models import (
     Asiento, AsientoDetalle, ConfigContable, CuentaRol, FormatoAsiento, FormatoAsientoLinea, MapeoCuenta, PlanCuenta,
 )
@@ -31,6 +31,7 @@ from OptsIO.models import BusinessEvent
 RE_DECIMAL = re.compile(r'^\d+(\.\d+)?$')
 RE_FECHA = re.compile(r'^\d{4}-\d{2}-\d{2}$')
 RE_CODIGO = re.compile(r'^\d+(\.\d+)*$')
+RE_PERIODO = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
 
 # Evento -> handler que genera su asiento (mismo mapa que publica plugin.py)
 HANDLERS = {
@@ -453,6 +454,16 @@ class MContabilidad:
             filas.append({'titulo': True, 'total': True, 'celdas': ['', nombre, float(total(tipo) + (resultado if tipo == 'patrimonio' else 0))]})
         filas.append({'titulo': True, 'total': True, 'celdas': ['', 'PASIVO + PATRIMONIO NETO', float(total('pasivo') + total('patrimonio') + resultado)]})
         return {'columnas': ['Código', 'Cuenta', 'Importe'], 'filas': filas}
+
+    def generar_rg90(self, *args, **kwargs) -> dict:
+        """TXT de RG90 del periodo (YYYY-MM): libro = 'ventas' | 'compras'."""
+        q = kwargs.get('qdict', {})
+        bobj = get_active_business(kwargs.get('userobj'))
+        if not bobj or not RE_PERIODO.match(q.get('periodo') or ''):
+            return {'error': 'Indique el período (mes y año)'}
+        if q.get('libro') not in ('ventas', 'compras'):
+            return {'error': 'Libro inválido'}
+        return rg90.ventas(bobj, q.get('periodo')) if q.get('libro') == 'ventas' else rg90.compras(bobj, q.get('periodo'))
 
     def _excel(self, data) -> str:
         wb = Workbook()

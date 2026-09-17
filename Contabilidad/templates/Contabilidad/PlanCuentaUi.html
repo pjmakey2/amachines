@@ -1,0 +1,139 @@
+<div class="plancuenta_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_plancuenta" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Nueva cuenta</button>
+            <button id="btn_borrar_plancuenta" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_plancuenta" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_plancuenta_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_plancuenta = [];
+    plancuenta_home_be = function (data, settings) {
+        let tt = qelem(`#table_plancuenta_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_plancuenta.length > 0) mquery = [...mquery, ...gmquery_plancuenta];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_plancuenta = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_plancuenta,
+          url_exec: '{% url "iom" %}',
+          title: 'Plan de Cuentas',
+          tselector: 'table_plancuenta_ui',
+          app_name: 'Contabilidad',
+          model_name: 'PlanCuenta',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: plancuenta_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_plancuenta_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-plancuenta-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'codigo', tit: 'Código', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Cuenta', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { let pad = (rowobj.nivel - 1) * 18; return `<span style="padding-left:${pad}px; ${rowobj.imputable ? '' : 'font-weight:600;'}">${$('<span>').text(data).html()}</span>`; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nivel', tit: 'Nivel', cls: 'align-center', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'imputable', tit: 'Imputable', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activa', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    plancuenta_form_crud = (pk) => {
+        let dattrs = { title: 'Plan de Cuentas', t_guid: t_plancuenta, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Contabilidad',
+            model_name: 'PlanCuenta',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Contabilidad/PlanCuentaCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_plancuenta').addEventListener('click', () => plancuenta_form_crud());
+
+    $(`#${t_plancuenta} tbody`).on('click', '.tr-plancuenta-query', function() {
+        let rowobj = $(`#${t_plancuenta}`).DataTable().row($(this).closest('tr')).data();
+        plancuenta_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_plancuenta').addEventListener('click', function() {
+        let ids = $(`#${t_plancuenta}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Contabilidad');
+            gbe.append('package', 'mng_contabilidad');
+            gbe.append('attr', 'MContabilidad');
+            gbe.append('mname', 'delete_cuentas');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_plancuenta}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_plancuenta').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_plancuenta = [];
+            let v = qelem('#input_buscar_plancuenta').value.trim();
+            if (v !== '') {
+                gmquery_plancuenta.push({'field': 'or_codigo__icontains', 'value': v});
+                gmquery_plancuenta.push({'field': 'or_nombre__icontains', 'value': v});
+            }
+            $(`#${t_plancuenta}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_plancuenta}`).on('draw.dt', function() {
+        let tt = qelem(`#table_plancuenta_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

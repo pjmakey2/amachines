@@ -1,0 +1,164 @@
+<div class="asiento_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_asiento" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Asiento manual</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_asiento" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_asiento_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_asiento = [];
+    asiento_home_be = function (data, settings) {
+        let tt = qelem(`#table_asiento_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_asiento.length > 0) mquery = [...mquery, ...gmquery_asiento];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_asiento = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_asiento,
+          url_exec: '{% url "iom" %}',
+          title: 'Asientos Contables',
+          tselector: 'table_asiento_ui',
+          app_name: 'Contabilidad',
+          model_name: 'Asiento',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: asiento_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) { return `tr_asiento_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-asiento-query text fs-5 mdi mdi-archive-eye-outline me-1"></i><i title="Avanzar al siguiente estado" class="tr-asiento-avanzar text fs-5 mdi mdi-check-decagram text-success cursor-pointer me-1"></i><i title="Anular" class="tr-asiento-anular text fs-5 mdi mdi-cancel text-danger cursor-pointer me-1"></i><i title="Historial" class="tr-asiento-log text fs-5 mdi mdi-history text-muted cursor-pointer me-1"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero', tit: 'Nro.', cls: 'align-left', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'concepto', tit: 'Concepto', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'origen', tit: 'Origen', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'evento', tit: 'Evento', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'total', tit: 'Total', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'estado', tit: 'Estado', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { if (rowobj.anulado) return '<span class="badge bg-dark">Anulado</span>'; let c = {cargado: 'bg-secondary', verificado: 'bg-info', aprobado: 'bg-success'}[data] || 'bg-primary'; return `<span class="badge ${c}">${data}</span>`; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'anulado', tit: 'Anulado', cls: 'align-left', dtyp: 'bool', hide: true },
+          ]
+      })
+
+    asiento_form_crud = (pk) => {
+        let dattrs = { title: 'Asientos Contables', t_guid: t_asiento, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Contabilidad',
+            model_name: 'Asiento',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Contabilidad/AsientoCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_asiento').addEventListener('click', () => asiento_form_crud());
+
+    $(`#${t_asiento} tbody`).on('click', '.tr-asiento-query', function() {
+        let rowobj = $(`#${t_asiento}`).DataTable().row($(this).closest('tr')).data();
+        asiento_form_crud(rowobj.id);
+    })
+
+    asiento_workflow = (mname, rowobj, extra) => {
+        let gbe = new FormData();
+        gbe.append('module', 'OptsIO');
+        gbe.append('package', 'mng_workflow');
+        gbe.append('attr', 'MWorkflow');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        gbe.append('model_app_name', 'Contabilidad');
+        gbe.append('model_name', 'Asiento');
+        gbe.append('id', rowobj.id);
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) UiB.MsgError(rsp.data.error);
+            else if (rsp.data.success && mname !== 'get_log') UiB.MsgSuccess(rsp.data.success);
+            if (mname !== 'get_log') $(`#${t_asiento}`).DataTable().ajax.reload(null, false);
+            return rsp.data;
+        });
+    }
+
+    $(`#${t_asiento} tbody`).on('click', '.tr-asiento-avanzar', function() {
+        let rowobj = $(`#${t_asiento}`).DataTable().row($(this).closest('tr')).data();
+        let siguiente = {cargado: 'verificado', verificado: 'aprobado'}[rowobj.estado];
+        if (rowobj.anulado || !siguiente) {
+            UiB.MsgInfo('La operación ya está cerrada.');
+            return;
+        }
+        UiB.MsgSwall({ msg: `¿Pasar la operación ${rowobj.numero} a "${siguiente}"?`, ttype: 'info' }).then((result) => {
+            if (result.isConfirmed) asiento_workflow('avanzar', rowobj, {estado: siguiente});
+        });
+    })
+
+    $(`#${t_asiento} tbody`).on('click', '.tr-asiento-anular', function() {
+        let rowobj = $(`#${t_asiento}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({
+            title: `Anular operación ${rowobj.numero}`, input: 'text', inputLabel: 'Motivo',
+            showCancelButton: true, confirmButtonText: 'Anular', cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) asiento_workflow('anular', rowobj, {motivo: result.value || ''});
+        });
+    })
+
+    $(`#${t_asiento} tbody`).on('click', '.tr-asiento-log', function() {
+        let rowobj = $(`#${t_asiento}`).DataTable().row($(this).closest('tr')).data();
+        asiento_workflow('get_log', rowobj).then((data) => {
+            if (!data.log) return;
+            let filas = data.log.map((l) => `<tr><td>${l.fecha}</td><td>${l.estado}</td><td>${$('<span>').text(l.usuario || l.username).html()}</td><td>${$('<span>').text(l.nota || '').html()}</td></tr>`);
+            Swal.fire({
+                title: `Historial operación ${rowobj.numero}`, width: 700,
+                html: `<table class="table table-sm text-start"><thead><tr><th>Fecha</th><th>Estado</th><th>Usuario</th><th>Nota</th></tr></thead><tbody>${filas.join('')}</tbody></table>`
+            });
+        });
+    })
+
+    qelem('#input_buscar_asiento').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_asiento = [];
+            let v = qelem('#input_buscar_asiento').value.trim();
+            if (v !== '') {
+                gmquery_asiento.push({'field': 'or_concepto__icontains', 'value': v});
+                gmquery_asiento.push({'field': 'or_evento__icontains', 'value': v});
+            }
+            $(`#${t_asiento}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_asiento}`).on('draw.dt', function() {
+        let tt = qelem(`#table_asiento_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

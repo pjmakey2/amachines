@@ -1,0 +1,78 @@
+<style>
+    #conta_reportes_{{ rr }} table.rpt td.num, #conta_reportes_{{ rr }} table.rpt th.num { text-align: right; white-space: nowrap; }
+    #conta_reportes_{{ rr }} table.rpt tr.titulo td { font-weight: 600; background: #f3f4f6; }
+    #conta_reportes_{{ rr }} table.rpt tr.total td { border-top: 2px solid #111; }
+    #conta_reportes_{{ rr }} table.rpt td { white-space: pre; }
+</style>
+<div class="container-fluid" id="conta_reportes_{{ rr }}">
+    <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+        <div><label class="small">Reporte</label>
+            <select name="reporte" class="form-select">
+                <option value="resultados">Estado de Resultados</option>
+                <option value="balance">Balance General</option>
+                <option value="sumas_saldos">Balance de Sumas y Saldos</option>
+                <option value="diario">Libro Diario</option>
+                <option value="mayor">Libro Mayor</option>
+            </select></div>
+        <div name="box_cuenta" hidden style="min-width: 320px;"><label class="small">Cuenta</label><select name="cuenta_id" class="form-select"></select></div>
+        <div name="box_desde"><label class="small">Desde</label><input type="date" name="desde" class="form-control"></div>
+        <div><label class="small">Hasta</label><input type="date" name="hasta" class="form-control"></div>
+        <button class="btn btn-primary" name="btn_ver"><i class="mdi mdi-magnify"></i> Ver</button>
+        <button class="btn btn-outline-success" name="btn_excel"><i class="mdi mdi-file-excel-outline"></i> Excel</button>
+    </div>
+    <div name="encabezado" class="mb-2"></div>
+    <div class="table-responsive"><table class="table table-sm rpt"><thead></thead><tbody></tbody></table></div>
+</div>
+<script type="text/javascript">
+(function() {
+    const root = qelem('#conta_reportes_{{ rr }}');
+    const el = (name) => root.querySelector(`[name=${name}]`);
+    const esc = (v) => $('<span>').text(v == null ? '' : v).html();
+    let hoy = moment();
+    el('desde').value = hoy.clone().startOf('year').format('YYYY-MM-DD');
+    el('hasta').value = hoy.format('YYYY-MM-DD');
+
+    function post(extra) {
+        let gbe = new FormData();
+        gbe.append('module', 'Contabilidad');
+        gbe.append('package', 'mng_contabilidad');
+        gbe.append('attr', 'MContabilidad');
+        gbe.append('dbcon', 'default');
+        Object.keys(extra).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => rsp.data);
+    }
+    function params(excel) {
+        return { mname: 'get_reporte', reporte: el('reporte').value, desde: el('box_desde').hidden ? '' : el('desde').value,
+                 hasta: el('hasta').value, cuenta_id: el('cuenta_id').value || '', excel: excel ? '1' : '' };
+    }
+    function ver() {
+        post(params(false)).then((d) => {
+            if (d.error) { UiB.MsgError(d.error); return; }
+            el('encabezado').innerHTML = `<h5 class="mb-0">${esc(d.titulo)}</h5><small class="text-muted">${esc(d.negocio)} — ${esc(d.periodo)}</small>` +
+                (d.aviso ? `<div class="alert alert-info mt-2 py-2">${esc(d.aviso)}</div>` : '');
+            let numericas = d.columnas.map((c) => ['Debe', 'Haber', 'Saldo', 'Importe', 'Saldo deudor', 'Saldo acreedor'].includes(c));
+            root.querySelector('table.rpt thead').innerHTML = '<tr>' + d.columnas.map((c, i) => `<th class="${numericas[i] ? 'num' : ''}">${c}</th>`).join('') + '</tr>';
+            root.querySelector('table.rpt tbody').innerHTML = d.filas.map((f) => `<tr class="${f.titulo ? 'titulo' : ''} ${f.total ? 'total' : ''}">` +
+                f.celdas.map((c, i) => numericas[i] ? `<td class="num">${c === '' || c === 0 && f.titulo && !f.total ? '' : UiN.formatNumberU(parseFloat(c).toFixed(0))}</td>` : `<td>${esc(c)}</td>`).join('') + '</tr>').join('') ||
+                `<tr><td colspan="${d.columnas.length}" class="text-center text-muted">Sin movimientos en el período</td></tr>`;
+        });
+    }
+    el('reporte').addEventListener('change', () => {
+        el('box_cuenta').hidden = el('reporte').value !== 'mayor';
+        el('box_desde').hidden = el('reporte').value === 'balance';
+    });
+    el('btn_ver').addEventListener('click', ver);
+    el('btn_excel').addEventListener('click', () => post(params(true)).then((d) => {
+        if (d.error) { UiB.MsgError(d.error); return; }
+        let link = document.createElement('a');
+        link.href = d.excel_file;
+        link.target = '_blank';
+        link.click();
+    }));
+    post({mname: 'get_config'}).then((d) => {
+        (d.cuentas || []).forEach((c) => el('cuenta_id').add(new Option(c.text, c.id)));
+        $(el('cuenta_id')).select2({ theme: 'bootstrap-5', width: '100%' });
+        ver();
+    });
+})();
+</script>

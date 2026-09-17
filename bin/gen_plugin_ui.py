@@ -143,7 +143,7 @@ def list_tmpl(app, s):
           ]
       }})
 """
-    if can_create:
+    if can_create or s.get('edit'):
         out += f"""
     {k}_form_crud = (pk) => {{
         let dattrs = {{ title: '{s['title']}', t_guid: t_{k}, sui_rr: '{{{{ rr }}}}', offcanvasglobal: true }};
@@ -167,6 +167,9 @@ def list_tmpl(app, s):
         }})
     }}
 
+"""
+        if can_create:
+            out += f"""
     qelem('#btn_crear_{k}').addEventListener('click', () => {k}_form_crud());
 """
         if s.get('editable', True):

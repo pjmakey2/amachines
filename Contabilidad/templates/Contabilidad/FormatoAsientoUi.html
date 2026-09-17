@@ -1,0 +1,103 @@
+<div class="formatoasiento_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_formatoasiento" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_formatoasiento_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_formatoasiento = [];
+    formatoasiento_home_be = function (data, settings) {
+        let tt = qelem(`#table_formatoasiento_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_formatoasiento.length > 0) mquery = [...mquery, ...gmquery_formatoasiento];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_formatoasiento = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_formatoasiento,
+          url_exec: '{% url "iom" %}',
+          title: 'Formatos de Asiento',
+          tselector: 'table_formatoasiento_ui',
+          app_name: 'Contabilidad',
+          model_name: 'FormatoAsiento',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: formatoasiento_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_formatoasiento_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-formatoasiento-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Formato', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'evento', tit: 'Evento que lo dispara', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'concepto', tit: 'Concepto del asiento', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activo', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    formatoasiento_form_crud = (pk) => {
+        let dattrs = { title: 'Formatos de Asiento', t_guid: t_formatoasiento, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Contabilidad',
+            model_name: 'FormatoAsiento',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Contabilidad/FormatoAsientoCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    $(`#${t_formatoasiento} tbody`).on('click', '.tr-formatoasiento-query', function() {
+        let rowobj = $(`#${t_formatoasiento}`).DataTable().row($(this).closest('tr')).data();
+        formatoasiento_form_crud(rowobj.id);
+    })
+
+    qelem('#input_buscar_formatoasiento').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_formatoasiento = [];
+            let v = qelem('#input_buscar_formatoasiento').value.trim();
+            if (v !== '') {
+                gmquery_formatoasiento.push({'field': 'or_nombre__icontains', 'value': v});
+                gmquery_formatoasiento.push({'field': 'or_evento__icontains', 'value': v});
+            }
+            $(`#${t_formatoasiento}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_formatoasiento}`).on('draw.dt', function() {
+        let tt = qelem(`#table_formatoasiento_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

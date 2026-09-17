@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 from django.contrib.auth.models import User
+from django.core.files.storage import default_storage
 from django.test import TestCase
 
 from Contabilidad.mng_contabilidad import MContabilidad
@@ -15,7 +16,7 @@ from Egreso.mng_egreso import MEgreso
 from Egreso.models import CategoriaGasto, Gasto, PagoProveedor, Proveedor, TransferenciaInterna
 from OptsIO import events
 from OptsIO.models import BusinessEvent
-from OptsIO.testing import make_business, make_user
+from OptsIO.testing import check_ui, grid_records, make_business, make_user
 from Tesoreria.models import Banco, Caja, CuentaBancaria
 
 
@@ -185,3 +186,44 @@ class CicloContableTest(ContaBase):
         self.assertEqual(self.mc.get_reporte(userobj=self.u, qdict={'reporte': 'diario', 'hasta': '2026-12-31'})['filas'], [])
         self.aprobar(a)
         self.assertEqual(len(self.mc.get_reporte(userobj=self.u, qdict={'reporte': 'diario', 'hasta': '2026-12-31'})['filas']), 3)
+
+
+class Rg90Test(ContaBase):
+    def test_compras_con_formato_marangatu(self):
+        me = MEgreso()
+        self.aprobar(Gasto.objects.get(pk=self.call(
+            me.create_gasto, tipo='comun', fecha='2026-08-03', proveedorobj_id=self.prov.pk, categoriaobj_id=self.cat.pk,
+            concepto='Alquiler', gravada_10='1100000', exenta='50000', factura_numero='001-001-0000009',
+            factura_timbrado='16108983', factura_fecha='2026-08-03', factura_condicion='credito')))
+        self.call(me.create_gasto, tipo='comun', fecha='2026-08-04', proveedorobj_id=self.prov.pk, categoriaobj_id=self.cat.pk,
+                  concepto='Sin aprobar', gravada_10='1', factura_numero='2', factura_fecha='2026-08-04')
+        rsp = self.mc.generar_rg90(userobj=self.u, qdict={'libro': 'compras', 'periodo': '2026-08'})
+        self.assertEqual((rsp['registros'], rsp['total']), (1, 1150000.0))
+        contenido = default_storage.open(rsp['archivo'].replace('/media/', '', 1)).read().decode('latin-1')
+        cols = contenido.rstrip('\r\n').split('\t')
+        self.assertEqual([len(c) for c in cols], [1, 2, 15, 80, 3, 10, 8, 15, 20, 20, 20, 20, 1, 1, 1, 1, 1, 1])
+        self.assertEqual([c.strip() for c in cols], ['2', '11', '800', 'PROVEEDOR SA', '109', '03/08/2026', '16108983',
+                                                     '001-001-0000009', '1100000', '0', '50000', '1150000', '2', 'N', 'S', 'S', 'N', 'N'])
+        self.assertTrue(contenido.endswith('\r\n'))
+        self.assertEqual(self.mc.generar_rg90(userobj=self.u, qdict={'libro': 'ventas', 'periodo': '2026-08'})['registros'], 0)
+
+
+class UiRenderTest(ContaBase):
+    def test_pantallas_renderizan_y_su_js_es_valido(self):
+        for t in ['PlanCuentaUi', 'PlanCuentaCreateUi', 'FormatoAsientoUi', 'AsientoUi', 'AsientoCreateUi',
+                  'ConfigContableUi', 'ReportesUi', 'Rg90Ui']:
+            check_ui(self, self.u, f'Contabilidad/{t}.html')
+        check_ui(self, self.u, 'Contabilidad/PlanCuentaCreateUi.html', ('Contabilidad', 'PlanCuenta'), self.cta('6.1.04').pk)
+        formato = FormatoAsiento.objects.filter(businessobj=self.b).first()
+        check_ui(self, self.u, 'Contabilidad/FormatoAsientoCreateUi.html', ('Contabilidad', 'FormatoAsiento'), formato.pk)
+        rsp = self.mc.save_formato(userobj=self.u, qdict={'uc_fields': json.dumps({
+            'id': formato.pk, 'nombre': formato.nombre, 'concepto': formato.concepto, 'activo': 'true',
+            'lineas': self.mc.get_formato(userobj=self.u, qdict={'id': formato.pk})['lineas']})})[0]
+        self.assertIn('success', rsp, rsp)
+        lineas = [{'cuenta_id': self.cta('1.1.01.04').pk, 'debe': '10'}, {'cuenta_id': self.cta('3.1.01').pk, 'haber': '10'}]
+        a = Asiento.objects.get(pk=self.call(self.mc.create_asiento, fecha='2026-09-01', concepto='x', lineas=lineas))
+        check_ui(self, self.u, 'Contabilidad/AsientoCreateUi.html', ('Contabilidad', 'Asiento'), a.pk)
+        cfg = self.mc.get_config(userobj=self.u, qdict={})
+        self.assertEqual({m['tipo'] for m in cfg['mapeables']}, {'cuenta_bancaria', 'caja', 'categoria_gasto'})
+        filas = grid_records(self, self.u, 'Contabilidad', 'PlanCuenta', ['id', 'codigo', 'nombre', 'nivel', 'imputable'])
+        self.assertTrue(len(filas) > 50)

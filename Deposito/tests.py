@@ -27,7 +27,7 @@ class DepositoTest(TestCase):
 
     def test_cobro_genera_depositos_una_sola_vez(self):
         event = self._evento_cobro()
-        self.assertEqual(events.get_handlers('cobro.recibo.aprobado'), ['Deposito.handlers.generar_depositos_de_cobro'])
+        self.assertIn('Deposito.handlers.generar_depositos_de_cobro', events.get_handlers('cobro.recibo.aprobado'))
         self.assertEqual(events.process_event(event.pk)['status'], 'done')
         generar_depositos_de_cobro(event)  # re-ejecucion directa: no duplica
         deps = list(Deposito.objects.order_by('tipo').values_list('tipo', 'monto', 'estado', 'automatico', 'cuentaobj_id'))

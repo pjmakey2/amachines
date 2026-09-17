@@ -1,0 +1,43 @@
+<div class="container-fluid" id="conta_rg90_{{ rr }}">
+    <h5 class="mb-1"><i class="mdi mdi-file-export-outline"></i> RG90 — Registro mensual de comprobantes</h5>
+    <p class="text-muted small">Genera el archivo TXT para importar en Marangatu. Ventas: documentos electrónicos aprobados por SIFEN.
+        Compras: gastos aprobados con factura (los gastos a rendir entran cuando se rinden).</p>
+    <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+        <div><label class="small">Período</label><input type="month" name="periodo" class="form-control"></div>
+        <button class="btn btn-primary" data-libro="ventas"><i class="mdi mdi-cash-register"></i> Generar Ventas</button>
+        <button class="btn btn-primary" data-libro="compras"><i class="mdi mdi-cart-arrow-down"></i> Generar Compras</button>
+    </div>
+    <table class="table table-sm" style="max-width: 760px;">
+        <thead><tr><th>Libro</th><th>Período</th><th class="text-end">Comprobantes</th><th class="text-end">Total Gs.</th><th>Archivo</th></tr></thead>
+        <tbody name="tbody_archivos"><tr><td colspan="5" class="text-muted text-center">Todavía no se generó ningún archivo</td></tr></tbody>
+    </table>
+</div>
+<script type="text/javascript">
+(function() {
+    const root = qelem('#conta_rg90_{{ rr }}');
+    root.querySelector('[name=periodo]').value = moment().subtract(1, 'month').format('YYYY-MM');
+    let primera = true;
+    root.querySelectorAll('[data-libro]').forEach((btn) => btn.addEventListener('click', () => {
+        let periodo = root.querySelector('[name=periodo]').value;
+        let gbe = new FormData();
+        gbe.append('module', 'Contabilidad');
+        gbe.append('package', 'mng_contabilidad');
+        gbe.append('attr', 'MContabilidad');
+        gbe.append('mname', 'generar_rg90');
+        gbe.append('dbcon', 'default');
+        gbe.append('libro', btn.dataset.libro);
+        gbe.append('periodo', periodo);
+        btn.disabled = true;
+        axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) { UiB.MsgError(rsp.data.error); return; }
+            let tbody = root.querySelector('[name=tbody_archivos]');
+            if (primera) { tbody.innerHTML = ''; primera = false; }
+            let tr = document.createElement('tr');
+            tr.innerHTML = `<td>${btn.dataset.libro === 'ventas' ? 'Ventas' : 'Compras'}</td><td>${periodo}</td>
+                <td class="text-end">${rsp.data.registros}</td><td class="text-end">${UiN.formatNumberU(rsp.data.total.toFixed(0))}</td>
+                <td><a href="${rsp.data.archivo}" target="_blank" download><i class="mdi mdi-download"></i> Descargar TXT</a></td>`;
+            tbody.prepend(tr);
+        }).catch(() => UiB.MsgError('No se pudo generar el archivo')).finally(() => { btn.disabled = false; });
+    }));
+})();
+</script>

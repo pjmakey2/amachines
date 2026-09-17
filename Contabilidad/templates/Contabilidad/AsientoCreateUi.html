@@ -1,0 +1,126 @@
+<div class="ui_asiento">
+    <form id="form_asiento_{{ rr }}" class="form_asiento">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        {% if mobj and mobj.origen != 'manual' %}
+            <div class="alert alert-secondary py-2"><i class="mdi mdi-robot-outline"></i> Asiento {{ mobj.get_origen_display|lower }} generado por <b>{{ mobj.evento }}</b>. Se revierte anulando la operación de origen.</div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-3 mb-3"><label>Fecha <span class="text-danger">*</span></label>
+                <input type="date" name="fecha" class="form-control" required value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' /></div>
+            <div class="col-md-9 mb-3"><label>Concepto <span class="text-danger">*</span></label>
+                <input type="text" name="concepto" class="form-control" required value="{{ mobj.concepto|default:'' }}" /></div>
+        </div>
+        <table class="table table-sm">
+            <thead><tr><th style="width: 42%;">Cuenta</th><th class="text-end">Debe</th><th class="text-end">Haber</th><th>Glosa</th><th></th></tr></thead>
+            <tbody name="tbody_lineas"></tbody>
+            <tfoot><tr class="fw-bold"><td class="text-end">TOTALES</td><td class="text-end" name="total_debe">0</td><td class="text-end" name="total_haber">0</td>
+                <td colspan="2" name="balance"></td></tr></tfoot>
+        </table>
+        <button type="button" class="btn btn-sm btn-outline-primary mb-3" name="btn_add_linea"><i class="mdi mdi-plus"></i> Agregar línea</button>
+        <div><button class="btn btn-primary" type="submit">Guardar asiento</button></div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Asiento {{ mobj.get_numero_display }}{% else %}Nuevo asiento manual{% endif %}`;
+    asiento_sel = (name) => `#form_asiento_{{ rr }} [name=${name}]`;
+    asiento_cuentas = [];
+    asiento_editable = {% if mobj and mobj.origen != 'manual' %}false{% elif mobj and mobj.estado != 'cargado' %}false{% elif mobj.anulado %}false{% else %}true{% endif %};
+    asiento_mask = { alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2, digitsOptional: false,
+                     rightAlign: true, allowMinus: false, removeMaskOnSubmit: true, autoUnmask: true };
+
+    asiento_totales = () => {
+        let debe = 0, haber = 0;
+        document.querySelectorAll('#form_asiento_{{ rr }} tbody[name=tbody_lineas] tr').forEach((tr) => {
+            debe += parseFloat(tr.querySelector('[name=ln_debe]').inputmask.unmaskedvalue()) || 0;
+            haber += parseFloat(tr.querySelector('[name=ln_haber]').inputmask.unmaskedvalue()) || 0;
+        });
+        qelem(asiento_sel('total_debe')).textContent = UiN.formatNumberU(debe.toFixed(0));
+        qelem(asiento_sel('total_haber')).textContent = UiN.formatNumberU(haber.toFixed(0));
+        let ok = debe > 0 && Math.abs(debe - haber) < 0.005;
+        qelem(asiento_sel('balance')).innerHTML = ok ? '<span class="text-success">Balanceado</span>' :
+            `<span class="text-danger">Diferencia: ${UiN.formatNumberU(Math.abs(debe - haber).toFixed(0))}</span>`;
+    }
+
+    asiento_add_linea = (l) => {
+        l = l || {};
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td><select name="ln_cuenta" class="form-control form-control-sm"></select></td>
+            <td><input type="text" name="ln_debe" class="form-control form-control-sm text-end"></td>
+            <td><input type="text" name="ln_haber" class="form-control form-control-sm text-end"></td>
+            <td><input type="text" name="ln_glosa" class="form-control form-control-sm"></td>
+            <td><i title="Quitar" class="mdi mdi-close text-danger cursor-pointer" name="ln_quitar"></i></td>`;
+        let sel = tr.querySelector('[name=ln_cuenta]');
+        sel.add(new Option('Seleccione...', ''));
+        asiento_cuentas.forEach((c) => sel.add(new Option(c.text, c.id)));
+        sel.value = l.cuenta_id || '';
+        tr.querySelector('[name=ln_debe]').value = l.debe || 0;
+        tr.querySelector('[name=ln_haber]').value = l.haber || 0;
+        tr.querySelector('[name=ln_glosa]').value = l.glosa || '';
+        ['ln_debe', 'ln_haber'].forEach((n) => {
+            Inputmask(asiento_mask).mask(tr.querySelector(`[name=${n}]`));
+            tr.querySelector(`[name=${n}]`).addEventListener('input', asiento_totales);
+        });
+        tr.querySelector('[name=ln_quitar]').addEventListener('click', () => { tr.remove(); asiento_totales(); });
+        qelem(asiento_sel('tbody_lineas')).appendChild(tr);
+        $(sel).select2({ dropdownParent: $('#offcanvasGlobalUi'), theme: 'bootstrap-5', width: '100%' });
+    }
+    qelem(asiento_sel('btn_add_linea')).addEventListener('click', () => asiento_add_linea());
+
+    asiento_post = (mname, extra) => {
+        let gbe = new FormData();
+        gbe.append('module', 'Contabilidad');
+        gbe.append('package', 'mng_contabilidad');
+        gbe.append('attr', 'MContabilidad');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} });
+    }
+    asiento_post('get_config').then((rsp) => {
+        asiento_cuentas = rsp.data.cuentas || [];
+        {% if mobj %}
+            asiento_post('get_asiento', {id: '{{ mobj.pk }}'}).then((r2) => {
+                (r2.data.lineas || []).forEach((l) => asiento_add_linea(l));
+                asiento_totales();
+                if (!asiento_editable) {
+                    $('#form_asiento_{{ rr }} :input').prop('disabled', true);
+                    $('#form_asiento_{{ rr }} button').remove();
+                    $('#form_asiento_{{ rr }} [name=ln_quitar]').remove();
+                }
+            });
+        {% else %}
+            asiento_add_linea();
+            asiento_add_linea();
+            asiento_totales();
+        {% endif %}
+    });
+
+    qelem('#form_asiento_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Contabilidad');
+        fdata.append('model_name', 'Asiento');
+        fdata.append('dbcon', 'default');
+        let edata = { id: qelem(asiento_sel('id')).value, fecha: qelem(asiento_sel('fecha')).value, concepto: qelem(asiento_sel('concepto')).value, lineas: [] };
+        document.querySelectorAll('#form_asiento_{{ rr }} tbody[name=tbody_lineas] tr').forEach((tr) => {
+            edata.lineas.push({ cuenta_id: $(tr.querySelector('[name=ln_cuenta]')).val(),
+                                debe: tr.querySelector('[name=ln_debe]').inputmask.unmaskedvalue().replace(',', '.'),
+                                haber: tr.querySelector('[name=ln_haber]').inputmask.unmaskedvalue().replace(',', '.'),
+                                glosa: tr.querySelector('[name=ln_glosa]').value });
+        });
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Contabilidad', 'package': 'mng_contabilidad', 'attr': 'MContabilidad', 'mname': 'create_asiento', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } }).then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) $('#{{ t_guid }}').DataTable().ajax.reload();
+        }).catch((err) => { UiB.MsgError(err); });
+    })
+</script>
