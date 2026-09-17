@@ -1,5 +1,6 @@
 """Resolucion del negocio activo y aislamiento multi-tenant para modelos con FK `businessobj`."""
 from django.core.exceptions import FieldDoesNotExist
+from django.db.models import Max
 
 from OptsIO.models import UserBusiness
 
@@ -27,3 +28,12 @@ def is_tenant_model(model_class) -> bool:
 def user_label(userobj) -> str:
     """Valor para los campos <paso>_usuario (misma convencion que IOMaction: first_name)."""
     return getattr(userobj, 'first_name', '') or getattr(userobj, 'username', '') or ''
+
+
+def siguiente_numero(model, businessobj) -> int:
+    """
+    Correlativo `numero` por negocio. Llamar dentro de transaction.atomic(): el lock del
+    Business serializa a los que numeran a la vez.
+    """
+    type(businessobj).objects.select_for_update().get(pk=businessobj.pk)
+    return (model.objects.filter(businessobj=businessobj).aggregate(m=Max('numero'))['m'] or 0) + 1

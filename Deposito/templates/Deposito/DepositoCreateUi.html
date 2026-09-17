@@ -1,0 +1,235 @@
+<div class="ui_deposito">
+    <form id="form_deposito_{{ rr }}" class="form_deposito">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-4 mb-3" data-field="fecha">
+                <label>Fecha del depósito <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="tipo">
+                <label>Tipo de valor</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="tipo" class="form-control">
+                        <option value="efectivo" {% if mobj and mobj.tipo == "efectivo" %}selected{% endif %}>Efectivo</option>
+                        <option value="cheque" {% if mobj and mobj.tipo == "cheque" %}selected{% endif %}>Cheques</option>
+                        <option value="transferencia" {% if mobj and mobj.tipo == "transferencia" %}selected{% endif %}>Transferencia recibida</option>
+                        <option value="tarjeta" {% if mobj and mobj.tipo == "tarjeta" %}selected{% endif %}>Acreditación de tarjetas</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="monto">
+                <label>Monto <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="monto" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="cuentaobj_id">
+                <label>Cuenta bancaria donde se depositó</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="cuentaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="moneda">
+                <label>Moneda</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="moneda" class="form-control">
+                        <option value="PYG" {% if mobj and mobj.moneda == "PYG" %}selected{% endif %}>Guaraníes</option>
+                        <option value="USD" {% if mobj and mobj.moneda == "USD" %}selected{% endif %}>Dólares</option>
+                        <option value="EUR" {% if mobj and mobj.moneda == "EUR" %}selected{% endif %}>Euros</option>
+                        <option value="BRL" {% if mobj and mobj.moneda == "BRL" %}selected{% endif %}>Reales</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="boleta_numero">
+                <label>Nro. de boleta / comprobante</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="boleta_numero" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.boleta_numero }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="observacion">
+                <label>Observación</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="observacion" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.observacion }}{% else %}{% endif %}' />
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3" data-field="sec_cheques">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0"><i class="mdi mdi-checkbook"></i> Cheques depositados</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" name="btn_add_cheque"><i class="mdi mdi-plus"></i> Agregar cheque</button>
+                </div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Banco</th><th>Número</th><th>Librador</th><th>Fecha</th><th class="text-end">Monto</th><th></th></tr></thead>
+                    <tbody name="tbody_cheques"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Depósito {{ mobj.pk }}{% else %}Crear Depósito{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_deposito_{{ rr }} select[name=cuentaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'CuentaBancaria',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.cuentaobj %}
+            $('#form_deposito_{{ rr }} select[name=cuentaobj_id]').val('{{ mobj.cuentaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_deposito = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_deposito_{{ rr }} input[name=monto]'));
+    }
+    initializeInputMasks_deposito();
+
+    save_deposito = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Deposito');
+        fdata.append('model_name', 'Deposito');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["cuentaobj_id"].forEach((idx) => {
+            let vv = $(`#form_deposito_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["monto"].forEach((f) => {
+            let el = qelem(`#form_deposito_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        [].forEach((f) => {
+            let el = qelem(`#form_deposito_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        ['chq_banco', 'chq_numero', 'chq_librador', 'chq_fecha', 'chq_monto'].forEach((n) => delete edata[n]);
+        edata['cheques'] = [];
+        document.querySelectorAll('#form_deposito_{{ rr }} tbody[name=tbody_cheques] tr').forEach((tr) => {
+            edata['cheques'].push({
+                banco: tr.querySelector('[name=chq_banco]').value, numero: tr.querySelector('[name=chq_numero]').value,
+                librador: tr.querySelector('[name=chq_librador]').value, fecha: tr.querySelector('[name=chq_fecha]').value,
+                monto: tr.querySelector('[name=chq_monto]').inputmask.unmaskedvalue().replace(',', '.')
+            });
+        });
+
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Deposito', 'package': 'mng_deposito', 'attr': 'MDeposito', 'mname': 'create_deposito', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_deposito_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_deposito Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_deposito_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_deposito_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_deposito(evt.target);
+    })
+
+    deposito_sel = (name) => `#form_deposito_{{ rr }} [name=${name}]`;
+    deposito_add_cheque = (c) => {
+        c = c || {};
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="text" name="chq_banco" class="form-control form-control-sm"></td>
+            <td><input type="text" name="chq_numero" class="form-control form-control-sm"></td>
+            <td><input type="text" name="chq_librador" class="form-control form-control-sm"></td>
+            <td><input type="date" name="chq_fecha" class="form-control form-control-sm"></td>
+            <td><input type="text" name="chq_monto" class="form-control form-control-sm text-end"></td>
+            <td><i title="Quitar" class="mdi mdi-close text-danger cursor-pointer" name="chq_quitar"></i></td>`;
+        tr.querySelector('[name=chq_banco]').value = c.banco || '';
+        tr.querySelector('[name=chq_numero]').value = c.numero || '';
+        tr.querySelector('[name=chq_librador]').value = c.librador || '';
+        tr.querySelector('[name=chq_fecha]').value = c.fecha || '';
+        tr.querySelector('[name=chq_monto]').value = c.monto || 0;
+        Inputmask({ alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2, digitsOptional: false,
+                    rightAlign: true, allowMinus: false, removeMaskOnSubmit: true, autoUnmask: true }).mask(tr.querySelector('[name=chq_monto]'));
+        tr.querySelector('[name=chq_quitar]').addEventListener('click', () => tr.remove());
+        qelem(deposito_sel('tbody_cheques')).appendChild(tr);
+    }
+    qelem(deposito_sel('btn_add_cheque')).addEventListener('click', () => deposito_add_cheque());
+    deposito_toggle_tipo = () => {
+        qelem('#form_deposito_{{ rr }} [data-field=sec_cheques]').hidden = qelem(deposito_sel('tipo')).value !== 'cheque';
+    }
+    qelem(deposito_sel('tipo')).addEventListener('change', deposito_toggle_tipo);
+    deposito_toggle_tipo();
+    {% if mobj %}
+        {% if mobj.automatico %}
+            // Generado por un cobro: tipo, monto y moneda vienen del recibo
+            ['tipo', 'monto', 'moneda'].forEach((n) => { qelem(deposito_sel(n)).disabled = true; });
+            $('#form_deposito_{{ rr }}').prepend(`<div class="alert alert-secondary py-2"><i class="mdi mdi-robot-outline"></i> Generado por el cobro: <b>{{ mobj.origen_desc }}</b>. Complete la cuenta y la boleta.</div>`);
+        {% endif %}
+        (() => {
+            let gbe = new FormData();
+            gbe.append('module', 'Deposito');
+            gbe.append('package', 'mng_deposito');
+            gbe.append('attr', 'MDeposito');
+            gbe.append('mname', 'get_cheques');
+            gbe.append('dbcon', 'default');
+            gbe.append('id', '{{ mobj.pk }}');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                (rsp.data.cheques || []).forEach((c) => deposito_add_cheque(c));
+                {% if mobj.estado != 'cargado' or mobj.anulado %}
+                    $('#form_deposito_{{ rr }} :input').prop('disabled', true);
+                    $('#form_deposito_{{ rr }} button[type=submit]').replaceWith('<div class="alert alert-info mb-0">Depósito {{ mobj.estado }}: solo lectura.</div>');
+                {% endif %}
+            });
+        })();
+    {% endif %}
+</script>

@@ -15,7 +15,6 @@ from django.conf import settings
 from django.core.files import File
 from django.core.files.storage import default_storage
 from django.db import transaction
-from django.db.models import Max
 from django.http import HttpRequest, QueryDict
 
 from Egreso.models import (
@@ -23,11 +22,10 @@ from Egreso.models import (
     TransferenciaInterna,
 )
 from OptsIO import events
-from OptsIO.io_business import get_active_business, user_label
+from OptsIO.io_business import get_active_business, siguiente_numero, user_label
 from OptsIO.io_json import from_json, to_json
 from OptsIO.io_money import iva_incluido, precision_monetaria
 from OptsIO.io_rpt import IoRpt
-from Sifen.models import Business
 from Tesoreria.mng_tesoreria import MTesoreria
 from Tesoreria.models import Caja, Chequera, CuentaBancaria
 
@@ -67,12 +65,6 @@ def fecha_aplicacion(anho: int, mes: int, dia: int) -> date:
 def sumar_meses(fecha: date, meses: int, dia: int) -> date:
     total = fecha.year * 12 + (fecha.month - 1) + meses
     return fecha_aplicacion(total // 12, total % 12 + 1, dia)
-
-
-def siguiente_numero(model, businessobj) -> int:
-    """Correlativo por negocio. El lock del Business serializa a los que numeran a la vez."""
-    Business.objects.select_for_update().get(pk=businessobj.pk)
-    return (model.objects.filter(businessobj=businessobj).aggregate(m=Max('numero'))['m'] or 0) + 1
 
 
 class MEgreso:

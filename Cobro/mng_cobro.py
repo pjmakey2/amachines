@@ -10,6 +10,7 @@ from num2words import num2words
 from Sifen.models import DocumentHeader, DocumentRecibo, DocumentReciboDetail, Cotizacion, Business, Enumbers
 from Sifen import ekuatia_serials
 from Cobro.models import Pago
+from OptsIO import events
 from OptsIO.models import UserProfile, UserBusiness
 
 logger = logging.getLogger(__name__)
@@ -573,6 +574,13 @@ class MCobro:
         enumobj.save(update_fields=['estado'])
 
         logger.info(f'Recibo cobro creado: {recobj.id} - Numero {doc_numero_rc} - Cliente {fobj.pdv_ruc} - Total cobrado {total_cobrado}')
+
+        # Cierre del cobro: depositos y asientos se generan desde este evento (OptsIO.events, idempotente)
+        events.emit('cobro.recibo.aprobado', recobj, business=bobj, userobj=userobj, payload={
+            'numero': doc_numero_rc, 'fecha': str(recobj.doc_fecha), 'moneda': recobj.doc_moneda,
+            'cliente_ruc': fobj.pdv_ruc, 'cliente': fobj.pdv_nombrefactura, 'total': str(total_cobrado),
+            'metodos': {m: str(v) for m, v in totales_metodo.items()},
+        })
 
         return {
             'success': True,
