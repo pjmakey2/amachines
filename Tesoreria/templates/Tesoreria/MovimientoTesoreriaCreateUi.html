@@ -2,13 +2,13 @@
     <form id="form_movimiento_{{ rr }}" class="form_movimiento">
         <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
         <div class="row">
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="fecha">
                 <label>Fecha <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="date" name="fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' required />
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="tipo">
                 <label>Tipo</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="tipo" class="form-control">
@@ -17,13 +17,13 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="monto">
                 <label>Monto <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="monto" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="cuentaobj_id">
                 <label>Cuenta bancaria</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="cuentaobj_id" class="form-control">
@@ -31,7 +31,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="cajaobj_id">
                 <label>Caja</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="cajaobj_id" class="form-control">
@@ -39,19 +39,20 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-8 mb-3">
+            <div class="col-md-8 mb-3" data-field="concepto">
                 <label>Concepto <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="concepto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.concepto }}{% else %}{% endif %}' required />
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="referencia">
                 <label>Referencia</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="referencia" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.referencia }}{% else %}{% endif %}' />
                 </div>
             </div>
         </div>
+
         <div class="row mt-2">
             <div class="col-md-12 text-start">
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -60,7 +61,7 @@
     </form>
 </div>
 <script type="text/javascript">
-    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Movimiento {{ mobj.pk }}{% else %}Registrar movimiento manual{% endif %}`;
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Movimiento {{ mobj.pk }}{% else %}Registrar movimiento manual{% endif %}`;{% endif %}
 
     form_search.se_populate({
         surl: '{% url "iom" %}',
@@ -77,7 +78,7 @@
         first_selected: false,
         allowClear: true,
         width: '100%',
-        dropdownParent: $('#offcanvasGlobalUi'),
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
         theme: 'bootstrap-5'
     }).then(() => {
         {% if mobj and mobj.cuentaobj %}
@@ -100,7 +101,7 @@
         first_selected: false,
         allowClear: true,
         width: '100%',
-        dropdownParent: $('#offcanvasGlobalUi'),
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
         theme: 'bootstrap-5'
     }).then(() => {
         {% if mobj and mobj.cajaobj %}
@@ -138,6 +139,12 @@
             let el = qelem(`#form_movimiento_{{ rr }} input[name=${f}]`);
             if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
         });
+        [].forEach((f) => {
+            let el = qelem(`#form_movimiento_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([{ 'module': 'Tesoreria', 'package': 'mng_tesoreria', 'attr': 'MTesoreria', 'mname': 'create_movimiento', 'cont': false, 'show_success': true }]));
@@ -149,7 +156,7 @@
         .then((rsp) => {
             let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
             let got_error = msgs.some((ee) => ee.error);
-            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
             if (!got_error) {
                 $('#{{ t_guid }}').DataTable().ajax.reload();
                 bootstrap.Offcanvas.getInstance('#offcanvasGlobalUi')?.hide();

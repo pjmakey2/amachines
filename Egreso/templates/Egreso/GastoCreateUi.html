@@ -1,0 +1,321 @@
+<div class="ui_gasto">
+    <form id="form_gasto_{{ rr }}" class="form_gasto">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-4 mb-3" data-field="tipo">
+                <label>Tipo de gasto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="tipo" class="form-control">
+                        <option value="comun" {% if mobj and mobj.tipo == "comun" %}selected{% endif %}>Gasto común (con factura)</option>
+                        <option value="a_rendir" {% if mobj and mobj.tipo == "a_rendir" %}selected{% endif %}>Gasto a rendir (presupuesto)</option>
+                        <option value="caja_chica" {% if mobj and mobj.tipo == "caja_chica" %}selected{% endif %}>Caja chica</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="fecha">
+                <label>Fecha <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="moneda">
+                <label>Moneda</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="moneda" class="form-control">
+                        <option value="PYG" {% if mobj and mobj.moneda == "PYG" %}selected{% endif %}>Guaraníes</option>
+                        <option value="USD" {% if mobj and mobj.moneda == "USD" %}selected{% endif %}>Dólares</option>
+                        <option value="EUR" {% if mobj and mobj.moneda == "EUR" %}selected{% endif %}>Euros</option>
+                        <option value="BRL" {% if mobj and mobj.moneda == "BRL" %}selected{% endif %}>Reales</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="proveedorobj_id">
+                <label>Proveedor</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="proveedorobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="beneficiario">
+                <label>Beneficiario (si no es proveedor)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="beneficiario" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.beneficiario }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="categoriaobj_id">
+                <label>Categoría <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="categoriaobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="concepto">
+                <label>Concepto <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="concepto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.concepto }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_caja"><h6 class="border-bottom pb-1 mt-2">Caja chica</h6></div>
+            <div class="col-md-6 mb-3" data-field="cajaobj_id">
+                <label>Caja chica que paga</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="cajaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+                <small class="text-muted">El gasto se descuenta de la caja al aprobarse.</small>
+            </div>
+            <div class="col-md-12" data-field="sec_rendir"><h6 class="border-bottom pb-1 mt-2">Presupuesto (a rendir)</h6></div>
+            <div class="col-md-4 mb-3" data-field="presupuesto_monto">
+                <label>Monto del presupuesto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="presupuesto_monto" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.presupuesto_monto|stringformat:"s" }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="presupuesto_ref">
+                <label>Referencia del presupuesto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="presupuesto_ref" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.presupuesto_ref }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="responsable">
+                <label>Responsable de rendir</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="responsable" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.responsable }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_comprobante"><h6 class="border-bottom pb-1 mt-2">Comprobante</h6></div>
+            <div class="col-md-4 mb-3" data-field="factura_numero">
+                <label>Factura Nro.</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="factura_numero" class="form-control" placeholder="001-001-0000001" value='{% if mobj %}{{ mobj.factura_numero }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="factura_timbrado">
+                <label>Timbrado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="factura_timbrado" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.factura_timbrado }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="factura_fecha">
+                <label>Fecha factura</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="factura_fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.factura_fecha|date:"Y-m-d" }}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="factura_condicion">
+                <label>Condición</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="factura_condicion" class="form-control">
+                        <option value="contado" {% if mobj and mobj.factura_condicion == "contado" %}selected{% endif %}>Contado</option>
+                        <option value="credito" {% if mobj and mobj.factura_condicion == "credito" %}selected{% endif %}>Crédito</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="vencimiento">
+                <label>Vencimiento</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="vencimiento" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.vencimiento|date:"Y-m-d" }}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="exenta">
+                <label>Exenta</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="exenta" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.exenta|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="gravada_5">
+                <label>Gravada 5% (IVA incl.)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="gravada_5" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.gravada_5|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="gravada_10">
+                <label>Gravada 10% (IVA incl.)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="gravada_10" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.gravada_10|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12 mb-3" data-field="archivo">
+                <label>Comprobante / presupuesto escaneado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="archivo" class="form-control" />
+                </div>
+                <small class="text-muted">{% if mobj and mobj.archivo %}<a href="{{ mobj.archivo.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Gasto {{ mobj.pk }}{% else %}Crear Gasto{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_gasto_{{ rr }} select[name=proveedorobj_id]',
+        app_name: 'Egreso',
+        model_name: 'Proveedor',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.proveedorobj %}
+            $('#form_gasto_{{ rr }} select[name=proveedorobj_id]').val('{{ mobj.proveedorobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_gasto_{{ rr }} select[name=categoriaobj_id]',
+        app_name: 'Egreso',
+        model_name: 'CategoriaGasto',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: false,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.categoriaobj %}
+            $('#form_gasto_{{ rr }} select[name=categoriaobj_id]').val('{{ mobj.categoriaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_gasto_{{ rr }} select[name=cajaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'Caja',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}, {"field": "tipo", "value": "chica"}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.cajaobj %}
+            $('#form_gasto_{{ rr }} select[name=cajaobj_id]').val('{{ mobj.cajaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_gasto = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_gasto_{{ rr }} input[name=presupuesto_monto]'));
+        Inputmask(maskDecimal).mask(qelem('#form_gasto_{{ rr }} input[name=exenta]'));
+        Inputmask(maskDecimal).mask(qelem('#form_gasto_{{ rr }} input[name=gravada_5]'));
+        Inputmask(maskDecimal).mask(qelem('#form_gasto_{{ rr }} input[name=gravada_10]'));
+    }
+    initializeInputMasks_gasto();
+
+    save_gasto = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'Gasto');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["proveedorobj_id", "categoriaobj_id", "cajaobj_id"].forEach((idx) => {
+            let vv = $(`#form_gasto_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["presupuesto_monto", "exenta", "gravada_5", "gravada_10"].forEach((f) => {
+            let el = qelem(`#form_gasto_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        ["archivo"].forEach((f) => {
+            let el = qelem(`#form_gasto_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Egreso', 'package': 'mng_egreso', 'attr': 'MEgreso', 'mname': 'create_gasto', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_gasto_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_gasto Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_gasto_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_gasto_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_gasto(evt.target);
+    })
+
+    // Secciones visibles segun el tipo de gasto
+    gasto_toggle_tipo = () => {
+        let tipo = qelem('#form_gasto_{{ rr }} select[name=tipo]').value;
+        let visibles = {
+            comun: ['sec_comprobante', 'factura_numero', 'factura_timbrado', 'factura_fecha', 'factura_condicion', 'vencimiento', 'exenta', 'gravada_5', 'gravada_10', 'moneda', 'archivo', 'proveedorobj_id'],
+            a_rendir: ['sec_rendir', 'presupuesto_monto', 'presupuesto_ref', 'responsable', 'moneda', 'archivo', 'proveedorobj_id', 'beneficiario'],
+            caja_chica: ['sec_caja', 'cajaobj_id', 'sec_comprobante', 'factura_numero', 'factura_timbrado', 'factura_fecha', 'exenta', 'gravada_5', 'gravada_10', 'archivo', 'proveedorobj_id', 'beneficiario'],
+        }[tipo];
+        ['sec_comprobante', 'factura_numero', 'factura_timbrado', 'factura_fecha', 'factura_condicion', 'vencimiento', 'exenta', 'gravada_5', 'gravada_10',
+         'sec_rendir', 'presupuesto_monto', 'presupuesto_ref', 'responsable', 'sec_caja', 'cajaobj_id', 'moneda', 'archivo', 'beneficiario', 'proveedorobj_id'].forEach((n) => {
+            let el = qelem(`#form_gasto_{{ rr }} [data-field=${n}]`);
+            if (el) el.hidden = !visibles.includes(n);
+        });
+    }
+    qelem('#form_gasto_{{ rr }} select[name=tipo]').addEventListener('change', gasto_toggle_tipo);
+    gasto_toggle_tipo();
+    {% if mobj and mobj.estado != 'cargado' %}
+        $('#form_gasto_{{ rr }} :input').prop('disabled', true);
+        $('#form_gasto_{{ rr }} button[type=submit]').replaceWith('<div class="alert alert-info mb-0">Gasto {{ mobj.estado }}: solo lectura.</div>');
+    {% endif %}
+</script>

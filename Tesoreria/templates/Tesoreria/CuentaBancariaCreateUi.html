@@ -2,7 +2,7 @@
     <form id="form_cuentabancaria_{{ rr }}" class="form_cuentabancaria">
         <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
         <div class="row">
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="bancoobj_id">
                 <label>Banco <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="bancoobj_id" class="form-control" required>
@@ -10,19 +10,19 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="numero">
                 <label>Número de cuenta <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="numero" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.numero }}{% else %}{% endif %}' required />
                 </div>
             </div>
-            <div class="col-md-12 mb-3">
+            <div class="col-md-12 mb-3" data-field="titular">
                 <label>Titular</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="titular" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.titular }}{% else %}{% endif %}' />
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="tipo">
                 <label>Tipo</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="tipo" class="form-control">
@@ -31,7 +31,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="moneda">
                 <label>Moneda</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="moneda" class="form-control">
@@ -42,7 +42,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="activo">
                 <label>Activa</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="activo" class="form-control">
@@ -51,19 +51,20 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="saldo_inicial">
                 <label>Saldo inicial</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="saldo_inicial" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial|stringformat:"s" }}{% else %}0{% endif %}' />
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="saldo_inicial_fecha">
                 <label>Fecha del saldo inicial</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="date" name="saldo_inicial_fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial_fecha|date:"Y-m-d" }}{% endif %}' />
                 </div>
             </div>
         </div>
+
         <div class="row mt-2">
             <div class="col-md-12 text-start">
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -72,7 +73,7 @@
     </form>
 </div>
 <script type="text/javascript">
-    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Cuenta Bancaria {{ mobj.pk }}{% else %}Crear Cuenta Bancaria{% endif %}`;
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Cuenta Bancaria {{ mobj.pk }}{% else %}Crear Cuenta Bancaria{% endif %}`;{% endif %}
 
     form_search.se_populate({
         surl: '{% url "iom" %}',
@@ -89,7 +90,7 @@
         first_selected: false,
         allowClear: false,
         width: '100%',
-        dropdownParent: $('#offcanvasGlobalUi'),
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
         theme: 'bootstrap-5'
     }).then(() => {
         {% if mobj and mobj.bancoobj %}
@@ -127,6 +128,12 @@
             let el = qelem(`#form_cuentabancaria_{{ rr }} input[name=${f}]`);
             if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
         });
+        [].forEach((f) => {
+            let el = qelem(`#form_cuentabancaria_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([]));
@@ -138,7 +145,7 @@
         .then((rsp) => {
             let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
             let got_error = msgs.some((ee) => ee.error);
-            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
             if (!got_error) {
                 $('#{{ t_guid }}').DataTable().ajax.reload();
                 

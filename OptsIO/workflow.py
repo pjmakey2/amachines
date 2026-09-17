@@ -16,6 +16,7 @@ from django.db import models, transaction
 
 from OptsIO import events
 from OptsIO.io_business import user_label
+from OptsIO.io_money import precision_monetaria
 from Sifen.models import Business
 
 
@@ -80,45 +81,68 @@ class WorkflowMixin(models.Model):
         self.estado = self.WORKFLOW_STATES[0]
         self._stamp(userobj, self.estado, '')
 
+    def workflow_validar(self, estado: str) -> str:
+        """Regla de negocio del modelo para entrar a `estado` ('anulado' incluido). '' = ok. Sobrescribir."""
+        return ''
+
+    def workflow_on_enter(self, estado: str, userobj):
+        """Efectos propios del modelo al entrar a `estado`, dentro de la transaccion. Sobrescribir."""
+
+    @precision_monetaria
+    def validar_avance(self, userobj, estado: str = None) -> str:
+        """Mensaje de error si no se puede avanzar, o ''. No modifica nada (apto para endpoints)."""
+        if self.anulado:
+            return "La operacion esta anulada"
+        siguiente = self.siguiente_estado()
+        if siguiente is None:
+            return f"La operacion ya esta en su estado final ({self.estado})"
+        if estado and estado != siguiente:
+            return f"Transicion invalida: {self.estado} -> {estado} (corresponde {siguiente})"
+        if not userobj.has_perm(self.workflow_perm(siguiente)):
+            return f"El usuario {userobj.username} no tiene permiso para pasar a '{siguiente}'"
+        ultimo = (self.workflow_log or [{}])[-1].get('username')
+        if self.WORKFLOW_DISTINCT_USERS and ultimo == userobj.username:
+            return f"El paso '{siguiente}' debe hacerlo un usuario distinto al que hizo '{self.estado}'"
+        return self.workflow_validar(siguiente)
+
+    @precision_monetaria
+    def validar_anulacion(self, userobj) -> str:
+        if self.anulado:
+            return "La operacion ya esta anulada"
+        if not userobj.has_perm(self.workflow_perm('anulado')):
+            return f"El usuario {userobj.username} no tiene permiso para anular"
+        return self.workflow_validar('anulado')
+
+    @precision_monetaria
     def avanzar(self, userobj, estado: str = None, nota: str = ''):
-        """
-        Pasa al siguiente estado (o a `estado`, que debe ser exactamente el siguiente).
-        Valida permiso y segregacion de usuarios, registra el paso y emite el evento.
-        """
+        """Pasa al siguiente estado: valida, registra el paso, aplica efectos y emite el evento."""
         with transaction.atomic():
             locked = type(self).objects.select_for_update().get(pk=self.pk)
-            if locked.anulado:
-                raise WorkflowError("La operacion esta anulada")
+            error = locked.validar_avance(userobj, estado)
+            if error:
+                raise WorkflowError(error)
             siguiente = locked.siguiente_estado()
-            if siguiente is None:
-                raise WorkflowError(f"La operacion ya esta en su estado final ({locked.estado})")
-            if estado and estado != siguiente:
-                raise WorkflowError(f"Transicion invalida: {locked.estado} -> {estado} (corresponde {siguiente})")
-            if not userobj.has_perm(locked.workflow_perm(siguiente)):
-                raise WorkflowError(f"El usuario {userobj.username} no tiene permiso para pasar a '{siguiente}'")
-            ultimo = (locked.workflow_log or [{}])[-1].get('username')
-            if self.WORKFLOW_DISTINCT_USERS and ultimo == userobj.username:
-                raise WorkflowError(f"El paso '{siguiente}' debe hacerlo un usuario distinto al que hizo '{locked.estado}'")
-
             locked.estado = siguiente
             locked._stamp(userobj, siguiente, nota)
             locked.save()
+            locked.workflow_on_enter(siguiente, userobj)
             locked._emit(siguiente, userobj)
         self.refresh_from_db()
         return self
 
+    @precision_monetaria
     def anular(self, userobj, motivo: str = ''):
         """Anula la operacion en cualquier estado y emite '<WORKFLOW_EVENT>.anulado' (reversos)."""
         with transaction.atomic():
             locked = type(self).objects.select_for_update().get(pk=self.pk)
-            if locked.anulado:
-                raise WorkflowError("La operacion ya esta anulada")
-            if not userobj.has_perm(locked.workflow_perm('anulado')):
-                raise WorkflowError(f"El usuario {userobj.username} no tiene permiso para anular")
+            error = locked.validar_anulacion(userobj)
+            if error:
+                raise WorkflowError(error)
             locked.anulado = True
             locked.anulado_motivo = (motivo or '')[:300]
             locked._stamp(userobj, 'anulado', motivo)
             locked.save()
+            locked.workflow_on_enter('anulado', userobj)
             locked._emit('anulado', userobj)
         self.refresh_from_db()
         return self

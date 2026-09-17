@@ -14,6 +14,7 @@ from django.db import transaction
 
 from OptsIO.io_business import get_active_business, user_label
 from OptsIO.io_json import from_json
+from OptsIO.io_money import precision_monetaria
 from Tesoreria.models import (
     Banco, CuentaBancaria, Chequera, Cheque, Caja, MovimientoTesoreria, TesoreriaError,
 )
@@ -44,6 +45,7 @@ class MTesoreria:
 
     # ------------------------------------------------------------------ API interna
 
+    @precision_monetaria
     def registrar_movimiento(self, businessobj, fecha, tipo, monto, concepto,
                              cuentaobj=None, cajaobj=None, referencia='', chequeobj=None,
                              origen=None, clave=None, userobj=None) -> MovimientoTesoreria:
@@ -80,6 +82,7 @@ class MTesoreria:
                 cargado_usuario=user_label(userobj),
             )
 
+    @precision_monetaria
     def validar_movimiento(self, tipo, monto, cuentaobj=None, cajaobj=None, businessobj=None) -> str:
         """Devuelve el mensaje de error de la regla incumplida, o '' si el movimiento es valido."""
         if tipo not in ('ingreso', 'egreso'):
@@ -103,6 +106,7 @@ class MTesoreria:
                         f"maximo a reponer: {cajaobj.tope - saldo:,.0f}")
         return ''
 
+    @precision_monetaria
     def emitir_cheque(self, chequeraobj, beneficiario, monto, fecha_emision, fecha_pago=None,
                       concepto='', a_la_orden=True, origen=None, userobj=None) -> Cheque:
         """Toma el proximo numero de la chequera y crea el cheque. No mueve saldo: eso ocurre al pagar."""
@@ -127,6 +131,7 @@ class MTesoreria:
 
     # ------------------------------------------------------------------ Metodos UI (iom)
 
+    @precision_monetaria
     def get_saldos(self, *args, **kwargs) -> dict:
         bobj = get_active_business(kwargs.get('userobj'))
         if not bobj:

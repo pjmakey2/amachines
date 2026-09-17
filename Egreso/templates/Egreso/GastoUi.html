@@ -1,0 +1,190 @@
+<div class="gasto_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_gasto" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Cargar gasto</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_gasto" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_gasto_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_gasto = [];
+    gasto_home_be = function (data, settings) {
+        let tt = qelem(`#table_gasto_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_gasto.length > 0) mquery = [...mquery, ...gmquery_gasto];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_gasto = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_gasto,
+          url_exec: '{% url "iom" %}',
+          title: 'Gastos',
+          tselector: 'table_gasto_ui',
+          app_name: 'Egreso',
+          model_name: 'Gasto',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: gasto_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) { return `tr_gasto_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-gasto-query text fs-5 mdi mdi-archive-eye-outline me-1"></i><i title="Rendir gasto" class="tr-gasto-rendir text fs-5 mdi mdi-clipboard-check-outline text-primary cursor-pointer me-1"></i><i title="Avanzar al siguiente estado" class="tr-gasto-avanzar text fs-5 mdi mdi-check-decagram text-success cursor-pointer me-1"></i><i title="Anular" class="tr-gasto-anular text fs-5 mdi mdi-cancel text-danger cursor-pointer me-1"></i><i title="Historial" class="tr-gasto-log text fs-5 mdi mdi-history text-muted cursor-pointer me-1"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero', tit: 'Nro.', cls: 'align-left', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'mdb', idx: 'get_beneficiario', tit: 'Proveedor / Beneficiario', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'categoriaobj__nombre', tit: 'Categoría', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'concepto', tit: 'Concepto', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'factura_numero', tit: 'Factura', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'moneda', tit: 'Mon.', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'total', tit: 'Total', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'presupuesto_monto', tit: 'Presupuesto', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'saldo', tit: 'Saldo', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'estado_pago', tit: 'Pago', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'estado', tit: 'Estado', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { if (rowobj.anulado) return '<span class="badge bg-dark">Anulado</span>'; let c = {cargado: 'bg-secondary', verificado: 'bg-info', aprobado: 'bg-success'}[data] || 'bg-primary'; return `<span class="badge ${c}">${data}</span>`; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'rendido', tit: 'Rendido', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'anulado', tit: 'Anulado', cls: 'align-left', dtyp: 'bool', hide: true },
+          ]
+      })
+
+    gasto_form_crud = (pk) => {
+        let dattrs = { title: 'Gastos', t_guid: t_gasto, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Egreso',
+            model_name: 'Gasto',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Egreso/GastoCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#btn_crear_gasto').addEventListener('click', () => gasto_form_crud());
+
+    $(`#${t_gasto} tbody`).on('click', '.tr-gasto-query', function() {
+        let rowobj = $(`#${t_gasto}`).DataTable().row($(this).closest('tr')).data();
+        gasto_form_crud(rowobj.id);
+    })
+
+    gasto_workflow = (mname, rowobj, extra) => {
+        let gbe = new FormData();
+        gbe.append('module', 'OptsIO');
+        gbe.append('package', 'mng_workflow');
+        gbe.append('attr', 'MWorkflow');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        gbe.append('model_app_name', 'Egreso');
+        gbe.append('model_name', 'Gasto');
+        gbe.append('id', rowobj.id);
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) UiB.MsgError(rsp.data.error);
+            else if (rsp.data.success && mname !== 'get_log') UiB.MsgSuccess(rsp.data.success);
+            if (mname !== 'get_log') $(`#${t_gasto}`).DataTable().ajax.reload(null, false);
+            return rsp.data;
+        });
+    }
+
+    $(`#${t_gasto} tbody`).on('click', '.tr-gasto-avanzar', function() {
+        let rowobj = $(`#${t_gasto}`).DataTable().row($(this).closest('tr')).data();
+        let siguiente = {cargado: 'verificado', verificado: 'aprobado'}[rowobj.estado];
+        if (rowobj.anulado || !siguiente) {
+            UiB.MsgInfo('La operación ya está cerrada.');
+            return;
+        }
+        UiB.MsgSwall({ msg: `¿Pasar la operación ${rowobj.numero} a "${siguiente}"?`, ttype: 'info' }).then((result) => {
+            if (result.isConfirmed) gasto_workflow('avanzar', rowobj, {estado: siguiente});
+        });
+    })
+
+    $(`#${t_gasto} tbody`).on('click', '.tr-gasto-anular', function() {
+        let rowobj = $(`#${t_gasto}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({
+            title: `Anular operación ${rowobj.numero}`, input: 'text', inputLabel: 'Motivo',
+            showCancelButton: true, confirmButtonText: 'Anular', cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) gasto_workflow('anular', rowobj, {motivo: result.value || ''});
+        });
+    })
+
+    $(`#${t_gasto} tbody`).on('click', '.tr-gasto-log', function() {
+        let rowobj = $(`#${t_gasto}`).DataTable().row($(this).closest('tr')).data();
+        gasto_workflow('get_log', rowobj).then((data) => {
+            if (!data.log) return;
+            let filas = data.log.map((l) => `<tr><td>${l.fecha}</td><td>${l.estado}</td><td>${$('<span>').text(l.usuario || l.username).html()}</td><td>${$('<span>').text(l.nota || '').html()}</td></tr>`);
+            Swal.fire({
+                title: `Historial operación ${rowobj.numero}`, width: 700,
+                html: `<table class="table table-sm text-start"><thead><tr><th>Fecha</th><th>Estado</th><th>Usuario</th><th>Nota</th></tr></thead><tbody>${filas.join('')}</tbody></table>`
+            });
+        });
+    })
+
+    $(`#${t_gasto} tbody`).on('click', '.tr-gasto-rendir', function() {
+        let rowobj = $(`#${t_gasto}`).DataTable().row($(this).closest('tr')).data();
+        if (rowobj.tipo !== 'a_rendir' || rowobj.estado !== 'aprobado' || rowobj.rendido || rowobj.anulado) {
+            UiB.MsgInfo('Solo se rinde un gasto "a rendir" aprobado y todavía no rendido.');
+            return;
+        }
+        OptsIO.getTmpl({ url: '{% url "dtmpl" %}', template: 'Egreso/GastoRendirUi.html', raw: true, dbcon: 'default',
+                         model_app_name: 'Egreso', model_name: 'Gasto', pk: rowobj.id,
+                         dattrs: { t_guid: t_gasto, offcanvasglobal: true } }).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            UiB.kILLLoaderAjax();
+        });
+    })
+
+    qelem('#input_buscar_gasto').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_gasto = [];
+            let v = qelem('#input_buscar_gasto').value.trim();
+            if (v !== '') {
+                gmquery_gasto.push({'field': 'or_concepto__icontains', 'value': v});
+                gmquery_gasto.push({'field': 'or_factura_numero__icontains', 'value': v});
+                gmquery_gasto.push({'field': 'or_proveedorobj__nombre__icontains', 'value': v});
+                gmquery_gasto.push({'field': 'or_beneficiario__icontains', 'value': v});
+            }
+            $(`#${t_gasto}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_gasto}`).on('draw.dt', function() {
+        let tt = qelem(`#table_gasto_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

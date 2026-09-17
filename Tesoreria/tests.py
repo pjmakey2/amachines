@@ -5,7 +5,7 @@ from django.test import TestCase
 
 from OptsIO.io_maction import IOMaction
 from OptsIO.io_serial import IoS
-from OptsIO.testing import make_business, make_user
+from OptsIO.testing import check_ui, make_business, make_user
 from Tesoreria.mng_tesoreria import MTesoreria
 from Tesoreria.models import TesoreriaError
 from Tesoreria.models import Banco, CuentaBancaria, Chequera, Caja, MovimientoTesoreria
@@ -112,3 +112,13 @@ class TenantIsolationTest(TesoreriaBase):
         self.assertContains(self.client.get('/io/dtmpl/', params), 'Banco A')
         self.client.force_login(self.u2)
         self.assertEqual(self.client.get('/io/dtmpl/', params).status_code, 403)
+
+
+class UiRenderTest(TesoreriaBase):
+    def test_pantallas_renderizan_y_su_js_es_valido(self):
+        self.u1.is_superuser = True
+        self.u1.save()
+        for t in ['SaldosUi', 'BancoUi', 'BancoCreateUi', 'CuentaBancariaUi', 'CuentaBancariaCreateUi', 'ChequeraUi',
+                  'ChequeraCreateUi', 'CajaUi', 'CajaCreateUi', 'MovimientoTesoreriaUi', 'MovimientoTesoreriaCreateUi', 'ChequeUi']:
+            check_ui(self, self.u1, f'Tesoreria/{t}.html')
+        check_ui(self, self.u1, 'Tesoreria/CuentaBancariaCreateUi.html', ('Tesoreria', 'CuentaBancaria'), self.cuenta.pk)

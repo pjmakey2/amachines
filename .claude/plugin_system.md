@@ -356,3 +356,25 @@ gasto.registrar_carga(userobj); gasto.save()
 gasto.avanzar(userobj)            # cargado -> verificado
 gasto.avanzar(userobj2)           # verificado -> aprobado (cierre: dispara contabilidad, depósitos, etc.)
 ```
+
+### Operar el workflow desde la UI
+
+`OptsIO.mng_workflow.MWorkflow` (vía `iom`): `avanzar`, `anular`, `get_log` con `model_app_name`, `model_name`, `id`.
+Valida antes de ejecutar (`validar_avance` / `validar_anulacion` devuelven el mensaje de error) y respeta el negocio activo.
+Cada modelo define sus reglas en `workflow_validar(estado)` y sus efectos en `workflow_on_enter(estado, userobj)`
+(corren dentro de la transacción del cambio de estado). El generador de pantallas agrega los íconos con `workflow=True`.
+
+## Tareas periódicas (Celery beat)
+
+Un plugin declara sus tareas en `get_beat_schedule()` y `Amachine/celery.py` las registra al iniciar beat
+(`celery -A Amachine beat`). Ej: `Egreso` genera los gastos recurrentes una vez al día a las 06:00.
+
+## Montos
+
+`OptsIO.io_serial` fija la precisión decimal global en 10 dígitos. Todo método que sume o compare montos debe llevar
+`@precision_monetaria` (`OptsIO.io_money`), y el IVA incluido se calcula con `iva_incluido(monto, 11 | 21)`.
+
+## Tests de plugins
+
+`OptsIO.testing`: `make_business`, `make_user`, `check_ui` (renderiza por `dtmpl` y valida el JS con node) y
+`grid_records` (pide filas como lo hace `Grid.datatables_wrapper`).

@@ -1,0 +1,225 @@
+<style>
+    #form_pagoproveedor_{{ rr }} .form-control, #form_pagoproveedor_{{ rr }} .form-select { font-size: 14px; }
+    #form_pagoproveedor_{{ rr }} h6 { font-weight: 600; font-size: 0.95rem; }
+</style>
+<div class="ui_pagoproveedor">
+    <form id="form_pagoproveedor_{{ rr }}" class="form_pagoproveedor">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        {% if mobj and mobj.estado != 'cargado' %}
+            <div class="alert alert-info">Pago {{ mobj.estado }}{% if mobj.anulado %} (anulado){% endif %}: solo lectura.</div>
+        {% endif %}
+        <div class="card shadow-sm mb-2"><div class="card-body">
+            <h6>1. Proveedor y gastos a pagar</h6>
+            <div class="row">
+                <div class="col-md-8 mb-2">
+                    <label>Proveedor</label>
+                    <div class="input-group flex-nowrap am_focus_highlight">
+                        <select name="proveedorobj_id" class="form-control"><option value="">Sin proveedor (gastos con beneficiario)</option></select>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label>Fecha del pago <span class="text-danger">*</span></label>
+                    <input type="date" name="fecha" class="form-control" required value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' />
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Gasto</th><th>Fecha</th><th>Concepto</th><th>Factura</th><th>Vence</th><th class="text-end">Saldo</th><th class="text-end" style="width: 160px;">A pagar</th></tr></thead>
+                    <tbody name="tbody_gastos"><tr><td colspan="7" class="text-center text-muted">Seleccione un proveedor</td></tr></tbody>
+                    <tfoot><tr class="fw-bold"><td colspan="6" class="text-end">TOTAL DEL PAGO</td><td class="text-end" name="total_pago">0</td></tr></tfoot>
+                </table>
+            </div>
+        </div></div>
+        <div class="card shadow-sm mb-2"><div class="card-body">
+            <h6>2. Medio de pago</h6>
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label>Medio <span class="text-danger">*</span></label>
+                    <select name="medio" class="form-control" required>
+                        <option value="transferencia" {% if mobj.medio == "transferencia" %}selected{% endif %}>Transferencia bancaria</option>
+                        <option value="cheque" {% if mobj.medio == "cheque" %}selected{% endif %}>Cheque</option>
+                        <option value="efectivo" {% if mobj.medio == "efectivo" %}selected{% endif %}>Efectivo (caja)</option>
+                    </select>
+                </div>
+                <div class="col-md-8 mb-2" data-medio="transferencia">
+                    <label>Cuenta bancaria que paga</label>
+                    <div class="input-group flex-nowrap am_focus_highlight"><select name="cuentaobj_id" class="form-control"><option value="">Seleccione...</option></select></div>
+                </div>
+                <div class="col-md-5 mb-2" data-medio="cheque">
+                    <label>Chequera</label>
+                    <div class="input-group flex-nowrap am_focus_highlight"><select name="chequeraobj_id" class="form-control"><option value="">Seleccione...</option></select></div>
+                    <small class="text-muted">El número de cheque se asigna al aprobar el pago.</small>
+                </div>
+                <div class="col-md-3 mb-2" data-medio="cheque">
+                    <label>Fecha de pago del cheque</label>
+                    <input type="date" name="cheque_fecha_pago" class="form-control" value='{% if mobj.cheque_fecha_pago %}{{ mobj.cheque_fecha_pago|date:"Y-m-d" }}{% endif %}' />
+                </div>
+                <div class="col-md-8 mb-2" data-medio="efectivo">
+                    <label>Caja que paga</label>
+                    <div class="input-group flex-nowrap am_focus_highlight"><select name="cajaobj_id" class="form-control"><option value="">Seleccione...</option></select></div>
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label>Referencia</label>
+                    <input type="text" name="referencia" class="form-control" placeholder="Nro. de transferencia" value="{{ mobj.referencia|default:'' }}" />
+                </div>
+                <div class="col-md-8 mb-2">
+                    <label>Observación</label>
+                    <input type="text" name="observacion" class="form-control" value="{{ mobj.observacion|default:'' }}" />
+                </div>
+            </div>
+        </div></div>
+        <div class="text-start">
+            <button class="btn btn-primary" type="submit">Guardar pago</button>
+            <small class="text-muted ms-2">Los fondos se mueven recién cuando el pago queda <b>aprobado</b>.</small>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Pago a proveedor {{ mobj.get_numero_display }}{% else %}Nuevo pago a proveedor{% endif %}`;
+    pagoprov_sel = (name) => `#form_pagoproveedor_{{ rr }} [name=${name}]`;
+    pagoprov_mask = {
+        alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2, digitsOptional: false,
+        rightAlign: true, allowMinus: false, removeMaskOnSubmit: true, autoUnmask: true
+    };
+    // Montos ya asignados cuando se edita un pago cargado: {gasto_id: monto}
+    pagoprov_asignados = {};
+
+    pagoprov_total = () => {
+        let total = 0;
+        document.querySelectorAll('#form_pagoproveedor_{{ rr }} input[name=monto_gasto]').forEach((el) => {
+            total += parseFloat(el.inputmask ? el.inputmask.unmaskedvalue() : el.value) || 0;
+        });
+        qelem(pagoprov_sel('total_pago')).textContent = UiN.formatNumberU(total.toFixed(0));
+    }
+
+    pagoprov_load_gastos = () => {
+        let gbe = new FormData();
+        gbe.append('module', 'Egreso');
+        gbe.append('package', 'mng_egreso');
+        gbe.append('attr', 'MEgreso');
+        gbe.append('mname', 'get_gastos_pendientes');
+        gbe.append('dbcon', 'default');
+        gbe.append('proveedor_id', $(pagoprov_sel('proveedorobj_id')).val() || '');
+        axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            let esc = (v) => $('<span>').text(v == null ? '' : v).html();
+            let filas = (rsp.data.gastos || []).map((g) => `<tr>
+                <td>${g.numero}</td><td>${moment(g.fecha).format('DD/MM/YY')}</td><td>${esc(g.concepto)}<br><small class="text-muted">${esc(g.beneficiario)}</small></td>
+                <td>${esc(g.factura)}</td><td>${g.vencimiento ? moment(g.vencimiento).format('DD/MM/YY') : '-'}</td>
+                <td class="text-end">${g.moneda} ${UiN.formatNumberU(g.saldo.toFixed(0))}</td>
+                <td><input type="text" name="monto_gasto" data-gasto="${g.id}" data-saldo="${g.saldo}" class="form-control form-control-sm text-end" value="${pagoprov_asignados[g.id] || 0}"></td></tr>`);
+            qelem(pagoprov_sel('tbody_gastos')).innerHTML = filas.join('') ||
+                '<tr><td colspan="7" class="text-center text-muted">No hay gastos aprobados con saldo</td></tr>';
+            document.querySelectorAll('#form_pagoproveedor_{{ rr }} input[name=monto_gasto]').forEach((el) => {
+                Inputmask(pagoprov_mask).mask(el);
+                el.addEventListener('input', pagoprov_total);
+                // Doble click = pagar el saldo completo
+                el.addEventListener('dblclick', () => { el.inputmask.setValue(el.dataset.saldo); pagoprov_total(); });
+            });
+            pagoprov_total();
+        });
+    }
+
+    pagoprov_toggle_medio = () => {
+        let medio = qelem(pagoprov_sel('medio')).value;
+        document.querySelectorAll('#form_pagoproveedor_{{ rr }} [data-medio]').forEach((el) => { el.hidden = el.dataset.medio !== medio; });
+    }
+    qelem(pagoprov_sel('medio')).addEventListener('change', pagoprov_toggle_medio);
+    pagoprov_toggle_medio();
+
+    pagoprov_populate = (name, app, model, display, methods, qs, selected) => {
+        return form_search.se_populate({
+            surl: '{% url "iom" %}', dele: pagoprov_sel(name), app_name: app, model_name: model,
+            field_display: display, field_id: ['id'], db_fields: ['id'].concat(display.filter((d) => !methods.includes(d))),
+            db_methods: methods, qs_be: qs, dbcon: 'default', headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+            first_selected: false, allowClear: true, width: '100%', dropdownParent: $('#offcanvasGlobalUi'), theme: 'bootstrap-5'
+        }).then(() => { if (selected) $(pagoprov_sel(name)).val(selected).trigger('change'); });
+    }
+    pagoprov_populate('cuentaobj_id', 'Tesoreria', 'CuentaBancaria', ['get_descripcion'], ['get_descripcion'], [{field: 'activo', value: true}], '{{ mobj.cuentaobj_id|default:"" }}');
+    pagoprov_populate('chequeraobj_id', 'Tesoreria', 'Chequera', ['get_descripcion'], ['get_descripcion'], [{field: 'activo', value: true}], '{{ mobj.chequeraobj_id|default:"" }}');
+    pagoprov_populate('cajaobj_id', 'Tesoreria', 'Caja', ['nombre'], [], [{field: 'activo', value: true}], '{{ mobj.cajaobj_id|default:"" }}');
+
+    pagoprov_init = () => {
+        pagoprov_populate('proveedorobj_id', 'Egreso', 'Proveedor', ['get_descripcion'], ['get_descripcion'], [{field: 'activo', value: true}], '{{ mobj.proveedorobj_id|default:"" }}').then(() => {
+            $(pagoprov_sel('proveedorobj_id')).on('change', pagoprov_load_gastos);
+            pagoprov_load_gastos();
+        });
+    }
+    {% if mobj %}
+        // Editando: primero traer lo ya asignado para precargar los montos
+        (() => {
+            let gbe = new FormData();
+            gbe.append('module', 'Egreso');
+            gbe.append('package', 'mng_egreso');
+            gbe.append('attr', 'MEgreso');
+            gbe.append('mname', 'get_pago');
+            gbe.append('dbcon', 'default');
+            gbe.append('id', '{{ mobj.pk }}');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                (rsp.data.detalles || []).forEach((d) => { pagoprov_asignados[d.gasto_id] = d.monto; });
+                {% if mobj.estado != 'cargado' or mobj.anulado %}
+                    let esc = (v) => $('<span>').text(v == null ? '' : v).html();
+                    qelem(pagoprov_sel('tbody_gastos')).innerHTML = (rsp.data.detalles || []).map((d) => `<tr>
+                        <td>${d.numero}</td><td></td><td>${esc(d.concepto)}</td><td>${esc(d.factura)}</td><td></td><td></td>
+                        <td class="text-end">${UiN.formatNumberU(d.monto.toFixed(0))}</td></tr>`).join('');
+                    qelem(pagoprov_sel('total_pago')).textContent = UiN.formatNumberU(parseFloat('{{ mobj.total|stringformat:"s" }}').toFixed(0));
+                    $('#form_pagoproveedor_{{ rr }} :input').prop('disabled', true);
+                    $('#form_pagoproveedor_{{ rr }} button[type=submit]').remove();
+                {% else %}
+                    pagoprov_init();
+                {% endif %}
+            });
+        })();
+    {% else %}
+        pagoprov_init();
+    {% endif %}
+
+    save_pagoproveedor = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'PagoProveedor');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        delete edata['monto_gasto'];
+        ['proveedorobj_id', 'cuentaobj_id', 'chequeraobj_id', 'cajaobj_id'].forEach((idx) => {
+            let vv = $(pagoprov_sel(idx)).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        edata['detalles'] = [];
+        document.querySelectorAll('#form_pagoproveedor_{{ rr }} input[name=monto_gasto]').forEach((el) => {
+            let monto = parseFloat(el.inputmask.unmaskedvalue().replace(',', '.')) || 0;
+            if (monto > 0) edata['detalles'].push({gasto_id: el.dataset.gasto, monto: String(monto)});
+        });
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Egreso', 'package': 'mng_egreso', 'attr': 'MEgreso', 'mname': 'create_pago', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_pagoproveedor_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) $('#{{ t_guid }}').DataTable().ajax.reload();
+        }).catch((err) => {
+            log.error(`#form_pagoproveedor Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_pagoproveedor_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_pagoproveedor_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_pagoproveedor(evt.target);
+    })
+</script>

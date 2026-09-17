@@ -2,7 +2,7 @@
     <form id="form_chequera_{{ rr }}" class="form_chequera">
         <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
         <div class="row">
-            <div class="col-md-12 mb-3">
+            <div class="col-md-12 mb-3" data-field="cuentaobj_id">
                 <label>Cuenta bancaria <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="cuentaobj_id" class="form-control" required>
@@ -10,7 +10,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="tipo">
                 <label>Tipo</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="tipo" class="form-control">
@@ -19,13 +19,13 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="serie">
                 <label>Serie</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="serie" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.serie }}{% else %}{% endif %}' />
                 </div>
             </div>
-            <div class="col-md-4 mb-3">
+            <div class="col-md-4 mb-3" data-field="activo">
                 <label>Activa</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="activo" class="form-control">
@@ -34,13 +34,13 @@
                     </select>
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="numero_desde">
                 <label>Número desde <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="numero_desde" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.numero_desde|stringformat:"s" }}{% else %}{% endif %}' required />
                 </div>
             </div>
-            <div class="col-md-6 mb-3">
+            <div class="col-md-6 mb-3" data-field="numero_hasta">
                 <label>Número hasta <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="numero_hasta" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.numero_hasta|stringformat:"s" }}{% else %}{% endif %}' required />
@@ -48,6 +48,7 @@
                 <small class="text-muted">El próximo número a emitir arranca en "desde" y avanza solo.</small>
             </div>
         </div>
+
         <div class="row mt-2">
             <div class="col-md-12 text-start">
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -56,7 +57,7 @@
     </form>
 </div>
 <script type="text/javascript">
-    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Chequera {{ mobj.pk }}{% else %}Crear Chequera{% endif %}`;
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Chequera {{ mobj.pk }}{% else %}Crear Chequera{% endif %}`;{% endif %}
 
     form_search.se_populate({
         surl: '{% url "iom" %}',
@@ -73,7 +74,7 @@
         first_selected: false,
         allowClear: false,
         width: '100%',
-        dropdownParent: $('#offcanvasGlobalUi'),
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
         theme: 'bootstrap-5'
     }).then(() => {
         {% if mobj and mobj.cuentaobj %}
@@ -112,6 +113,12 @@
             let el = qelem(`#form_chequera_{{ rr }} input[name=${f}]`);
             if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
         });
+        [].forEach((f) => {
+            let el = qelem(`#form_chequera_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([{ 'module': 'Tesoreria', 'package': 'mng_tesoreria', 'attr': 'MTesoreria', 'mname': 'create_chequera', 'cont': false, 'show_success': true }]));
@@ -123,7 +130,7 @@
         .then((rsp) => {
             let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
             let got_error = msgs.some((ee) => ee.error);
-            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
             if (!got_error) {
                 $('#{{ t_guid }}').DataTable().ajax.reload();
                 

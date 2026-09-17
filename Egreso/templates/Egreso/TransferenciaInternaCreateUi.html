@@ -1,0 +1,247 @@
+<div class="ui_transferenciainterna">
+    <form id="form_transferenciainterna_{{ rr }}" class="form_transferenciainterna">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-4 mb-3" data-field="fecha">
+                <label>Fecha <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="monto">
+                <label>Monto que sale <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="monto" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="monto_destino">
+                <label>Monto que ingresa (si cambia la moneda)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="monto_destino" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.monto_destino|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_origen"><h6 class="border-bottom pb-1 mt-2">Origen (elegir uno)</h6></div>
+            <div class="col-md-6 mb-3" data-field="origen_cuentaobj_id">
+                <label>Cuenta bancaria origen</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="origen_cuentaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="origen_cajaobj_id">
+                <label>Caja origen</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="origen_cajaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_destino"><h6 class="border-bottom pb-1 mt-2">Destino (elegir uno) — para reponer caja chica, elegir la caja</h6></div>
+            <div class="col-md-6 mb-3" data-field="destino_cuentaobj_id">
+                <label>Cuenta bancaria destino</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="destino_cuentaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="destino_cajaobj_id">
+                <label>Caja destino</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="destino_cajaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="concepto">
+                <label>Concepto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="concepto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.concepto }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="referencia">
+                <label>Referencia</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="referencia" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.referencia }}{% else %}{% endif %}' />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Transferencia {{ mobj.pk }}{% else %}Crear Transferencia{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_transferenciainterna_{{ rr }} select[name=origen_cuentaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'CuentaBancaria',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.origen_cuentaobj %}
+            $('#form_transferenciainterna_{{ rr }} select[name=origen_cuentaobj_id]').val('{{ mobj.origen_cuentaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_transferenciainterna_{{ rr }} select[name=origen_cajaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'Caja',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.origen_cajaobj %}
+            $('#form_transferenciainterna_{{ rr }} select[name=origen_cajaobj_id]').val('{{ mobj.origen_cajaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_transferenciainterna_{{ rr }} select[name=destino_cuentaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'CuentaBancaria',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.destino_cuentaobj %}
+            $('#form_transferenciainterna_{{ rr }} select[name=destino_cuentaobj_id]').val('{{ mobj.destino_cuentaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_transferenciainterna_{{ rr }} select[name=destino_cajaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'Caja',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.destino_cajaobj %}
+            $('#form_transferenciainterna_{{ rr }} select[name=destino_cajaobj_id]').val('{{ mobj.destino_cajaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_transferenciainterna = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_transferenciainterna_{{ rr }} input[name=monto]'));
+        Inputmask(maskDecimal).mask(qelem('#form_transferenciainterna_{{ rr }} input[name=monto_destino]'));
+    }
+    initializeInputMasks_transferenciainterna();
+
+    save_transferenciainterna = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'TransferenciaInterna');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["origen_cuentaobj_id", "origen_cajaobj_id", "destino_cuentaobj_id", "destino_cajaobj_id"].forEach((idx) => {
+            let vv = $(`#form_transferenciainterna_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["monto", "monto_destino"].forEach((f) => {
+            let el = qelem(`#form_transferenciainterna_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        [].forEach((f) => {
+            let el = qelem(`#form_transferenciainterna_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Egreso', 'package': 'mng_egreso', 'attr': 'MEgreso', 'mname': 'create_transferencia', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_transferenciainterna_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_transferenciainterna Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_transferenciainterna_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_transferenciainterna_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_transferenciainterna(evt.target);
+    })
+
+    {% if mobj and mobj.estado != 'cargado' %}
+        $('#form_transferenciainterna_{{ rr }} :input').prop('disabled', true);
+        $('#form_transferenciainterna_{{ rr }} button[type=submit]').replaceWith('<div class="alert alert-info mb-0">Transferencia {{ mobj.estado }}: solo lectura.</div>');
+    {% endif %}
+</script>

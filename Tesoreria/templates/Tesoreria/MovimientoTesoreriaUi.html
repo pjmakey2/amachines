@@ -98,7 +98,8 @@
         UiB.MsgSwall({
             msg: `¿Anular ${ids.length} movimiento(s)?`,
             ttype: 'info'
-        }).then(() => {
+        }).then((result) => {
+            if (!result.isConfirmed) return;
             let gbe = new FormData();
             gbe.append('module', 'Tesoreria');
             gbe.append('package', 'mng_tesoreria');

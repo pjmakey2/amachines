@@ -1,0 +1,23 @@
+{% load humanize %}
+{% comment %}
+Cheque para imprimir sobre el formulario del banco. Las posiciones (mm) dependen del
+formulario de cada banco: ajustar los `top/left` de cada bloque.
+{% endcomment %}
+<style>
+    .chq { position: relative; width: 180mm; height: 80mm; font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #000; }
+    .chq div { position: absolute; white-space: nowrap; }
+    .chq .numero { top: 8mm; left: 140mm; font-size: 11px; }
+    .chq .monto { top: 16mm; left: 138mm; font-weight: bold; font-size: 14px; }
+    .chq .fecha { top: 26mm; left: 100mm; }
+    .chq .orden { top: 36mm; left: 38mm; font-weight: bold; }
+    .chq .letras { top: 46mm; left: 28mm; width: 145mm; white-space: normal; line-height: 8mm; }
+    .chq .pie { top: 70mm; left: 10mm; font-size: 9px; }
+</style>
+<div class="chq">
+    <div class="numero">N&deg; {{ mobj.chequeobj.numero }}</div>
+    <div class="monto">{{ mobj.moneda }} {{ mobj.total|floatformat:"0"|intcomma }}.-</div>
+    <div class="fecha">{{ mobj.chequeobj.fecha_pago|date:"d" }} de {{ mobj.chequeobj.fecha_pago|date:"F" }} de {{ mobj.chequeobj.fecha_pago|date:"Y" }}</div>
+    <div class="orden">{{ mobj.chequeobj.beneficiario|upper }}{% if not mobj.chequeobj.a_la_orden %} - NO A LA ORDEN{% endif %}</div>
+    <div class="letras">{{ mobj.get_total_word }}{% if mobj.moneda == "PYG" %} GUARANIES{% endif %}.----------</div>
+    <div class="pie">Pago {{ mobj.get_numero_display }} · {{ mobj.chequeobj.chequeraobj.cuentaobj }}</div>
+</div>

@@ -1,4 +1,6 @@
 import os
+
+import django
 from celery import Celery
 
 # Set the default Django settings module for the 'celery' program.
@@ -14,6 +16,18 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
+
+
+@app.on_after_finalize.connect
+def setup_plugin_periodic_tasks(sender, **kwargs):
+    """Registra en beat las tareas periodicas declaradas por cada plugin (get_beat_schedule)."""
+    django.setup()
+    from OptsIO.plugin_manager import plugin_manager  # requiere apps cargadas
+    if not plugin_manager.get_all_plugins():
+        plugin_manager.discover_plugins()
+    for plugin in plugin_manager.get_all_plugins().values():
+        for name, entry in plugin.get_beat_schedule().items():
+            sender.add_periodic_task(entry['schedule'], sender.signature(entry['task']), name=name)
 
 
 @app.task(bind=True, ignore_result=True)

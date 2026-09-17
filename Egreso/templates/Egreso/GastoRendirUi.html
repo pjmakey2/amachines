@@ -1,0 +1,98 @@
+<div class="ui_gastorendir">
+    <form id="form_gastorendir_{{ rr }}">
+        <input type="hidden" name="id" value="{{ mobj.pk }}">
+        <div class="alert alert-secondary py-2">
+            <b>Gasto {{ mobj.get_numero_display }}</b> — {{ mobj.concepto }}<br>
+            Presupuesto: <b>{{ mobj.moneda }} {{ mobj.presupuesto_monto|floatformat:"0" }}</b> ·
+            Entregado: <b>{{ mobj.moneda }} {{ mobj.pagado|floatformat:"0" }}</b> ·
+            Responsable: {{ mobj.responsable|default:"-" }}
+        </div>
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label>Proveedor de la factura</label>
+                <div class="input-group flex-nowrap am_focus_highlight"><select name="proveedorobj_id" class="form-control"><option value="">Seleccione...</option></select></div>
+            </div>
+            <div class="col-md-4 mb-3"><label>Factura Nro. <span class="text-danger">*</span></label>
+                <input type="text" name="factura_numero" class="form-control" placeholder="001-001-0000001" required /></div>
+            <div class="col-md-4 mb-3"><label>Timbrado</label><input type="text" name="factura_timbrado" class="form-control" /></div>
+            <div class="col-md-4 mb-3"><label>Fecha factura</label><input type="date" name="factura_fecha" class="form-control" value='{% now "Y-m-d" %}' /></div>
+            <div class="col-md-4 mb-3"><label>Exenta</label><input type="text" name="exenta" class="form-control text-end" value="0" /></div>
+            <div class="col-md-4 mb-3"><label>Gravada 5% (IVA incl.)</label><input type="text" name="gravada_5" class="form-control text-end" value="0" /></div>
+            <div class="col-md-4 mb-3"><label>Gravada 10% (IVA incl.)</label><input type="text" name="gravada_10" class="form-control text-end" value="0" /></div>
+        </div>
+        <div class="alert py-2" name="rendir_resumen"></div>
+        <div class="row" name="rendir_devolucion" hidden>
+            <div class="col-md-12"><h6 class="border-bottom pb-1">Devolución del sobrante (elegir dónde ingresa)</h6></div>
+            <div class="col-md-6 mb-3"><label>Cuenta bancaria</label>
+                <div class="input-group flex-nowrap am_focus_highlight"><select name="devolucion_cuentaobj_id" class="form-control"><option value="">Seleccione...</option></select></div></div>
+            <div class="col-md-6 mb-3"><label>Caja</label>
+                <div class="input-group flex-nowrap am_focus_highlight"><select name="devolucion_cajaobj_id" class="form-control"><option value="">Seleccione...</option></select></div></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Rendir gasto</button>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `Rendir gasto {{ mobj.get_numero_display }}`;
+    rendir_sel = (name) => `#form_gastorendir_{{ rr }} [name=${name}]`;
+    rendir_montos = ['exenta', 'gravada_5', 'gravada_10'];
+    rendir_entregado = parseFloat('{{ mobj.pagado|stringformat:"s" }}') || 0;
+
+    rendir_valor = (name) => parseFloat(qelem(rendir_sel(name)).inputmask.unmaskedvalue().replace(',', '.')) || 0;
+    rendir_resumen = () => {
+        let total = rendir_montos.reduce((acc, n) => acc + rendir_valor(n), 0);
+        let dif = rendir_entregado - total;
+        let box = qelem(rendir_sel('rendir_resumen'));
+        qelem(rendir_sel('rendir_devolucion')).hidden = !(dif > 0 && total > 0);
+        box.className = 'alert py-2 ' + (dif > 0 ? 'alert-warning' : (dif < 0 ? 'alert-info' : 'alert-success'));
+        box.innerHTML = `Total comprobante: <b>${UiN.formatNumberU(total.toFixed(0))}</b> — ` +
+            (dif > 0 ? `sobran <b>${UiN.formatNumberU(dif.toFixed(0))}</b> que se devuelven.` :
+             dif < 0 ? `faltan <b>${UiN.formatNumberU((-dif).toFixed(0))}</b>: quedan como saldo a pagar del gasto.` : 'coincide con lo entregado.');
+    }
+    rendir_montos.forEach((n) => {
+        Inputmask({ alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2, digitsOptional: false,
+                    rightAlign: true, allowMinus: false, removeMaskOnSubmit: true, autoUnmask: true }).mask(qelem(rendir_sel(n)));
+        qelem(rendir_sel(n)).addEventListener('input', rendir_resumen);
+    });
+    rendir_resumen();
+
+    rendir_populate = (name, app, model, display, methods, selected) => {
+        return form_search.se_populate({
+            surl: '{% url "iom" %}', dele: rendir_sel(name), app_name: app, model_name: model,
+            field_display: display, field_id: ['id'], db_fields: ['id'].concat(display.filter((d) => !methods.includes(d))),
+            db_methods: methods, qs_be: [{field: 'activo', value: true}], dbcon: 'default',
+            headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}, first_selected: false, allowClear: true, width: '100%',
+            dropdownParent: $('#offcanvasGlobalUi'), theme: 'bootstrap-5'
+        }).then(() => { if (selected) $(rendir_sel(name)).val(selected).trigger('change'); });
+    }
+    rendir_populate('proveedorobj_id', 'Egreso', 'Proveedor', ['get_descripcion'], ['get_descripcion'], '{{ mobj.proveedorobj_id|default:"" }}');
+    rendir_populate('devolucion_cuentaobj_id', 'Tesoreria', 'CuentaBancaria', ['get_descripcion'], ['get_descripcion']);
+    rendir_populate('devolucion_cajaobj_id', 'Tesoreria', 'Caja', ['nombre'], []);
+
+    qelem('#form_gastorendir_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'Gasto');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(evt.target));
+        ['proveedorobj_id', 'devolucion_cuentaobj_id', 'devolucion_cajaobj_id'].forEach((idx) => {
+            let vv = $(rendir_sel(idx)).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        rendir_montos.forEach((n) => { edata[n] = String(rendir_valor(n)); });
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Egreso', 'package': 'mng_egreso', 'attr': 'MEgreso', 'mname': 'rendir_gasto', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } }).then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2500, offcanvasglobal: true });
+            if (!got_error) $('#{{ t_guid }}').DataTable().ajax.reload();
+        }).catch((err) => { UiB.MsgError(err); });
+    })
+</script>

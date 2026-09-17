@@ -3,6 +3,8 @@ from decimal import Decimal
 from django.db import models, transaction
 from django.db.models import Sum
 
+from OptsIO.io_money import precision_monetaria
+
 MONEDAS = [('PYG', 'Guaraníes'), ('USD', 'Dólares'), ('EUR', 'Euros'), ('BRL', 'Reales')]
 CCT = {'max_digits': 19, 'decimal_places': 6}
 
@@ -39,6 +41,7 @@ class SaldoMixin:
     """Saldo = saldo_inicial + ingresos - egresos de los movimientos no anulados."""
     _mov_field = None
 
+    @precision_monetaria
     def get_saldo(self) -> Decimal:
         qs = MovimientoTesoreria.objects.filter(anulado=False, **{self._mov_field: self})
         tot = {r['tipo']: r['t'] for r in qs.values('tipo').annotate(t=Sum('monto'))}

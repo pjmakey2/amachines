@@ -6,6 +6,69 @@ def col(idx, tit, dtyp='str', cls='align-left', render=None, btyp='fdb', hide=Fa
     return f"""              {{ fdis: true, gre: true, btyp: '{btyp}', idx: '{idx}', tit: '{tit}', cls: '{cls}', dtyp: '{dtyp}', hide: {str(hide).lower()}{r} }},"""
 
 MONEY = "return UiN.formatNumberU(parseFloat(data || 0).toFixed(0));"
+ESTADO_BADGE = ("if (rowobj.anulado) return '<span class=\"badge bg-dark\">Anulado</span>';"
+                " let c = {cargado: 'bg-secondary', verificado: 'bg-info', aprobado: 'bg-success'}[data] || 'bg-primary';"
+                " return `<span class=\"badge ${c}\">${data}</span>`;")
+WORKFLOW_ACC = ('<i title="Avanzar al siguiente estado" class="tr-{k}-avanzar text fs-5 mdi mdi-check-decagram text-success cursor-pointer me-1"></i>'
+                '<i title="Anular" class="tr-{k}-anular text fs-5 mdi mdi-cancel text-danger cursor-pointer me-1"></i>'
+                '<i title="Historial" class="tr-{k}-log text fs-5 mdi mdi-history text-muted cursor-pointer me-1"></i>')
+
+
+def workflow_js(app, k, M):
+    return """
+    {k}_workflow = (mname, rowobj, extra) => {{
+        let gbe = new FormData();
+        gbe.append('module', 'OptsIO');
+        gbe.append('package', 'mng_workflow');
+        gbe.append('attr', 'MWorkflow');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        gbe.append('model_app_name', '{app}');
+        gbe.append('model_name', '{M}');
+        gbe.append('id', rowobj.id);
+        Object.keys(extra || {{}}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{{% url "iom" %}}', gbe, {{ headers: {{'X-CSRFToken': OptsIO.getCookie('csrftoken')}} }}).then((rsp) => {{
+            if (rsp.data.error) UiB.MsgError(rsp.data.error);
+            else if (rsp.data.success && mname !== 'get_log') UiB.MsgSuccess(rsp.data.success);
+            if (mname !== 'get_log') $(`#${{t_{k}}}`).DataTable().ajax.reload(null, false);
+            return rsp.data;
+        }});
+    }}
+
+    $(`#${{t_{k}}} tbody`).on('click', '.tr-{k}-avanzar', function() {{
+        let rowobj = $(`#${{t_{k}}}`).DataTable().row($(this).closest('tr')).data();
+        let siguiente = {{cargado: 'verificado', verificado: 'aprobado'}}[rowobj.estado];
+        if (rowobj.anulado || !siguiente) {{
+            UiB.MsgInfo('La operación ya está cerrada.');
+            return;
+        }}
+        UiB.MsgSwall({{ msg: `¿Pasar la operación ${{rowobj.numero}} a "${{siguiente}}"?`, ttype: 'info' }}).then((result) => {{
+            if (result.isConfirmed) {k}_workflow('avanzar', rowobj, {{estado: siguiente}});
+        }});
+    }})
+
+    $(`#${{t_{k}}} tbody`).on('click', '.tr-{k}-anular', function() {{
+        let rowobj = $(`#${{t_{k}}}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({{
+            title: `Anular operación ${{rowobj.numero}}`, input: 'text', inputLabel: 'Motivo',
+            showCancelButton: true, confirmButtonText: 'Anular', cancelButtonText: 'Cancelar'
+        }}).then((result) => {{
+            if (result.isConfirmed) {k}_workflow('anular', rowobj, {{motivo: result.value || ''}});
+        }});
+    }})
+
+    $(`#${{t_{k}}} tbody`).on('click', '.tr-{k}-log', function() {{
+        let rowobj = $(`#${{t_{k}}}`).DataTable().row($(this).closest('tr')).data();
+        {k}_workflow('get_log', rowobj).then((data) => {{
+            if (!data.log) return;
+            let filas = data.log.map((l) => `<tr><td>${{l.fecha}}</td><td>${{l.estado}}</td><td>${{$('<span>').text(l.usuario || l.username).html()}}</td><td>${{$('<span>').text(l.nota || '').html()}}</td></tr>`);
+            Swal.fire({{
+                title: `Historial operación ${{rowobj.numero}}`, width: 700,
+                html: `<table class="table table-sm text-start"><thead><tr><th>Fecha</th><th>Estado</th><th>Usuario</th><th>Nota</th></tr></thead><tbody>${{filas.join('')}}</tbody></table>`
+            }});
+        }});
+    }})
+""".format(k=k, app=app, M=M)
 BOOL = "return data ? 'Sí' : 'No';"
 
 def list_tmpl(app, s):
@@ -16,6 +79,11 @@ def list_tmpl(app, s):
     mquery = json.dumps(s.get('mquery', []))
     can_create = s.get('create', True)
     can_delete = s.get('delete', True)
+    if s.get('workflow'):
+        can_delete = False
+        s = dict(s, acc=s.get('acc', f'<i title="Ver/Editar" class="tr-{k}-query text fs-5 mdi mdi-archive-eye-outline me-1"></i>') + WORKFLOW_ACC.format(k=k),
+                 extra_js=workflow_js(app, k, M) + s.get('extra_js', ''))
+        cols = cols + "\n" + col('anulado', 'Anulado', 'bool', hide=True)
     btns = ''
     if can_create:
         btns += f"""            <button id="btn_crear_{k}" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> {s.get('create_label', 'Crear')}</button>\n"""
@@ -26,7 +94,7 @@ def list_tmpl(app, s):
     out = f"""<div class="{k}_ui_container container-fluid">
     <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
         <div class="toolbar-buttons">
-{btns}        </div>
+{btns}{s.get('toolbar_extra', '')}        </div>
         <div class="toolbar-search">
             <input type="text" id="input_buscar_{k}" class="form-control" placeholder="Buscar...">
         </div>
@@ -120,7 +188,8 @@ def list_tmpl(app, s):
         UiB.MsgSwall({{
             msg: `{s.get('delete_msg', '¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.')}`,
             ttype: 'info'
-        }}).then(() => {{
+        }}).then((result) => {{
+            if (!result.isConfirmed) return;
             let gbe = new FormData();
             gbe.append('module', '{app}');
             gbe.append('package', '{s['pkg']}');
@@ -189,12 +258,19 @@ def field_html(k, f):
                         <option value="true" {{% if not mobj or mobj.{n} %}}selected{{% endif %}}>Sí</option>
                         <option value="false" {{% if mobj and not mobj.{n} %}}selected{{% endif %}}>No</option>
                     </select>"""
+    elif typ == 'file':
+        inner = f"""<input type="file" name="{n}" class="form-control" />"""
+        if f.get('link', True):
+            help_link = f"""{{% if mobj and mobj.{n} %}}<a href="{{{{ mobj.{n}.url }}}}" target="_blank">Ver archivo actual</a>{{% endif %}}"""
+            f = dict(f, help=(f.get('help', '') + ' ' + help_link).strip())
+    elif typ == 'section':
+        return f"""            <div class="col-md-12" data-field="{n}"><h6 class="border-bottom pb-1 mt-2">{label}</h6></div>"""
     elif typ == 'fk':
         inner = f"""<select name="{n}" class="form-control"{req}>
                         <option value="">Seleccione...</option>
                     </select>"""
     help_ = f"""\n                <small class="text-muted">{f['help']}</small>""" if f.get('help') else ''
-    return f"""            <div class="col-md-{w} mb-3">
+    return f"""            <div class="col-md-{w} mb-3" data-field="{n}">
                 <label>{label}{star}</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     {inner}
@@ -205,6 +281,7 @@ def field_html(k, f):
 def form_tmpl(app, s):
     k, M = s['key'], s['model']
     fields = '\n'.join(field_html(k, f) for f in s['fields'])
+    s = dict(s, fields=[f for f in s['fields'] if f['type'] != 'section'])
     fks = [f for f in s['fields'] if f['type'] == 'fk']
     pop = ''
     for f in fks:
@@ -227,7 +304,7 @@ def form_tmpl(app, s):
         first_selected: false,
         allowClear: {str(not f.get('required', False)).lower()},
         width: '100%',
-        dropdownParent: $('#offcanvasGlobalUi'),
+        dropdownParent: {{% if en_modal %}}$('.swal2-container'){{% else %}}$('#offcanvasGlobalUi'){{% endif %}},
         theme: 'bootstrap-5'
     }}).then(() => {{
         {{% if mobj and mobj.{attr} %}}
@@ -256,6 +333,7 @@ def form_tmpl(app, s):
     if s.get('c_a'):
         c_a = f"""[{{ 'module': '{app}', 'package': '{s['pkg']}', 'attr': '{s['attr']}', 'mname': '{s['c_a']}', 'cont': false, 'show_success': true }}]"""
     seldis = json.dumps([f['name'] for f in fks])
+    filenames = json.dumps([f['name'] for f in s['fields'] if f['type'] == 'file'])
     numnames = json.dumps([f['name'] for f in s['fields'] if f['type'] == 'number'])
     return f"""<div class="ui_{k}">
     <form id="form_{k}_{{{{ rr }}}}" class="form_{k}">
@@ -263,6 +341,7 @@ def form_tmpl(app, s):
         <div class="row">
 {fields}
         </div>
+{s.get('form_extra_html', '')}
         <div class="row mt-2">
             <div class="col-md-12 text-start">
                 <button class="btn btn-primary" type="submit">Guardar</button>
@@ -271,7 +350,7 @@ def form_tmpl(app, s):
     </form>
 </div>
 <script type="text/javascript">
-    qelem('#offcanvasGlobalUiLabel').innerHTML = `{{% if mobj %}}Modificar {s['singular']} {{{{ mobj.pk }}}}{{% else %}}{s.get('create_title', 'Crear ' + s['singular'])}{{% endif %}}`;
+    {{% if not en_modal %}}qelem('#offcanvasGlobalUiLabel').innerHTML = `{{% if mobj %}}Modificar {s['singular']} {{{{ mobj.pk }}}}{{% else %}}{s.get('create_title', 'Crear ' + s['singular'])}{{% endif %}}`;{{% endif %}}
 {pop}
     save_{k} = (target) => {{
         let fdata = new FormData();
@@ -292,6 +371,12 @@ def form_tmpl(app, s):
             let el = qelem(`#form_{k}_{{{{ rr }}}} input[name=${{f}}]`);
             if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
         }});
+        {filenames}.forEach((f) => {{
+            let el = qelem(`#form_{k}_{{{{ rr }}}} input[name=${{f}}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        }});
+        {s.get('before_save_js', '')}
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy({c_a}));
@@ -303,7 +388,7 @@ def form_tmpl(app, s):
         .then((rsp) => {{
             let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
             let got_error = msgs.some((ee) => ee.error);
-            UiB.BeMsgHandle({{ rsps: msgs, timer: 2000, offcanvasglobal: true }});
+            UiB.BeMsgHandle({{ rsps: msgs, timer: 2000, offcanvasglobal: {{% if en_modal %}}false{{% else %}}true{{% endif %}} }});
             if (!got_error) {{
                 $('#{{{{ t_guid }}}}').DataTable().ajax.reload();
                 {s.get('after_save_js', '')}

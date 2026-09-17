@@ -1,0 +1,220 @@
+<div class="ui_proveedor">
+    <form id="form_proveedor_{{ rr }}" class="form_proveedor">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-4 mb-3" data-field="ruc">
+                <label>RUC <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="ruc" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.ruc }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-2 mb-3" data-field="ruc_dv">
+                <label>DV</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="ruc_dv" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.ruc_dv|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="nombre">
+                <label>Razón social <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="nombre_fantasia">
+                <label>Nombre de fantasía</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombre_fantasia" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre_fantasia }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="contacto">
+                <label>Contacto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="contacto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.contacto }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="telefono">
+                <label>Teléfono</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="telefono" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.telefono }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="email">
+                <label>Email</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="email" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.email }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="plazo_dias">
+                <label>Plazo de pago (días)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="plazo_dias" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.plazo_dias|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12 mb-3" data-field="direccion">
+                <label>Dirección</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="direccion" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.direccion }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="banco_nombre">
+                <label>Banco (para transferirle)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="banco_nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.banco_nombre }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="banco_cuenta">
+                <label>Nro. de cuenta</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="banco_cuenta" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.banco_cuenta }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="activo">
+                <label>Activo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="activo" class="form-control">
+                        <option value="true" {% if not mobj or mobj.activo %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.activo %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        {% if mobj %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h6 class="mb-0"><i class="mdi mdi-calendar-sync"></i> Gastos recurrentes del proveedor</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" name="btn_nuevo_recurrente"><i class="mdi mdi-plus"></i> Agregar</button>
+                </div>
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Concepto</th><th>Categoría</th><th class="text-end">Monto</th><th>Frecuencia</th><th>Día</th><th>Próxima</th><th>Activo</th><th></th></tr></thead>
+                    <tbody name="tbody_recurrentes"><tr><td colspan="8" class="text-muted text-center">Cargando...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Proveedor {{ mobj.pk }}{% else %}Crear Proveedor{% endif %}`;{% endif %}
+
+    initializeInputMasks_proveedor = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskEntero).mask(qelem('#form_proveedor_{{ rr }} input[name=ruc_dv]'));
+        Inputmask(maskEntero).mask(qelem('#form_proveedor_{{ rr }} input[name=plazo_dias]'));
+    }
+    initializeInputMasks_proveedor();
+
+    save_proveedor = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'Proveedor');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        [].forEach((idx) => {
+            let vv = $(`#form_proveedor_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["ruc_dv", "plazo_dias"].forEach((f) => {
+            let el = qelem(`#form_proveedor_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        [].forEach((f) => {
+            let el = qelem(`#form_proveedor_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_proveedor_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_proveedor Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_proveedor_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_proveedor_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_proveedor(evt.target);
+    })
+
+    {% if mobj %}
+    proveedor_recurrentes_load = () => {
+        let ffdata = new FormData();
+        ffdata.append('module', 'OptsIO');
+        ffdata.append('package', 'io_serial');
+        ffdata.append('attr', 'IoS');
+        ffdata.append('mname', 'seModel');
+        ffdata.append('model_app_name', 'Egreso');
+        ffdata.append('model_name', 'GastoRecurrente');
+        ffdata.append('dbcon', 'default');
+        ffdata.append('fields', jfy(['id', 'concepto', 'categoriaobj__nombre', 'monto', 'moneda', 'frecuencia', 'dia_aplicacion', 'proxima_fecha', 'activo']));
+        ffdata.append('mquery', jfy([{field: 'proveedorobj_id', value: {{ mobj.pk }}}]));
+        axios.post('{% url "iom" %}', ffdata, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            let esc = (v) => $('<span>').text(v == null ? '' : v).html();
+            let filas = (rsp.data.qs || []).map((r) => `<tr>
+                <td>${esc(r.concepto)}</td><td>${esc(r.categoriaobj__nombre)}</td>
+                <td class="text-end">${r.moneda} ${UiN.formatNumberU(parseFloat(r.monto).toFixed(0))}</td>
+                <td>${r.frecuencia}</td><td>${r.dia_aplicacion}</td><td>${moment(r.proxima_fecha).format('DD/MM/YYYY')}</td>
+                <td>${r.activo ? 'Sí' : 'No'}</td>
+                <td><i title="Editar" data-id="${r.id}" class="tr-recurrente-edit mdi mdi-pencil cursor-pointer"></i></td></tr>`);
+            qelem('#form_proveedor_{{ rr }} tbody[name=tbody_recurrentes]').innerHTML = filas.join('') ||
+                '<tr><td colspan="8" class="text-muted text-center">Sin gastos recurrentes</td></tr>';
+        });
+    }
+    // El recurrente se edita en un modal para no perder la ficha abierta en el offcanvas
+    proveedor_recurrente_form = (pk) => {
+        let tps = {
+            url: '{% url "dtmpl" %}', template: 'Egreso/GastoRecurrenteCreateUi.html', raw: true, dbcon: 'default',
+            dattrs: { t_guid: 'none', from_ProveedorCreateUi: true, en_modal: true, proveedor_id: {{ mobj.pk }} },
+        }
+        if (pk) { tps['model_app_name'] = 'Egreso'; tps['model_name'] = 'GastoRecurrente'; tps['pk'] = pk; }
+        OptsIO.getTmpl(tps).then((rsp) => {
+            Swal.fire({ title: 'Gasto recurrente', html: `<div class="text-start">${rsp.data}</div>`, width: 800,
+                        showConfirmButton: false, showCloseButton: true,
+                        didOpen: () => { $(Swal.getHtmlContainer()).find('script').each(function() { $.globalEval(this.text || this.textContent || ''); }); },
+                        willClose: () => proveedor_recurrentes_load() });
+            UiB.kILLLoaderAjax();
+        });
+    }
+    qelem('#form_proveedor_{{ rr }} button[name=btn_nuevo_recurrente]').addEventListener('click', () => proveedor_recurrente_form());
+    $('#form_proveedor_{{ rr }}').on('click', '.tr-recurrente-edit', function() { proveedor_recurrente_form($(this).data('id')); });
+    proveedor_recurrentes_load();
+    {% endif %}
+</script>

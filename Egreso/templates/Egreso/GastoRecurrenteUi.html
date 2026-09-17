@@ -1,0 +1,155 @@
+<div class="gastorecurrente_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_gastorecurrente" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_gastorecurrente" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+            <button id="btn_generar_recurrentes" class="btn btn-outline-success"><i class="mdi mdi-play"></i> Generar vencidos ahora</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_gastorecurrente" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_gastorecurrente_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_gastorecurrente = [];
+    gastorecurrente_home_be = function (data, settings) {
+        let tt = qelem(`#table_gastorecurrente_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_gastorecurrente.length > 0) mquery = [...mquery, ...gmquery_gastorecurrente];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_gastorecurrente = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_gastorecurrente,
+          url_exec: '{% url "iom" %}',
+          title: 'Gastos Recurrentes',
+          tselector: 'table_gastorecurrente_ui',
+          app_name: 'Egreso',
+          model_name: 'GastoRecurrente',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: gastorecurrente_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[7, 'asc']],
+              rowId: function(row, se) { return `tr_gastorecurrente_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-gastorecurrente-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'proveedorobj__nombre', tit: 'Proveedor', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'concepto', tit: 'Concepto', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'categoriaobj__nombre', tit: 'Categoría', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'monto', tit: 'Monto', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'moneda', tit: 'Moneda', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'frecuencia', tit: 'Frecuencia', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'proxima_fecha', tit: 'Próxima generación', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha_fin', tit: 'Hasta', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activo', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    gastorecurrente_form_crud = (pk) => {
+        let dattrs = { title: 'Gastos Recurrentes', t_guid: t_gastorecurrente, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Egreso',
+            model_name: 'GastoRecurrente',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Egreso/GastoRecurrenteCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#btn_crear_gastorecurrente').addEventListener('click', () => gastorecurrente_form_crud());
+
+    $(`#${t_gastorecurrente} tbody`).on('click', '.tr-gastorecurrente-query', function() {
+        let rowobj = $(`#${t_gastorecurrente}`).DataTable().row($(this).closest('tr')).data();
+        gastorecurrente_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_gastorecurrente').addEventListener('click', function() {
+        let ids = $(`#${t_gastorecurrente}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Egreso');
+            gbe.append('package', 'mng_egreso');
+            gbe.append('attr', 'MEgreso');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'GastoRecurrente');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_gastorecurrente}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#btn_generar_recurrentes').addEventListener('click', () => {
+        let gbe = new FormData();
+        gbe.append('module', 'Egreso');
+        gbe.append('package', 'mng_egreso');
+        gbe.append('attr', 'MEgreso');
+        gbe.append('mname', 'generar_recurrentes_ui');
+        gbe.append('dbcon', 'default');
+        axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            UiB.MsgSuccess(rsp.data.success);
+            $(`#${t_gastorecurrente}`).DataTable().ajax.reload();
+        });
+    });
+
+    qelem('#input_buscar_gastorecurrente').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_gastorecurrente = [];
+            let v = qelem('#input_buscar_gastorecurrente').value.trim();
+            if (v !== '') {
+                gmquery_gastorecurrente.push({'field': 'or_concepto__icontains', 'value': v});
+                gmquery_gastorecurrente.push({'field': 'or_proveedorobj__nombre__icontains', 'value': v});
+            }
+            $(`#${t_gastorecurrente}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_gastorecurrente}`).on('draw.dt', function() {
+        let tt = qelem(`#table_gastorecurrente_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

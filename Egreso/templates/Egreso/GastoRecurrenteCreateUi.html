@@ -1,0 +1,216 @@
+<div class="ui_gastorecurrente">
+    <form id="form_gastorecurrente_{{ rr }}" class="form_gastorecurrente">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-12 mb-3" data-field="proveedorobj_id">
+                <label>Proveedor <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="proveedorobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="categoriaobj_id">
+                <label>Categoría <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="categoriaobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="concepto">
+                <label>Concepto <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="concepto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.concepto }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="monto">
+                <label>Monto (IVA incluido) <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="monto" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="moneda">
+                <label>Moneda</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="moneda" class="form-control">
+                        <option value="PYG" {% if mobj and mobj.moneda == "PYG" %}selected{% endif %}>Guaraníes</option>
+                        <option value="USD" {% if mobj and mobj.moneda == "USD" %}selected{% endif %}>Dólares</option>
+                        <option value="EUR" {% if mobj and mobj.moneda == "EUR" %}selected{% endif %}>Euros</option>
+                        <option value="BRL" {% if mobj and mobj.moneda == "BRL" %}selected{% endif %}>Reales</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="activo">
+                <label>Activo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="activo" class="form-control">
+                        <option value="true" {% if not mobj or mobj.activo %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.activo %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="frecuencia">
+                <label>Frecuencia</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="frecuencia" class="form-control">
+                        <option value="mensual" {% if mobj and mobj.frecuencia == "mensual" %}selected{% endif %}>Mensual</option>
+                        <option value="bimestral" {% if mobj and mobj.frecuencia == "bimestral" %}selected{% endif %}>Bimestral</option>
+                        <option value="trimestral" {% if mobj and mobj.frecuencia == "trimestral" %}selected{% endif %}>Trimestral</option>
+                        <option value="semestral" {% if mobj and mobj.frecuencia == "semestral" %}selected{% endif %}>Semestral</option>
+                        <option value="anual" {% if mobj and mobj.frecuencia == "anual" %}selected{% endif %}>Anual</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="dia_aplicacion">
+                <label>Día de aplicación <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="dia_aplicacion" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.dia_aplicacion|stringformat:"s" }}{% else %}1{% endif %}' required />
+                </div>
+                <small class="text-muted">Día del mes en que se genera el gasto.</small>
+            </div>
+            <div class="col-md-4 mb-3" data-field="fecha_inicio">
+                <label>Desde <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha_inicio" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha_inicio|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="fecha_fin">
+                <label>Hasta (opcional)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha_fin" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha_fin|date:"Y-m-d" }}{% endif %}' />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Gasto Recurrente {{ mobj.pk }}{% else %}Crear Gasto Recurrente{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_gastorecurrente_{{ rr }} select[name=proveedorobj_id]',
+        app_name: 'Egreso',
+        model_name: 'Proveedor',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: false,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.proveedorobj %}
+            $('#form_gastorecurrente_{{ rr }} select[name=proveedorobj_id]').val('{{ mobj.proveedorobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_gastorecurrente_{{ rr }} select[name=categoriaobj_id]',
+        app_name: 'Egreso',
+        model_name: 'CategoriaGasto',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: false,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.categoriaobj %}
+            $('#form_gastorecurrente_{{ rr }} select[name=categoriaobj_id]').val('{{ mobj.categoriaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_gastorecurrente = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_gastorecurrente_{{ rr }} input[name=monto]'));
+        Inputmask(maskEntero).mask(qelem('#form_gastorecurrente_{{ rr }} input[name=dia_aplicacion]'));
+    }
+    initializeInputMasks_gastorecurrente();
+
+    save_gastorecurrente = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Egreso');
+        fdata.append('model_name', 'GastoRecurrente');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["proveedorobj_id", "categoriaobj_id"].forEach((idx) => {
+            let vv = $(`#form_gastorecurrente_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["monto", "dia_aplicacion"].forEach((f) => {
+            let el = qelem(`#form_gastorecurrente_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        [].forEach((f) => {
+            let el = qelem(`#form_gastorecurrente_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Egreso', 'package': 'mng_egreso', 'attr': 'MEgreso', 'mname': 'create_recurrente', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_gastorecurrente_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                if (typeof Swal !== 'undefined' && Swal.isVisible()) Swal.close();
+            }
+        }).catch((err) => {
+            log.error(`#form_gastorecurrente Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_gastorecurrente_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_gastorecurrente_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_gastorecurrente(evt.target);
+    })
+
+    {% if proveedor_id %}
+        // Abierto desde la ficha del proveedor: el proveedor queda fijo
+        setTimeout(() => { $('#form_gastorecurrente_{{ rr }} select[name=proveedorobj_id]').val('{{ proveedor_id }}').trigger('change'); }, 600);
+    {% endif %}
+</script>

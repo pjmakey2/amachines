@@ -1,0 +1,142 @@
+<div class="proveedor_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_proveedor" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_proveedor" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_proveedor" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_proveedor_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_proveedor = [];
+    proveedor_home_be = function (data, settings) {
+        let tt = qelem(`#table_proveedor_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_proveedor.length > 0) mquery = [...mquery, ...gmquery_proveedor];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_proveedor = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_proveedor,
+          url_exec: '{% url "iom" %}',
+          title: 'Proveedores',
+          tselector: 'table_proveedor_ui',
+          app_name: 'Egreso',
+          model_name: 'Proveedor',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: proveedor_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_proveedor_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-proveedor-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'ruc', tit: 'RUC', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'ruc_dv', tit: 'DV', cls: 'align-left', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Razón social', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre_fantasia', tit: 'Fantasía', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'telefono', tit: 'Teléfono', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'email', tit: 'Email', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'plazo_dias', tit: 'Plazo (días)', cls: 'align-right', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'mdb', idx: 'get_saldo_pendiente', tit: 'Saldo pendiente', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activo', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    proveedor_form_crud = (pk) => {
+        let dattrs = { title: 'Proveedores', t_guid: t_proveedor, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Egreso',
+            model_name: 'Proveedor',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Egreso/ProveedorCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#btn_crear_proveedor').addEventListener('click', () => proveedor_form_crud());
+
+    $(`#${t_proveedor} tbody`).on('click', '.tr-proveedor-query', function() {
+        let rowobj = $(`#${t_proveedor}`).DataTable().row($(this).closest('tr')).data();
+        proveedor_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_proveedor').addEventListener('click', function() {
+        let ids = $(`#${t_proveedor}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Egreso');
+            gbe.append('package', 'mng_egreso');
+            gbe.append('attr', 'MEgreso');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'Proveedor');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_proveedor}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_proveedor').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_proveedor = [];
+            let v = qelem('#input_buscar_proveedor').value.trim();
+            if (v !== '') {
+                gmquery_proveedor.push({'field': 'or_nombre__icontains', 'value': v});
+                gmquery_proveedor.push({'field': 'or_ruc__icontains', 'value': v});
+                gmquery_proveedor.push({'field': 'or_nombre_fantasia__icontains', 'value': v});
+            }
+            $(`#${t_proveedor}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_proveedor}`).on('draw.dt', function() {
+        let tt = qelem(`#table_proveedor_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

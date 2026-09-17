@@ -11,6 +11,8 @@ Este plugin proporciona:
 
 from typing import List, Dict, Tuple
 
+from celery.schedules import crontab
+
 from OptsIO.plugin_manager import BasePlugin
 
 
@@ -23,7 +25,7 @@ class Plugin(BasePlugin):
     version = "1.0.0"
     author = "Alta Machines"
     is_core = False
-    dependencies = ['sifen']
+    dependencies = ['sifen', 'tesoreria']
     icon = "mdi mdi-cart-arrow-up"
     category = "compras"
 
@@ -43,6 +45,18 @@ class Plugin(BasePlugin):
                         'prioridad': 1,
                         'background': '#D97706',
                     },
+                    {'app_name': 'egreso_gastos', 'friendly_name': 'Gastos', 'icon': 'mdi mdi-receipt-text-outline',
+                     'url': 'Egreso/GastoUi.html', 'prioridad': 3, 'background': '#92400E'},
+                    {'app_name': 'egreso_pagos_proveedor', 'friendly_name': 'Pagos a Proveedores', 'icon': 'mdi mdi-account-cash',
+                     'url': 'Egreso/PagoProveedorUi.html', 'prioridad': 4, 'background': '#92400E'},
+                    {'app_name': 'egreso_transferencias', 'friendly_name': 'Transferencias Internas', 'icon': 'mdi mdi-bank-transfer',
+                     'url': 'Egreso/TransferenciaInternaUi.html', 'prioridad': 5, 'background': '#92400E'},
+                    {'app_name': 'egreso_proveedores', 'friendly_name': 'Proveedores', 'icon': 'mdi mdi-truck-outline',
+                     'url': 'Egreso/ProveedorUi.html', 'prioridad': 6, 'background': '#78350F'},
+                    {'app_name': 'egreso_recurrentes', 'friendly_name': 'Gastos Recurrentes', 'icon': 'mdi mdi-calendar-sync',
+                     'url': 'Egreso/GastoRecurrenteUi.html', 'prioridad': 7, 'background': '#78350F'},
+                    {'app_name': 'egreso_categorias', 'friendly_name': 'Categorías de Gasto', 'icon': 'mdi mdi-tag-multiple-outline',
+                     'url': 'Egreso/CategoriaGastoUi.html', 'prioridad': 8, 'background': '#78350F'},
                     {
                         'app_name': 'egreso_gestion_pagos',
                         'friendly_name': 'Gestión de Pagos',
@@ -54,6 +68,10 @@ class Plugin(BasePlugin):
                 ]
             }
         ]
+
+    def get_beat_schedule(self) -> Dict[str, Dict]:
+        return {'egreso-gastos-recurrentes': {'task': 'Egreso.tasks.generar_gastos_recurrentes',
+                                              'schedule': crontab(hour=6, minute=0)}}
 
     def get_reference_data(self) -> List[Dict]:
         """Egresos no carga datos de referencia propios."""

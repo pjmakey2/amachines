@@ -169,6 +169,16 @@ class BasePlugin:
         """
         return {}
 
+    def get_beat_schedule(self) -> Dict[str, Dict]:
+        """
+        Tareas periodicas de Celery beat del plugin (Amachine/celery.py las registra).
+
+        Ejemplo:
+        return {'egreso-recurrentes': {'task': 'Egreso.tasks.generar_gastos_recurrentes',
+                                       'schedule': crontab(hour=6, minute=0)}}
+        """
+        return {}
+
     def get_setup_steps(self) -> List[Dict]:
         """
         Retorna pasos de setup específicos del plugin.
