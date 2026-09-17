@@ -1,10 +1,11 @@
 """Resolucion del negocio activo y aislamiento multi-tenant para modelos con FK `businessobj`."""
 from django.core.exceptions import FieldDoesNotExist
 
+from OptsIO.models import UserBusiness
+
 
 def get_active_business(userobj):
     """Business activo del usuario (UserBusiness.active) o None."""
-    from OptsIO.models import UserProfile, UserBusiness
     username = getattr(userobj, 'username', None)
     if not username:
         return None
@@ -21,3 +22,8 @@ def is_tenant_model(model_class) -> bool:
         return True
     except FieldDoesNotExist:
         return False
+
+
+def user_label(userobj) -> str:
+    """Valor para los campos <paso>_usuario (misma convencion que IOMaction: first_name)."""
+    return getattr(userobj, 'first_name', '') or getattr(userobj, 'username', '') or ''

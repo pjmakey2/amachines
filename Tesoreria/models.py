@@ -7,6 +7,10 @@ MONEDAS = [('PYG', 'Guaraníes'), ('USD', 'Dólares'), ('EUR', 'Euros'), ('BRL',
 CCT = {'max_digits': 19, 'decimal_places': 6}
 
 
+class TesoreriaError(Exception):
+    """Regla de negocio de tesoreria incumplida (saldo, tope, numeracion, pertenencia)."""
+
+
 class TrackMixin(models.Model):
     cargado_fecha = models.DateTimeField(null=True, blank=True)
     cargado_usuario = models.CharField(max_length=120, null=True, blank=True)
@@ -96,7 +100,7 @@ class Chequera(TrackMixin):
         with transaction.atomic():
             ch = Chequera.objects.select_for_update().get(pk=self.pk)
             if not ch.activo or ch.proximo_numero > ch.numero_hasta:
-                raise ValueError(f"La chequera {ch} no tiene cheques disponibles")
+                raise TesoreriaError(f"La chequera {ch} no tiene cheques disponibles")
             numero = ch.proximo_numero
             ch.proximo_numero = numero + 1
             ch.save(update_fields=['proximo_numero'])

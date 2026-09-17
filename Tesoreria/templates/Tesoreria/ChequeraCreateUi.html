@@ -37,13 +37,13 @@
             <div class="col-md-6 mb-3">
                 <label>Número desde <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="number" name="numero_desde" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.numero_desde|stringformat:"s" }}{% else %}{% endif %}' required />
+                    <input type="text" name="numero_desde" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.numero_desde|stringformat:"s" }}{% else %}{% endif %}' required />
                 </div>
             </div>
             <div class="col-md-6 mb-3">
                 <label>Número hasta <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="number" name="numero_hasta" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.numero_hasta|stringformat:"s" }}{% else %}{% endif %}' required />
+                    <input type="text" name="numero_hasta" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.numero_hasta|stringformat:"s" }}{% else %}{% endif %}' required />
                 </div>
                 <small class="text-muted">El próximo número a emitir arranca en "desde" y avanza solo.</small>
             </div>
@@ -81,6 +81,18 @@
         {% endif %}
     });
 
+    initializeInputMasks_chequera = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskEntero).mask(qelem('#form_chequera_{{ rr }} input[name=numero_desde]'));
+        Inputmask(maskEntero).mask(qelem('#form_chequera_{{ rr }} input[name=numero_hasta]'));
+    }
+    initializeInputMasks_chequera();
+
     save_chequera = (target) => {
         let fdata = new FormData();
         fdata.append('module', 'OptsIO');
@@ -94,7 +106,12 @@
         ["cuentaobj_id"].forEach((idx) => {
             let vv = $(`#form_chequera_{{ rr }} select[name=${idx}]`).val();
             if (vv !== undefined) edata[idx] = vv;
-        })
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["numero_desde", "numero_hasta"].forEach((f) => {
+            let el = qelem(`#form_chequera_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([{ 'module': 'Tesoreria', 'package': 'mng_tesoreria', 'attr': 'MTesoreria', 'mname': 'create_chequera', 'cont': false, 'show_success': true }]));

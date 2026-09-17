@@ -47,7 +47,12 @@
         [].forEach((idx) => {
             let vv = $(`#form_banco_{{ rr }} select[name=${idx}]`).val();
             if (vv !== undefined) edata[idx] = vv;
-        })
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        [].forEach((f) => {
+            let el = qelem(`#form_banco_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([]));

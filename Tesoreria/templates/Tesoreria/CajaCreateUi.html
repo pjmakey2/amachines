@@ -31,7 +31,7 @@
             <div class="col-md-4 mb-3">
                 <label>Tope</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="number" name="tope" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.tope|stringformat:"s" }}{% else %}0{% endif %}' />
+                    <input type="text" name="tope" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.tope|stringformat:"s" }}{% else %}0{% endif %}' />
                 </div>
                 <small class="text-muted">Caja chica: saldo máximo permitido (0 = sin tope).</small>
             </div>
@@ -53,7 +53,7 @@
             <div class="col-md-6 mb-3">
                 <label>Saldo inicial</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="number" name="saldo_inicial" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial|stringformat:"s" }}{% else %}0{% endif %}' />
+                    <input type="text" name="saldo_inicial" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial|stringformat:"s" }}{% else %}0{% endif %}' />
                 </div>
             </div>
         </div>
@@ -66,6 +66,18 @@
 </div>
 <script type="text/javascript">
     qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Caja {{ mobj.pk }}{% else %}Crear Caja{% endif %}`;
+
+    initializeInputMasks_caja = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_caja_{{ rr }} input[name=tope]'));
+        Inputmask(maskDecimal).mask(qelem('#form_caja_{{ rr }} input[name=saldo_inicial]'));
+    }
+    initializeInputMasks_caja();
 
     save_caja = (target) => {
         let fdata = new FormData();
@@ -80,7 +92,12 @@
         [].forEach((idx) => {
             let vv = $(`#form_caja_{{ rr }} select[name=${idx}]`).val();
             if (vv !== undefined) edata[idx] = vv;
-        })
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["tope", "saldo_inicial"].forEach((f) => {
+            let el = qelem(`#form_caja_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([]));

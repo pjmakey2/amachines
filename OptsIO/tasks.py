@@ -5,6 +5,7 @@ from celery import shared_task
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from OptsIO.models import UserTask
+from OptsIO.events import process_event
 
 actions = {
     'recepcion_paquete': 'Recepcion Paquetes: Inserta-Reg. Paquete codigo {paquetecodigo} Tracking {paquetetracking}'
@@ -204,7 +205,6 @@ def demo_quick_task(self):
 @shared_task(bind=True, max_retries=5, default_retry_delay=60)
 def process_business_event(self, event_id):
     """Procesa un BusinessEvent del outbox. Reintenta mientras queden handlers con error."""
-    from OptsIO.events import process_event
     result = process_event(event_id)
     if result.get('status') == 'error':
         raise self.retry(exc=Exception('; '.join(result.get('errors', []))))

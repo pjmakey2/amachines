@@ -20,7 +20,7 @@
             <div class="col-md-4 mb-3">
                 <label>Monto <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="number" name="monto" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
+                    <input type="text" name="monto" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
                 </div>
             </div>
             <div class="col-md-6 mb-3">
@@ -108,6 +108,17 @@
         {% endif %}
     });
 
+    initializeInputMasks_movimiento = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_movimiento_{{ rr }} input[name=monto]'));
+    }
+    initializeInputMasks_movimiento();
+
     save_movimiento = (target) => {
         let fdata = new FormData();
         fdata.append('module', 'OptsIO');
@@ -121,7 +132,12 @@
         ["cuentaobj_id", "cajaobj_id"].forEach((idx) => {
             let vv = $(`#form_movimiento_{{ rr }} select[name=${idx}]`).val();
             if (vv !== undefined) edata[idx] = vv;
-        })
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["monto"].forEach((f) => {
+            let el = qelem(`#form_movimiento_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([{ 'module': 'Tesoreria', 'package': 'mng_tesoreria', 'attr': 'MTesoreria', 'mname': 'create_movimiento', 'cont': false, 'show_success': true }]));

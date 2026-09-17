@@ -4,12 +4,19 @@ Workflow de estados para operaciones (cargado -> verificado -> aprobado).
 Cada modulo hereda WorkflowMixin y puede extender WORKFLOW_STATES. Al avanzar
 de estado se emite el evento '<WORKFLOW_EVENT>.<estado>' en el bus (OptsIO.events);
 la contabilidad y demas automatismos se cuelgan del estado final.
+
+Auditoria con la convencion del proyecto: <paso>_fecha / <paso>_usuario. Un paso
+extra (ej: 'pagado') se agrega a WORKFLOW_STATES y, si se quiere auditar en columnas,
+se declaran pagado_fecha / pagado_usuario en el modelo; el historial completo queda
+siempre en workflow_log.
 """
 from datetime import datetime
 
 from django.db import models, transaction
 
 from OptsIO import events
+from OptsIO.io_business import user_label
+from Sifen.models import Business
 
 
 class WorkflowError(Exception):
@@ -25,8 +32,16 @@ class WorkflowMixin(models.Model):
     WORKFLOW_DISTINCT_USERS = False
 
     estado = models.CharField(max_length=30, default='cargado', db_index=True)
-    estado_usuario = models.CharField(max_length=120, blank=True)
-    estado_fecha = models.DateTimeField(null=True, blank=True)
+    cargado_fecha = models.DateTimeField(null=True, blank=True)
+    cargado_usuario = models.CharField(max_length=120, null=True, blank=True)
+    verificado_fecha = models.DateTimeField(null=True, blank=True)
+    verificado_usuario = models.CharField(max_length=120, null=True, blank=True)
+    aprobado_fecha = models.DateTimeField(null=True, blank=True)
+    aprobado_usuario = models.CharField(max_length=120, null=True, blank=True)
+    anulado = models.BooleanField(default=False, db_index=True)
+    anulado_fecha = models.DateTimeField(null=True, blank=True)
+    anulado_usuario = models.CharField(max_length=120, null=True, blank=True)
+    anulado_motivo = models.CharField(max_length=300, blank=True, default='')
     workflow_log = models.JSONField(default=list, blank=True)
 
     class Meta:
@@ -53,7 +68,6 @@ class WorkflowMixin(models.Model):
     def get_workflow_business(self):
         business = getattr(self, 'businessobj', None)
         if business is None and getattr(self, 'bs_ruc', None):
-            from Sifen.models import Business
             business = Business.objects.filter(ruc=self.bs_ruc).first()
         return business
 
@@ -73,6 +87,8 @@ class WorkflowMixin(models.Model):
         """
         with transaction.atomic():
             locked = type(self).objects.select_for_update().get(pk=self.pk)
+            if locked.anulado:
+                raise WorkflowError("La operacion esta anulada")
             siguiente = locked.siguiente_estado()
             if siguiente is None:
                 raise WorkflowError(f"La operacion ya esta en su estado final ({locked.estado})")
@@ -80,35 +96,52 @@ class WorkflowMixin(models.Model):
                 raise WorkflowError(f"Transicion invalida: {locked.estado} -> {estado} (corresponde {siguiente})")
             if not userobj.has_perm(locked.workflow_perm(siguiente)):
                 raise WorkflowError(f"El usuario {userobj.username} no tiene permiso para pasar a '{siguiente}'")
-            if self.WORKFLOW_DISTINCT_USERS and locked.estado_usuario == userobj.username:
+            ultimo = (locked.workflow_log or [{}])[-1].get('username')
+            if self.WORKFLOW_DISTINCT_USERS and ultimo == userobj.username:
                 raise WorkflowError(f"El paso '{siguiente}' debe hacerlo un usuario distinto al que hizo '{locked.estado}'")
 
             locked.estado = siguiente
             locked._stamp(userobj, siguiente, nota)
-            locked.save(update_fields=['estado', 'estado_usuario', 'estado_fecha', 'workflow_log'])
-
-            if self.WORKFLOW_EVENT:
-                events.emit(
-                    f"{self.WORKFLOW_EVENT}.{siguiente}",
-                    locked,
-                    business=locked.get_workflow_business(),
-                    payload=locked.get_workflow_payload(),
-                    userobj=userobj,
-                )
-
-        self.estado = locked.estado
-        self.estado_usuario = locked.estado_usuario
-        self.estado_fecha = locked.estado_fecha
-        self.workflow_log = locked.workflow_log
+            locked.save()
+            locked._emit(siguiente, userobj)
+        self.refresh_from_db()
         return self
+
+    def anular(self, userobj, motivo: str = ''):
+        """Anula la operacion en cualquier estado y emite '<WORKFLOW_EVENT>.anulado' (reversos)."""
+        with transaction.atomic():
+            locked = type(self).objects.select_for_update().get(pk=self.pk)
+            if locked.anulado:
+                raise WorkflowError("La operacion ya esta anulada")
+            if not userobj.has_perm(locked.workflow_perm('anulado')):
+                raise WorkflowError(f"El usuario {userobj.username} no tiene permiso para anular")
+            locked.anulado = True
+            locked.anulado_motivo = (motivo or '')[:300]
+            locked._stamp(userobj, 'anulado', motivo)
+            locked.save()
+            locked._emit('anulado', userobj)
+        self.refresh_from_db()
+        return self
+
+    def _emit(self, estado: str, userobj):
+        if self.WORKFLOW_EVENT:
+            events.emit(
+                f"{self.WORKFLOW_EVENT}.{estado}",
+                self,
+                business=self.get_workflow_business(),
+                payload=self.get_workflow_payload(),
+                userobj=userobj,
+            )
 
     def _stamp(self, userobj, estado: str, nota: str):
         ahora = datetime.now()
-        self.estado_usuario = getattr(userobj, 'username', '') or ''
-        self.estado_fecha = ahora
+        if hasattr(self, f'{estado}_fecha'):
+            setattr(self, f'{estado}_fecha', ahora)
+            setattr(self, f'{estado}_usuario', user_label(userobj))
         self.workflow_log = list(self.workflow_log or []) + [{
             'estado': estado,
-            'usuario': self.estado_usuario,
+            'username': getattr(userobj, 'username', '') or '',
+            'usuario': user_label(userobj),
             'fecha': ahora.strftime('%Y-%m-%d %H:%M:%S'),
             'nota': nota,
         }]

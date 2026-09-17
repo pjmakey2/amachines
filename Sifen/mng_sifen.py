@@ -19,6 +19,7 @@ from django.http import QueryDict, HttpRequest
 from django.forms import model_to_dict
 from django.db.models import Sum, Count, Q
 from django.core.files import File
+from django.core.files.storage import default_storage
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
@@ -1151,7 +1152,6 @@ class MSifen:
         version 1..4: variantes de layout en evaluacion; cuando el negocio
         decida cual usar, queda la elegida y este parametro fijo.
         """
-        from django.core.files.storage import default_storage
         userobj = kwargs.get('userobj')
         q: dict = kwargs.get('qdict', {})
         dbcon = q.get('dbcon')
@@ -3442,7 +3442,6 @@ class MSifen:
         q: dict = kwargs.get('qdict', {})
         ruc = q.get('ruc', '').strip()
         eser = ekuatia_serials.Eserial()
-        clobj = Clientes.objects.filter(pdv_ruc=ruc).first()
         if clobj:
             msg = 'RUC LOCAL'
             pdv_nombrefactura = clobj.pdv_nombrefactura

@@ -6,32 +6,38 @@ API interna para otros plugins (Egreso, Deposito, Cobro):
     MTesoreria().emitir_cheque(...)
 """
 import logging
+import re
 from datetime import datetime
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import ProtectedError
 
-from OptsIO.io_business import get_active_business
+from OptsIO.io_business import get_active_business, user_label
 from OptsIO.io_json import from_json
 from Tesoreria.models import (
-    Banco, CuentaBancaria, Chequera, Cheque, Caja, MovimientoTesoreria,
+    Banco, CuentaBancaria, Chequera, Cheque, Caja, MovimientoTesoreria, TesoreriaError,
 )
 
 logger = logging.getLogger(__name__)
 
 CATALOGOS = {'Banco': Banco, 'CuentaBancaria': CuentaBancaria, 'Chequera': Chequera, 'Caja': Caja}
-
-
-class TesoreriaError(Exception):
-    pass
+# Relaciones que impiden borrar un catalogo (hay que desactivarlo)
+EN_USO = {
+    'Banco': lambda ids: CuentaBancaria.objects.filter(bancoobj_id__in=ids).exists(),
+    'CuentaBancaria': lambda ids: (Chequera.objects.filter(cuentaobj_id__in=ids).exists()
+                                   or MovimientoTesoreria.objects.filter(cuentaobj_id__in=ids).exists()),
+    'Chequera': lambda ids: Cheque.objects.filter(chequeraobj_id__in=ids).exists(),
+    'Caja': lambda ids: MovimientoTesoreria.objects.filter(cajaobj_id__in=ids).exists(),
+}
+RE_DECIMAL = re.compile(r'^\d+(\.\d+)?$')
+RE_ENTERO = re.compile(r'^\d+$')
 
 
 def _decimal(value, campo='monto') -> Decimal:
-    try:
-        return Decimal(str(value).replace(',', '.'))
-    except (InvalidOperation, TypeError):
+    texto = str(value if value is not None else '').strip()
+    if not RE_DECIMAL.match(texto):
         raise TesoreriaError(f"Valor invalido para {campo}: {value}")
+    return Decimal(texto)
 
 
 class MTesoreria:
@@ -45,18 +51,11 @@ class MTesoreria:
         Registra un ingreso/egreso en una cuenta bancaria o caja.
         Con `clave`, repetir la llamada devuelve el movimiento ya registrado (idempotente).
         """
-        if tipo not in ('ingreso', 'egreso'):
-            raise TesoreriaError(f"Tipo de movimiento invalido: {tipo}")
-        if bool(cuentaobj) == bool(cajaobj):
-            raise TesoreriaError("El movimiento debe indicar una cuenta bancaria o una caja (solo una)")
+        error = self.validar_movimiento(tipo, monto, cuentaobj=cuentaobj, cajaobj=cajaobj, businessobj=businessobj)
+        if error:
+            raise TesoreriaError(error)
         monto = _decimal(monto)
-        if monto <= 0:
-            raise TesoreriaError("El monto debe ser mayor a cero")
         destino = cuentaobj or cajaobj
-        if destino.businessobj_id != businessobj.pk:
-            raise TesoreriaError("La cuenta/caja no pertenece al negocio")
-        if not destino.activo:
-            raise TesoreriaError(f"{destino} esta inactiva")
 
         with transaction.atomic():
             if clave:
@@ -66,13 +65,9 @@ class MTesoreria:
             if cajaobj:
                 # Lock de la caja: serializa el control de saldo/tope entre movimientos concurrentes.
                 cajaobj = Caja.objects.select_for_update().get(pk=cajaobj.pk)
-                saldo = cajaobj.get_saldo()
-                if tipo == 'egreso' and monto > saldo:
-                    raise TesoreriaError(f"Saldo insuficiente en {cajaobj}: disponible {saldo:,.0f}")
-                if tipo == 'ingreso' and cajaobj.tope and saldo + monto > cajaobj.tope:
-                    raise TesoreriaError(
-                        f"El ingreso supera el tope de {cajaobj} ({cajaobj.tope:,.0f}); "
-                        f"maximo a reponer: {cajaobj.tope - saldo:,.0f}")
+                error = self.validar_movimiento(tipo, monto, cajaobj=cajaobj)
+                if error:
+                    raise TesoreriaError(error)
             return MovimientoTesoreria.objects.create(
                 businessobj=businessobj, fecha=fecha, tipo=tipo, monto=monto,
                 moneda=destino.moneda, concepto=concepto[:300], referencia=(referencia or '')[:120],
@@ -82,8 +77,31 @@ class MTesoreria:
                 origen_id=origen.pk if origen else None,
                 clave=clave,
                 cargado_fecha=datetime.now(),
-                cargado_usuario=getattr(userobj, 'username', '') or '',
+                cargado_usuario=user_label(userobj),
             )
+
+    def validar_movimiento(self, tipo, monto, cuentaobj=None, cajaobj=None, businessobj=None) -> str:
+        """Devuelve el mensaje de error de la regla incumplida, o '' si el movimiento es valido."""
+        if tipo not in ('ingreso', 'egreso'):
+            return f"Tipo de movimiento invalido: {tipo}"
+        if bool(cuentaobj) == bool(cajaobj):
+            return "El movimiento debe indicar una cuenta bancaria o una caja (solo una)"
+        if not RE_DECIMAL.match(str(monto if monto is not None else '').strip()) or Decimal(str(monto).strip()) <= 0:
+            return "El monto debe ser un numero mayor a cero"
+        monto = Decimal(str(monto).strip())
+        destino = cuentaobj or cajaobj
+        if businessobj and destino.businessobj_id != businessobj.pk:
+            return "La cuenta/caja no pertenece al negocio"
+        if not destino.activo:
+            return f"{destino} esta inactiva"
+        if cajaobj:
+            saldo = cajaobj.get_saldo()
+            if tipo == 'egreso' and monto > saldo:
+                return f"Saldo insuficiente en {cajaobj}: disponible {saldo:,.0f}"
+            if tipo == 'ingreso' and cajaobj.tope and saldo + monto > cajaobj.tope:
+                return (f"El ingreso supera el tope de {cajaobj} ({cajaobj.tope:,.0f}); "
+                        f"maximo a reponer: {cajaobj.tope - saldo:,.0f}")
+        return ''
 
     def emitir_cheque(self, chequeraobj, beneficiario, monto, fecha_emision, fecha_pago=None,
                       concepto='', a_la_orden=True, origen=None, userobj=None) -> Cheque:
@@ -95,10 +113,7 @@ class MTesoreria:
         if chequeraobj.tipo == 'vista' and fecha_pago != fecha_emision:
             raise TesoreriaError("Una chequera a la vista no admite fecha de pago diferida")
         with transaction.atomic():
-            try:
-                numero = chequeraobj.tomar_numero()
-            except ValueError as e:
-                raise TesoreriaError(str(e))
+            numero = chequeraobj.tomar_numero()
             return Cheque.objects.create(
                 businessobj_id=chequeraobj.businessobj_id, chequeraobj=chequeraobj, numero=numero,
                 fecha_emision=fecha_emision, fecha_pago=fecha_pago, beneficiario=beneficiario[:200],
@@ -107,7 +122,7 @@ class MTesoreria:
                 origen_model=origen._meta.model_name if origen else '',
                 origen_id=origen.pk if origen else None,
                 cargado_fecha=datetime.now(),
-                cargado_usuario=getattr(userobj, 'username', '') or '',
+                cargado_usuario=user_label(userobj),
             )
 
     # ------------------------------------------------------------------ Metodos UI (iom)
@@ -134,10 +149,9 @@ class MTesoreria:
         bobj = get_active_business(userobj)
         if not bobj:
             return {'error': 'El usuario no tiene un negocio activo'}, args, kwargs
-        try:
-            desde, hasta = int(f.get('numero_desde')), int(f.get('numero_hasta'))
-        except (TypeError, ValueError):
+        if not (RE_ENTERO.match(str(f.get('numero_desde') or '')) and RE_ENTERO.match(str(f.get('numero_hasta') or ''))):
             return {'error': 'Rango de numeracion invalido'}, args, kwargs
+        desde, hasta = int(f.get('numero_desde')), int(f.get('numero_hasta'))
         if desde <= 0 or hasta < desde:
             return {'error': 'El numero hasta debe ser mayor o igual al numero desde'}, args, kwargs
         cuenta = CuentaBancaria.objects.filter(pk=f.get('cuentaobj_id') or 0, businessobj=bobj).first()
@@ -167,14 +181,14 @@ class MTesoreria:
             ch.numero_desde, ch.numero_hasta, ch.activo = desde, hasta, activo
             if not emitidos:
                 ch.proximo_numero = desde
-            ch.actualizado_fecha, ch.actualizado_usuario = datetime.now(), userobj.username
+            ch.actualizado_fecha, ch.actualizado_usuario = datetime.now(), user_label(userobj)
             ch.save()
             return {'success': 'Chequera actualizada', 'record_id': ch.pk}, args, kwargs
 
         ch = Chequera.objects.create(
             businessobj=bobj, cuentaobj=cuenta, serie=serie, tipo=f.get('tipo') or 'vista',
             numero_desde=desde, numero_hasta=hasta, proximo_numero=desde, activo=activo,
-            cargado_fecha=datetime.now(), cargado_usuario=userobj.username)
+            cargado_fecha=datetime.now(), cargado_usuario=user_label(userobj))
         return {'success': 'Chequera creada', 'record_id': ch.pk}, args, kwargs
 
     def create_movimiento(self, *args, **kwargs) -> tuple:
@@ -188,12 +202,12 @@ class MTesoreria:
         caja = Caja.objects.filter(pk=f.get('cajaobj_id') or 0, businessobj=bobj).first()
         if not (f.get('concepto') or '').strip():
             return {'error': 'El concepto es obligatorio'}, args, kwargs
-        try:
-            mov = self.registrar_movimiento(
-                bobj, f.get('fecha'), f.get('tipo'), f.get('monto'), f.get('concepto').strip(),
-                cuentaobj=cuenta, cajaobj=caja, referencia=f.get('referencia', ''), userobj=userobj)
-        except TesoreriaError as e:
-            return {'error': str(e)}, args, kwargs
+        error = self.validar_movimiento(f.get('tipo'), f.get('monto'), cuentaobj=cuenta, cajaobj=caja)
+        if error:
+            return {'error': error}, args, kwargs
+        mov = self.registrar_movimiento(
+            bobj, f.get('fecha'), f.get('tipo'), f.get('monto'), f.get('concepto').strip(),
+            cuentaobj=cuenta, cajaobj=caja, referencia=f.get('referencia', ''), userobj=userobj)
         return {'success': f'Movimiento {mov.pk} registrado', 'record_id': mov.pk}, args, kwargs
 
     def anular_movimientos(self, *args, **kwargs) -> dict:
@@ -204,7 +218,7 @@ class MTesoreria:
         qs = MovimientoTesoreria.objects.filter(pk__in=ids, businessobj=bobj, anulado=False)
         if qs.exclude(origen_app='').exists():
             return {'msgs': [{'error': 'Hay movimientos generados por otra operacion: anule la operacion de origen'}]}
-        n = qs.update(anulado=True, anulado_fecha=datetime.now(), anulado_usuario=userobj.username)
+        n = qs.update(anulado=True, anulado_fecha=datetime.now(), anulado_usuario=user_label(userobj))
         return {'msgs': [{'success': f'{n} movimiento(s) anulado(s)'}]}
 
     def anular_cheque(self, *args, **kwargs) -> dict:
@@ -219,7 +233,7 @@ class MTesoreria:
         if cheque.estado == 'anulado':
             return {'info': 'El cheque ya estaba anulado'}
         cheque.estado = 'anulado'
-        cheque.anulado_fecha, cheque.anulado_usuario = datetime.now(), userobj.username
+        cheque.anulado_fecha, cheque.anulado_usuario = datetime.now(), user_label(userobj)
         cheque.anulado_motivo = (q.get('motivo') or '')[:300]
         cheque.save()
         return {'success': f'Cheque {cheque.numero} anulado'}
@@ -231,9 +245,8 @@ class MTesoreria:
         bobj = get_active_business(kwargs.get('userobj'))
         if not model or not bobj:
             return {'msgs': [{'error': 'Solicitud invalida'}]}
-        try:
-            with transaction.atomic():
-                n, _ = model.objects.filter(pk__in=from_json(q.get('ids', '[]')), businessobj=bobj).delete()
-        except ProtectedError:
+        ids = list(model.objects.filter(pk__in=from_json(q.get('ids', '[]')), businessobj=bobj).values_list('pk', flat=True))
+        if EN_USO[q.get('model_name')](ids):
             return {'msgs': [{'error': 'El registro tiene datos asociados: desactivelo en lugar de borrarlo'}]}
+        n, _ = model.objects.filter(pk__in=ids).delete()
         return {'msgs': [{'success': f'{n} registro(s) borrado(s)'}]}

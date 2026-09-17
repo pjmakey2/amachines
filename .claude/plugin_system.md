@@ -341,7 +341,8 @@ Un handler recibe el `BusinessEvent` (`event.get_source()`, `event.payload`, `ev
 
 ## Workflow de operaciones (`OptsIO/workflow.py`)
 
-`WorkflowMixin` (abstracto): `estado`, `estado_usuario`, `estado_fecha`, `workflow_log`.
+`WorkflowMixin` (abstracto): `estado`, auditoría `cargado_/verificado_/aprobado_/anulado_` + `_fecha`/`_usuario`, `anulado`, `workflow_log`.
+`anular(userobj, motivo)` emite `<prefijo>.anulado` para que los handlers reviertan.
 
 ```python
 class Gasto(WorkflowMixin, models.Model):

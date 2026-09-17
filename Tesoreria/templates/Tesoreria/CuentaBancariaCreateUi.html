@@ -54,7 +54,7 @@
             <div class="col-md-6 mb-3">
                 <label>Saldo inicial</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="number" name="saldo_inicial" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial|stringformat:"s" }}{% else %}0{% endif %}' />
+                    <input type="text" name="saldo_inicial" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial|stringformat:"s" }}{% else %}0{% endif %}' />
                 </div>
             </div>
             <div class="col-md-6 mb-3">
@@ -97,6 +97,17 @@
         {% endif %}
     });
 
+    initializeInputMasks_cuentabancaria = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_cuentabancaria_{{ rr }} input[name=saldo_inicial]'));
+    }
+    initializeInputMasks_cuentabancaria();
+
     save_cuentabancaria = (target) => {
         let fdata = new FormData();
         fdata.append('module', 'OptsIO');
@@ -110,7 +121,12 @@
         ["bancoobj_id"].forEach((idx) => {
             let vv = $(`#form_cuentabancaria_{{ rr }} select[name=${idx}]`).val();
             if (vv !== undefined) edata[idx] = vv;
-        })
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["saldo_inicial"].forEach((f) => {
+            let el = qelem(`#form_cuentabancaria_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
         fdata.append('uc_fields', jfy(edata));
         fdata.append('b_vals', jfy([]));
         fdata.append('c_a', jfy([]));

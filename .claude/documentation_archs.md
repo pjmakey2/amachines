@@ -1,9 +1,67 @@
-.claude/guidelines_codigo.md
-.claude/renderizar_template.md
-.claude/llamadas_axios.md
-.claude/crud_pattern.md
-.claude/paramquery_semodel_estandar.md
-.claude/estetica_formulario.md
-.claude/estilo_mejoras.md
-.claude/tipos_apertura_detalle_grilla.md
-.claude/paramquery_metodo_personalizado.md (Este solamente se usa cuando semodel no es suficiente y requiere mas personalizacion que lo habitual)
+# Arquitectura de Amachine — índice de documentación
+
+Leer estos documentos (todos en `.claude/`) antes de codificar. Cada uno describe una pieza real del proyecto.
+
+## Documentos
+
+| Documento | Cuándo leerlo |
+|-----------|---------------|
+| `context.md` | Siempre primero: endpoints, directrices generales, nombres de archivos, verificación antes de codificar |
+| `CrearInterfaz.md` | Crear una pantalla: listado (`{Modelo}Ui.html`) + formulario (`{Modelo}CreateUi.html`) |
+| `crud_patterm.md` | CRUD genérico con `process_record`, `c_a`, manejo de respuesta, Inputmask, subida de archivos |
+| `axios_backend_calls.md` | Llamadas a `iom` (métodos Python) y `dtmpl` (templates); APIs por token |
+| `record_from_backend.md` | Traer registros en JSON con `IoS.seModel` (fields, methods, mquery) |
+| `table_ui.md` | Parámetros de `Grid.datatables_wrapper` (DataTables) |
+| `form_ui.md` | `form_serials`, `form_search.se_populate/se_select`, validaciones de formulario |
+| `javascript_methods.md` | Métodos JS que existen (`OptsIO`, `Grid`, `UiB`, `Form`). No inventar métodos |
+| `menu.md` / `DisponibilizarApps.md` | Registrar apps en el menú / launcher y asignarlas a roles |
+| `models_reference.md` | `UserProfile`, `UserBusiness`, `Business` y cómo obtener el negocio activo |
+| `plugin_system.md` | Core vs plugins, `plugin.py`, bus de eventos, workflow de operaciones |
+| `setup_system.md` | Setup autoconfigurable de una instalación nueva |
+
+## Stack y piezas base
+
+- **Backend**: Django + Channels + Celery + PostgreSQL + Redis. Sin endpoints por pantalla: todo pasa por `iom` (ejecuta `module.package.attr.mname`) y `dtmpl` (renderiza un template, con `mobj` si se pasa `pk`).
+- **Frontend**: templates parciales cargados por ajax dentro de `BaseUi.html`; Bootstrap 5, axios (nunca fetch), DataTables vía `Grid.datatables_wrapper`, select2 vía `form_search`, SweetAlert2 vía `UiB`, Inputmask, moment. Formularios en el offcanvas global `#offcanvasGlobalUi`.
+- **Lógica**: módulos `mng_*.py` con una clase `M*`; los métodos reciben `userobj`, `rq`, `files`, `qdict` y devuelven `dict` (`success` / `error` / `info`), o `(dict, args, kwargs)` si son parte de una cadena `c_a`.
+
+## Core y plugins
+
+- `INSTALLED_APPS` = Django + core (`OptsIO`, `Sifen`, `Finance`) + `AMACHINE_PLUGINS` del `.env` de cada instalación.
+- Un plugin es una app Django con `plugin.py` (`BasePlugin`): menús, datos de referencia, handlers de eventos. Sus templates viven en `<App>/templates/<App>/`.
+- **El core nunca importa un plugin.** Un plugin puede depender de otro (declararlo en `dependencies`). Si el core necesita un modelo opcional: `apps.is_installed()` + `apps.get_model()`.
+- Dependencias entre plugins financieros: `Tesoreria` ← `Egreso`, `Deposito`, `Cobro`; `Contabilidad` escucha eventos de todos y ninguno depende de ella.
+
+## Multi-tenant
+
+- Modelos nuevos: FK `businessobj` a `Sifen.Business`. Con eso el core los aísla solo por negocio activo: lecturas (`seModel`, grids, selects), escrituras (`IOMaction.uc_record` fija el negocio en el servidor) y edición (`dtmpl` responde 403 ante un registro ajeno).
+- Modelos históricos usan `bs_ruc` (sin aislamiento automático).
+- En Python: `OptsIO.io_business.get_active_business(userobj)`. Nunca confiar en un negocio enviado por el cliente.
+
+## Estados y auditoría
+
+- Auditoría por paso con el par `<paso>_fecha` / `<paso>_usuario` (`cargado_`, `actualizado_`, `verificado_`, `aprobado_`, `anulado_`). `IOMaction` completa `cargado_*` y `actualizado_*` automáticamente; `_usuario` guarda `first_name` (usar `io_business.user_label`).
+- Estado de una operación: campo `estado` (CharField). Operaciones con circuito de aprobación heredan `OptsIO.workflow.WorkflowMixin`: `cargado → verificado → aprobado` (extensible con `WORKFLOW_STATES`), permiso Django por paso, segregación de usuarios opcional, `anular()`, historial en `workflow_log`.
+- El cierre (`aprobado`) es lo que dispara automatismos; nunca generar asientos ni movimientos de fondos desde un estado intermedio.
+
+## Eventos y automatismos
+
+- `OptsIO.events.emit('<plugin>.<modelo>.<estado>', obj, business=...)` registra el evento una sola vez (clave de idempotencia) y lo procesa **Celery**. No usar crontab de sondeo para lógica de negocio.
+- Cada handler se ejecuta con éxito una sola vez por evento, en la misma transacción que su efecto. Aun así, un handler debe ser idempotente por sí mismo (ej: `MTesoreria.registrar_movimiento(clave=...)`).
+- Suscripción en `plugin.py` con `get_event_handlers()`; acepta comodines (`'*.aprobado'`).
+
+## Directrices de código (resumen; el detalle está en `context.md` y `crud_patterm.md`)
+
+- Imports siempre al inicio del archivo, nunca dentro de métodos.
+- Sin `try/except` en los métodos Python de negocio: validar y devolver `{'error': ...}`. Las excepciones de regla de negocio (`TesoreriaError`, `WorkflowError`) son para la API interna entre plugins.
+- Archivos: lógica `mng_*.py`; templates terminan en `Ui.html`.
+- Templates cargados por ajax: sin `let`/`const` a nivel superior; IDs con `{{ rr }}`; elementos de formulario referenciados por `name`.
+- Numéricos: `type="text"` + Inputmask, y leer `inputmask.unmaskedvalue()` al guardar (el backend recibe punto decimal).
+- Respuestas del backend: patrón `msgs` + `UiB.BeMsgHandle` y recarga del DataTable con `{{ t_guid }}`.
+- URLs siempre con `{% url %}`; nunca hardcodeadas.
+- No cambiar el comportamiento del CRUD genérico salvo pedido explícito.
+- Migraciones: no van a git, cada entorno genera las suyas.
+
+## Generador de pantallas CRUD
+
+`bin/gen_plugin_ui.py` genera el par listado + formulario con el patrón de `CrearInterfaz.md` a partir de un spec Python (`bin/ui_specs/<plugin>.py`). Uso: `python bin/ui_specs/tesoreria.py`. Las pantallas que no son CRUD puro (paneles, flujos) se escriben a mano.

@@ -14,7 +14,11 @@ from fnmatch import fnmatch
 from importlib import import_module
 from typing import Callable, Dict, List, Optional
 
+from celery import current_app
 from django.db import transaction
+
+from OptsIO.models import BusinessEvent, BusinessEventDelivery
+from OptsIO.plugin_manager import plugin_manager
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +26,6 @@ MAX_ATTEMPTS = 5
 
 
 def _registry() -> Dict[str, List[str]]:
-    from OptsIO.plugin_manager import plugin_manager
     if not plugin_manager._plugins:
         plugin_manager.discover_plugins()
     registry: Dict[str, List[str]] = {}
@@ -53,8 +56,6 @@ def emit(event_type: str, source, business=None, payload: Optional[dict] = None,
     Emitir dos veces el mismo evento para el mismo objeto devuelve el evento original
     sin volver a despacharlo. key_suffix permite eventos repetibles (ej: numero de cuota).
     """
-    from OptsIO.models import BusinessEvent
-
     meta = source._meta
     key = f"{event_type}:{meta.app_label}.{meta.model_name}:{source.pk}"
     if key_suffix:
@@ -80,8 +81,7 @@ def emit(event_type: str, source, business=None, payload: Optional[dict] = None,
 def dispatch(event_id: int) -> bool:
     """Encola el evento en Celery. Si el broker no responde queda 'pending' (recuperable con process_events)."""
     try:
-        from OptsIO.tasks import process_business_event
-        process_business_event.delay(event_id)
+        current_app.send_task('OptsIO.tasks.process_business_event', args=[event_id])
         return True
     except Exception as e:
         logger.warning(f"Evento {event_id} no pudo encolarse en Celery, queda pendiente: {e}")
@@ -90,8 +90,6 @@ def dispatch(event_id: int) -> bool:
 
 def process_event(event_id: int) -> dict:
     """Ejecuta los handlers pendientes del evento. Seguro de re-ejecutar."""
-    from OptsIO.models import BusinessEvent, BusinessEventDelivery
-
     with transaction.atomic():
         event = BusinessEvent.objects.select_for_update().get(pk=event_id)
         if event.status == 'done':
@@ -137,8 +135,6 @@ def process_event(event_id: int) -> dict:
 
 def process_pending(limit: int = 200) -> dict:
     """Recuperacion manual de eventos pendientes o con error (hasta MAX_ATTEMPTS). No programar en cron."""
-    from OptsIO.models import BusinessEvent
-
     ids = list(
         BusinessEvent.objects.filter(status__in=['pending', 'error', 'processing'], attempts__lt=MAX_ATTEMPTS)
         .order_by('created_at').values_list('pk', flat=True)[:limit]

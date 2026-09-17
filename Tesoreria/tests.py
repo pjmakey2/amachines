@@ -6,7 +6,8 @@ from django.test import TestCase
 from OptsIO.io_maction import IOMaction
 from OptsIO.io_serial import IoS
 from OptsIO.testing import make_business, make_user
-from Tesoreria.mng_tesoreria import MTesoreria, TesoreriaError
+from Tesoreria.mng_tesoreria import MTesoreria
+from Tesoreria.models import TesoreriaError
 from Tesoreria.models import Banco, CuentaBancaria, Chequera, Caja, MovimientoTesoreria
 
 
