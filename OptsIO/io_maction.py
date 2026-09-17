@@ -8,6 +8,7 @@ from django.apps import apps
 from django.forms import model_to_dict
 from OptsIO.io_serial import IoS
 from OptsIO.io_json import to_json, from_json
+from OptsIO.io_business import get_active_business, is_tenant_model
 from django.core.files import File
 from sentry_sdk import capture_exception
 
@@ -68,6 +69,19 @@ class IOMaction:
         if pk and pk != '':
             logging.info('Set attribute pk to uc_fields')
             uc_fields['pk'] = pk
+        # Aislamiento multi-tenant: el negocio lo fija el servidor, nunca el cliente.
+        if is_tenant_model(model_class):
+            bobj = get_active_business(userobj)
+            if not bobj:
+                return {'error': 'El usuario no tiene un negocio activo'}, args, kwargs
+            uc_fields.pop('businessobj', None)
+            uc_fields['businessobj_id'] = bobj.pk
+            if uc_fields.get('pk'):
+                pks = pk if isinstance(pk, (list, tuple)) else [pk]
+                propios = model_class.objects.using(dbcon).filter(pk__in=pks, businessobj_id=bobj.pk).count()
+                if propios != len(pks):
+                    return {'error': 'El registro no pertenece al negocio activo'}, args, kwargs
+                uc_fields.pop('businessobj_id')
         logging.info(f'record delete {record_delete} state_field {state_field}')
         if uc_fields.get('pk'):
             logging.info('Beginning update process')

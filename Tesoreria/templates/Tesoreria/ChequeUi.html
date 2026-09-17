@@ -1,0 +1,107 @@
+<div class="cheque_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_cheque" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_cheque_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_cheque = [];
+    cheque_home_be = function (data, settings) {
+        let tt = qelem(`#table_cheque_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_cheque.length > 0) mquery = [...mquery, ...gmquery_cheque];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_cheque = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_cheque,
+          url_exec: '{% url "iom" %}',
+          title: 'Cheques Emitidos',
+          tselector: 'table_cheque_ui',
+          app_name: 'Tesoreria',
+          model_name: 'Cheque',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: cheque_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[2, 'desc']],
+              rowId: function(row, se) { return `tr_cheque_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Anular cheque" class="tr-cheque-anular text fs-5 mdi mdi-cancel text-danger cursor-pointer"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'chequeraobj__cuentaobj__bancoobj__nombre', tit: 'Banco', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero', tit: 'Número', cls: 'align-left', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha_emision', tit: 'Emisión', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha_pago', tit: 'Pago', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'beneficiario', tit: 'Beneficiario', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'monto', tit: 'Monto', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'estado', tit: 'Estado', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'concepto', tit: 'Concepto', cls: 'align-left', dtyp: 'str', hide: false },
+          ]
+      })
+
+    $(`#${t_cheque} tbody`).on('click', '.tr-cheque-anular', function() {
+        let rowobj = $(`#${t_cheque}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({
+            title: `Anular cheque ${rowobj.numero}`,
+            input: 'text',
+            inputLabel: 'Motivo',
+            showCancelButton: true,
+            confirmButtonText: 'Anular',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Tesoreria');
+            gbe.append('package', 'mng_tesoreria');
+            gbe.append('attr', 'MTesoreria');
+            gbe.append('mname', 'anular_cheque');
+            gbe.append('dbcon', 'default');
+            gbe.append('id', rowobj.id);
+            gbe.append('motivo', result.value || '');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                if (rsp.data.error) UiB.MsgError(rsp.data.error);
+                else UiB.MsgSuccess(rsp.data.success || rsp.data.info);
+                $(`#${t_cheque}`).DataTable().ajax.reload();
+            });
+        });
+    })
+
+    qelem('#input_buscar_cheque').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_cheque = [];
+            let v = qelem('#input_buscar_cheque').value.trim();
+            if (v !== '') {
+                gmquery_cheque.push({'field': 'or_beneficiario__icontains', 'value': v});
+                gmquery_cheque.push({'field': 'or_numero__icontains', 'value': v});
+                gmquery_cheque.push({'field': 'or_concepto__icontains', 'value': v});
+            }
+            $(`#${t_cheque}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_cheque}`).on('draw.dt', function() {
+        let tt = qelem(`#table_cheque_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

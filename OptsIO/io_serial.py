@@ -18,6 +18,7 @@ redisc = caches['default']
 getcontext().prec = 10
 getcontext().rounding = ROUND_HALF_UP
 from OptsIO.io_construct import FConstruc
+from OptsIO.io_business import get_active_business, is_tenant_model
 
 
 UNIDADES = (
@@ -150,6 +151,10 @@ class IoS(object):
         qd = QueryDict(mutable=True)
         for q in mquery:
             qd.update({q.get("field"): q.get("value")})
+        # Aislamiento multi-tenant: modelos con FK businessobj solo muestran el negocio activo.
+        if is_tenant_model(model_class) and hasattr(userobj, 'username'):
+            bobj = get_active_business(userobj)
+            qd.update({"businessobj_id": bobj.pk if bobj else -1})
         if pq_filter:
             logging.info("Build filter base on {}".format(pq_filter))
             qd = self.stsconstruc.pqueryfilter(qd, pq_filter)

@@ -1,0 +1,57 @@
+<div class="container-fluid" id="tesoreria_saldos_{{ rr }}">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0"><i class="mdi mdi-scale-balance"></i> Saldos de Tesorería</h5>
+        <button class="btn btn-outline-primary btn-sm" id="btn_saldos_reload_{{ rr }}"><i class="mdi mdi-refresh"></i> Actualizar</button>
+    </div>
+    <h6 class="text-muted">Cuentas bancarias</h6>
+    <div class="table-responsive mb-4">
+        <table class="table table-sm table-striped">
+            <thead><tr><th>Banco</th><th>Cuenta</th><th>Moneda</th><th class="text-end">Saldo</th></tr></thead>
+            <tbody class="ts-cuentas"><tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr></tbody>
+        </table>
+    </div>
+    <h6 class="text-muted">Cajas</h6>
+    <div class="table-responsive">
+        <table class="table table-sm table-striped">
+            <thead><tr><th>Caja</th><th>Tipo</th><th>Responsable</th><th>Moneda</th><th class="text-end">Tope</th><th class="text-end">Saldo</th><th style="width: 22%">Uso del tope</th></tr></thead>
+            <tbody class="ts-cajas"><tr><td colspan="7" class="text-center text-muted">Cargando...</td></tr></tbody>
+        </table>
+    </div>
+</div>
+<script type="text/javascript">
+(function() {
+    const root = qelem('#tesoreria_saldos_{{ rr }}');
+    const esc = (v) => $('<span>').text(v == null ? '' : v).html();
+    const fmt = (n, moneda) => moneda === 'PYG' ? UiN.formatNumberU(n.toFixed(0)) : UiN.formatNumberU(n.toFixed(2));
+
+    function cargar() {
+        let gbe = new FormData();
+        gbe.append('module', 'Tesoreria');
+        gbe.append('package', 'mng_tesoreria');
+        gbe.append('attr', 'MTesoreria');
+        gbe.append('mname', 'get_saldos');
+        gbe.append('dbcon', 'default');
+        axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) { UiB.MsgError(rsp.data.error); return; }
+            let cuentas = rsp.data.cuentas.map((c) => `
+                <tr><td>${esc(c.banco)}</td><td>${esc(c.numero)}</td><td>${c.moneda}</td>
+                <td class="text-end fw-bold ${c.saldo < 0 ? 'text-danger' : ''}">${fmt(c.saldo, c.moneda)}</td></tr>`);
+            root.querySelector('.ts-cuentas').innerHTML = cuentas.join('') ||
+                '<tr><td colspan="4" class="text-center text-muted">Sin cuentas bancarias</td></tr>';
+            let cajas = rsp.data.cajas.map((c) => {
+                let pct = c.tope > 0 ? Math.min(100, Math.round(c.saldo * 100 / c.tope)) : null;
+                let bar = pct === null ? '<span class="text-muted">Sin tope</span>' :
+                    `<div class="progress" style="height: 14px;"><div class="progress-bar ${pct < 20 ? 'bg-danger' : 'bg-success'}" style="width: ${pct}%">${pct}%</div></div>`;
+                return `<tr><td>${esc(c.descripcion)}</td><td>${c.tipo === 'chica' ? 'Caja Chica' : 'General'}</td>
+                    <td>${esc(c.responsable)}</td><td>${c.moneda}</td>
+                    <td class="text-end">${c.tope > 0 ? fmt(c.tope, c.moneda) : '-'}</td>
+                    <td class="text-end fw-bold">${fmt(c.saldo, c.moneda)}</td><td>${bar}</td></tr>`;
+            });
+            root.querySelector('.ts-cajas').innerHTML = cajas.join('') ||
+                '<tr><td colspan="7" class="text-center text-muted">Sin cajas</td></tr>';
+        });
+    }
+    qelem('#btn_saldos_reload_{{ rr }}').addEventListener('click', cargar);
+    cargar();
+})();
+</script>

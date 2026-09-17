@@ -37,7 +37,7 @@ class IoG:
                             )
                 
             else:
-                records = ios.seModel(qdict=qdict)
+                records = ios.seModel(userobj=kwargs.get('userobj'), qdict=qdict)
             return self.datatables_records(qdict, records)
         
     def datatables_parse_search(self, dtr: dict) -> list:

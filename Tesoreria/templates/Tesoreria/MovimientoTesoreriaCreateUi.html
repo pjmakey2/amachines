@@ -1,0 +1,157 @@
+<div class="ui_movimiento">
+    <form id="form_movimiento_{{ rr }}" class="form_movimiento">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label>Fecha <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Tipo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="tipo" class="form-control">
+                        <option value="ingreso" {% if mobj and mobj.tipo == "ingreso" %}selected{% endif %}>Ingreso</option>
+                        <option value="egreso" {% if mobj and mobj.tipo == "egreso" %}selected{% endif %}>Egreso</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Monto <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="number" name="monto" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.monto|stringformat:"s" }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Cuenta bancaria</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="cuentaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Caja</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="cajaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8 mb-3">
+                <label>Concepto <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="concepto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.concepto }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Referencia</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="referencia" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.referencia }}{% else %}{% endif %}' />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Movimiento {{ mobj.pk }}{% else %}Registrar movimiento manual{% endif %}`;
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_movimiento_{{ rr }} select[name=cuentaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'CuentaBancaria',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.cuentaobj %}
+            $('#form_movimiento_{{ rr }} select[name=cuentaobj_id]').val('{{ mobj.cuentaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_movimiento_{{ rr }} select[name=cajaobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'Caja',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.cajaobj %}
+            $('#form_movimiento_{{ rr }} select[name=cajaobj_id]').val('{{ mobj.cajaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_movimiento = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Tesoreria');
+        fdata.append('model_name', 'MovimientoTesoreria');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["cuentaobj_id", "cajaobj_id"].forEach((idx) => {
+            let vv = $(`#form_movimiento_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        })
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Tesoreria', 'package': 'mng_tesoreria', 'attr': 'MTesoreria', 'mname': 'create_movimiento', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_movimiento_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                bootstrap.Offcanvas.getInstance('#offcanvasGlobalUi')?.hide();
+            }
+        }).catch((err) => {
+            log.error(`#form_movimiento Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_movimiento_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_movimiento_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_movimiento(evt.target);
+    })
+</script>

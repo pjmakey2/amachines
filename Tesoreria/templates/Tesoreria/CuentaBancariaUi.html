@@ -1,0 +1,139 @@
+<div class="cuentabancaria_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_cuentabancaria" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_cuentabancaria" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_cuentabancaria" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_cuentabancaria_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_cuentabancaria = [];
+    cuentabancaria_home_be = function (data, settings) {
+        let tt = qelem(`#table_cuentabancaria_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_cuentabancaria.length > 0) mquery = [...mquery, ...gmquery_cuentabancaria];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_cuentabancaria = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_cuentabancaria,
+          url_exec: '{% url "iom" %}',
+          title: 'Cuentas Bancarias',
+          tselector: 'table_cuentabancaria_ui',
+          app_name: 'Tesoreria',
+          model_name: 'CuentaBancaria',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: cuentabancaria_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_cuentabancaria_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-cuentabancaria-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'bancoobj__nombre', tit: 'Banco', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero', tit: 'Número', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'titular', tit: 'Titular', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'moneda', tit: 'Moneda', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'saldo_inicial', tit: 'Saldo Inicial', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activo', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    cuentabancaria_form_crud = (pk) => {
+        let dattrs = { title: 'Cuentas Bancarias', t_guid: t_cuentabancaria, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Tesoreria',
+            model_name: 'CuentaBancaria',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Tesoreria/CuentaBancariaCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#btn_crear_cuentabancaria').addEventListener('click', () => cuentabancaria_form_crud());
+
+    $(`#${t_cuentabancaria} tbody`).on('click', '.tr-cuentabancaria-query', function() {
+        let rowobj = $(`#${t_cuentabancaria}`).DataTable().row($(this).closest('tr')).data();
+        cuentabancaria_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_cuentabancaria').addEventListener('click', function() {
+        let ids = $(`#${t_cuentabancaria}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then(() => {
+            let gbe = new FormData();
+            gbe.append('module', 'Tesoreria');
+            gbe.append('package', 'mng_tesoreria');
+            gbe.append('attr', 'MTesoreria');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'CuentaBancaria');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_cuentabancaria}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_cuentabancaria').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_cuentabancaria = [];
+            let v = qelem('#input_buscar_cuentabancaria').value.trim();
+            if (v !== '') {
+                gmquery_cuentabancaria.push({'field': 'or_numero__icontains', 'value': v});
+                gmquery_cuentabancaria.push({'field': 'or_titular__icontains', 'value': v});
+                gmquery_cuentabancaria.push({'field': 'or_bancoobj__nombre__icontains', 'value': v});
+            }
+            $(`#${t_cuentabancaria}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_cuentabancaria}`).on('draw.dt', function() {
+        let tt = qelem(`#table_cuentabancaria_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

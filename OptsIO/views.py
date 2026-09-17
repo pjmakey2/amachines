@@ -18,7 +18,8 @@ import uuid, json
 from random import randint
 from django.apps import apps
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseForbidden
+from OptsIO.io_business import get_active_business, is_tenant_model
 from django.middleware.csrf import get_token
 
 
@@ -52,6 +53,11 @@ def dtmpl(request, from_hub=False):
         appobj = apps.get_app_config(model_app_name)
         model_class = appobj.get_model(model_name)
         mobj = model_class.objects.using(dbcon).get(pk=pk)
+        # Aislamiento multi-tenant: no exponer registros de otro negocio.
+        if is_tenant_model(model_class):
+            bobj = get_active_business(request.user)
+            if not bobj or mobj.businessobj_id != bobj.pk:
+                return HttpResponseForbidden('El registro no pertenece al negocio activo')
         qdict.update({'mobj': mobj})
     if g.get('mobile_view'):
         qdict.update({'mobile_view': True})

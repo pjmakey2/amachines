@@ -1,0 +1,146 @@
+<div class="ui_cuentabancaria">
+    <form id="form_cuentabancaria_{{ rr }}" class="form_cuentabancaria">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label>Banco <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="bancoobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Número de cuenta <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="numero" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.numero }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label>Titular</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="titular" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.titular }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Tipo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="tipo" class="form-control">
+                        <option value="cta_cte" {% if mobj and mobj.tipo == "cta_cte" %}selected{% endif %}>Cuenta Corriente</option>
+                        <option value="caja_ahorro" {% if mobj and mobj.tipo == "caja_ahorro" %}selected{% endif %}>Caja de Ahorro</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Moneda</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="moneda" class="form-control">
+                        <option value="PYG" {% if mobj and mobj.moneda == "PYG" %}selected{% endif %}>Guaraníes</option>
+                        <option value="USD" {% if mobj and mobj.moneda == "USD" %}selected{% endif %}>Dólares</option>
+                        <option value="EUR" {% if mobj and mobj.moneda == "EUR" %}selected{% endif %}>Euros</option>
+                        <option value="BRL" {% if mobj and mobj.moneda == "BRL" %}selected{% endif %}>Reales</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Activa</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="activo" class="form-control">
+                        <option value="true" {% if not mobj or mobj.activo %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.activo %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Saldo inicial</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="number" name="saldo_inicial" class="form-control" step="any" min="0" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label>Fecha del saldo inicial</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="saldo_inicial_fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.saldo_inicial_fecha|date:"Y-m-d" }}{% endif %}' />
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Cuenta Bancaria {{ mobj.pk }}{% else %}Crear Cuenta Bancaria{% endif %}`;
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_cuentabancaria_{{ rr }} select[name=bancoobj_id]',
+        app_name: 'Tesoreria',
+        model_name: 'Banco',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: false,
+        width: '100%',
+        dropdownParent: $('#offcanvasGlobalUi'),
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.bancoobj %}
+            $('#form_cuentabancaria_{{ rr }} select[name=bancoobj_id]').val('{{ mobj.bancoobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    save_cuentabancaria = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Tesoreria');
+        fdata.append('model_name', 'CuentaBancaria');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["bancoobj_id"].forEach((idx) => {
+            let vv = $(`#form_cuentabancaria_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        })
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_cuentabancaria_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_cuentabancaria Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_cuentabancaria_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_cuentabancaria_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_cuentabancaria(evt.target);
+    })
+</script>

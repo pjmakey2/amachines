@@ -1,0 +1,83 @@
+<div class="ui_banco">
+    <form id="form_banco_{{ rr }}" class="form_banco">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-8 mb-3">
+                <label>Nombre <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Código</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="codigo" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.codigo }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label>Activo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="activo" class="form-control">
+                        <option value="true" {% if not mobj or mobj.activo %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.activo %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Banco {{ mobj.pk }}{% else %}Crear Banco{% endif %}`;
+
+    save_banco = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Tesoreria');
+        fdata.append('model_name', 'Banco');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        [].forEach((idx) => {
+            let vv = $(`#form_banco_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        })
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_banco_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_banco Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_banco_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_banco_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_banco(evt.target);
+    })
+</script>

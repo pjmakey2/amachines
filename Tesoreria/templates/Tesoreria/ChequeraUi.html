@@ -1,0 +1,139 @@
+<div class="chequera_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_chequera" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_chequera" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_chequera" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_chequera_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_chequera = [];
+    chequera_home_be = function (data, settings) {
+        let tt = qelem(`#table_chequera_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_chequera.length > 0) mquery = [...mquery, ...gmquery_chequera];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_chequera = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_chequera,
+          url_exec: '{% url "iom" %}',
+          title: 'Chequeras',
+          tselector: 'table_chequera_ui',
+          app_name: 'Tesoreria',
+          model_name: 'Chequera',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: chequera_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_chequera_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-chequera-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'cuentaobj__bancoobj__nombre', tit: 'Banco', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'cuentaobj__numero', tit: 'Cuenta', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'serie', tit: 'Serie', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero_desde', tit: 'Desde', cls: 'align-right', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero_hasta', tit: 'Hasta', cls: 'align-right', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'proximo_numero', tit: 'Próximo', cls: 'align-right', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activa', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    chequera_form_crud = (pk) => {
+        let dattrs = { title: 'Chequeras', t_guid: t_chequera, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Tesoreria',
+            model_name: 'Chequera',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Tesoreria/ChequeraCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+    qelem('#btn_crear_chequera').addEventListener('click', () => chequera_form_crud());
+
+    $(`#${t_chequera} tbody`).on('click', '.tr-chequera-query', function() {
+        let rowobj = $(`#${t_chequera}`).DataTable().row($(this).closest('tr')).data();
+        chequera_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_chequera').addEventListener('click', function() {
+        let ids = $(`#${t_chequera}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then(() => {
+            let gbe = new FormData();
+            gbe.append('module', 'Tesoreria');
+            gbe.append('package', 'mng_tesoreria');
+            gbe.append('attr', 'MTesoreria');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'Chequera');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_chequera}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_chequera').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_chequera = [];
+            let v = qelem('#input_buscar_chequera').value.trim();
+            if (v !== '') {
+                gmquery_chequera.push({'field': 'or_serie__icontains', 'value': v});
+                gmquery_chequera.push({'field': 'or_cuentaobj__numero__icontains', 'value': v});
+                gmquery_chequera.push({'field': 'or_cuentaobj__bancoobj__nombre__icontains', 'value': v});
+            }
+            $(`#${t_chequera}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_chequera}`).on('draw.dt', function() {
+        let tt = qelem(`#table_chequera_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>
