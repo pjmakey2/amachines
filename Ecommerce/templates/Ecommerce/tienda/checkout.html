@@ -32,11 +32,11 @@
             <h2 class="h5 mt-4">Forma de pago</h2>
             {% if errores.metodo_pago %}<div class="text-danger small mb-2">{{ errores.metodo_pago }}</div>{% endif %}
             {% if tienda.acepta_transferencia %}
-            <div class="form-check border rounded p-3 mb-2"><input class="form-check-input ms-0 me-2" type="radio" name="metodo_pago" id="mp_transferencia" value="transferencia" {% if datos.metodo_pago == "transferencia" %}checked{% endif %}>
+            <div class="d-flex align-items-start gap-2 border rounded p-3 mb-2"><input class="form-check-input mt-1 flex-shrink-0" type="radio" name="metodo_pago" id="mp_transferencia" value="transferencia" {% if datos.metodo_pago == "transferencia" %}checked{% endif %}>
                 <label class="form-check-label" for="mp_transferencia"><b>Transferencia bancaria</b><br><small class="text-muted">Te mostramos los datos de la cuenta al confirmar. Preparamos tu pedido cuando acreditamos el pago.</small></label></div>
             {% endif %}
             {% if tienda.acepta_contra_entrega %}
-            <div class="form-check border rounded p-3 mb-2"><input class="form-check-input ms-0 me-2" type="radio" name="metodo_pago" id="mp_contra" value="contra_entrega" {% if datos.metodo_pago == "contra_entrega" %}checked{% endif %}>
+            <div class="d-flex align-items-start gap-2 border rounded p-3 mb-2"><input class="form-check-input mt-1 flex-shrink-0" type="radio" name="metodo_pago" id="mp_contra" value="contra_entrega" {% if datos.metodo_pago == "contra_entrega" %}checked{% endif %}>
                 <label class="form-check-label" for="mp_contra"><b>Pago contra entrega</b><br><small class="text-muted">Pagás en efectivo al recibir tu pedido.</small></label></div>
             {% endif %}
         </div>
