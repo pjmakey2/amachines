@@ -6,6 +6,7 @@ from django.db.models import Q
 from Sifen import mng_sifen_masters, ekuatia_gf, ekuatia_serials, mng_sifen_ruc_mapper, mng_sifen, mng_orders_mdata
 from Sifen.models import DocumentHeader, Clientes
 from Sifen.rq_soap_handler import SoapSifen
+from Sifen.sifen_events import emitir_eventos_documentos
 from OptsIO.models import Apps
 from tqdm import tqdm
 
@@ -84,6 +85,9 @@ class Command(BaseCommand):
                             self.stdout.write(f'  - Doc {docobj.doc_numero} lote={docobj.lote}: {rdata.get("success", "ok")}')
                     except Exception as e:
                         self.stdout.write(self.style.ERROR(f'  - Doc {docobj.doc_numero}: Error - {str(e)}'))
+            emitidos = emitir_eventos_documentos()
+            if emitidos:
+                self.stdout.write(f'  - Eventos de venta emitidos: {emitidos}')
             self.stdout.write(self.style.SUCCESS('Track lotes completed'))
 
         if options['reset_codseg']:

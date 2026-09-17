@@ -331,8 +331,11 @@ class Gasto(WorkflowMixin, EgresoTrack):
         self.estado_pago = 'PAGADO' if self.saldo <= 0 and self.pagado > 0 else ('PARCIAL' if self.pagado > 0 else 'PENDIENTE')
 
     def get_workflow_payload(self):
-        return {'tipo': self.tipo, 'total': str(self.total), 'moneda': self.moneda,
-                'categoria_id': self.categoriaobj_id, 'proveedor_id': self.proveedorobj_id}
+        return {'numero': self.numero, 'fecha': str(self.fecha), 'tipo': self.tipo, 'concepto': self.concepto,
+                'beneficiario': self.get_beneficiario(), 'moneda': self.moneda, 'tasa_cambio': str(self.tasa_cambio),
+                'total': str(self.total), 'exenta': str(self.exenta), 'gravada_5': str(self.gravada_5),
+                'gravada_10': str(self.gravada_10), 'iva_5': str(self.iva_5), 'iva_10': str(self.iva_10),
+                'categoria_id': self.categoriaobj_id, 'proveedor_id': self.proveedorobj_id, 'caja_id': self.cajaobj_id}
 
     def workflow_validar(self, estado):
         if estado == 'anulado' and self.pagado > 0 and self.tipo != 'caja_chica':
@@ -411,9 +414,12 @@ class PagoProveedor(WorkflowMixin, EgresoTrack):
         return num2words(int(self.total), lang='es').upper()
 
     def get_workflow_payload(self):
-        return {'medio': self.medio, 'total': str(self.total), 'moneda': self.moneda,
-                'proveedor_id': self.proveedorobj_id,
-                'gastos': [{'gasto_id': d.gastoobj_id, 'monto': str(d.monto)} for d in self.detalles.all()]}
+        cuenta_id = self.chequeraobj.cuentaobj_id if self.chequeraobj_id else self.cuentaobj_id
+        return {'numero': self.numero, 'fecha': str(self.fecha), 'beneficiario': self.beneficiario, 'medio': self.medio,
+                'total': str(self.total), 'moneda': self.moneda, 'proveedor_id': self.proveedorobj_id,
+                'cuenta_id': cuenta_id, 'caja_id': self.cajaobj_id,
+                'gastos': [{'gasto_id': d.gastoobj_id, 'monto': str(d.monto), 'tipo': d.gastoobj.tipo}
+                           for d in self.detalles.select_related('gastoobj')]}
 
     def _clave(self):
         return f"egreso.pago:{self.pk}"
@@ -537,8 +543,11 @@ class TransferenciaInterna(WorkflowMixin, EgresoTrack):
         return self.monto if origen.moneda == destino.moneda else self.monto_destino
 
     def get_workflow_payload(self):
-        return {'monto': str(self.monto), 'monto_destino': str(self.get_monto_destino()),
-                'origen': self.get_origen(), 'destino': self.get_destino()}
+        origen = self.origen_cuentaobj or self.origen_cajaobj
+        return {'numero': self.numero, 'fecha': str(self.fecha), 'monto': str(self.monto), 'moneda': origen.moneda,
+                'monto_destino': str(self.get_monto_destino()), 'origen': self.get_origen(), 'destino': self.get_destino(),
+                'origen_cuenta_id': self.origen_cuentaobj_id, 'origen_caja_id': self.origen_cajaobj_id,
+                'destino_cuenta_id': self.destino_cuentaobj_id, 'destino_caja_id': self.destino_cajaobj_id}
 
     def workflow_validar(self, estado):
         if estado != 'aprobado':

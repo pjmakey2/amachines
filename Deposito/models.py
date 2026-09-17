@@ -55,8 +55,8 @@ class Deposito(WorkflowMixin):
         return str(self.cuentaobj) if self.cuentaobj_id else 'PENDIENTE'
 
     def get_workflow_payload(self):
-        return {'tipo': self.tipo, 'monto': str(self.monto), 'moneda': self.moneda,
-                'cuenta_id': self.cuentaobj_id, 'origen': self.origen_desc}
+        return {'numero': self.numero, 'fecha': str(self.fecha), 'tipo': self.tipo, 'monto': str(self.monto),
+                'moneda': self.moneda, 'cuenta_id': self.cuentaobj_id, 'origen': self.origen_desc}
 
     def workflow_validar(self, estado):
         if estado in ('verificado', 'aprobado'):

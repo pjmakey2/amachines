@@ -1,6 +1,7 @@
 import uuid, os, re, html
 from Sifen.rq_soap_handler import SoapSifen
 from Sifen.models import SoapMsg
+from Sifen.sifen_events import emitir_eventos_documentos
 import requests
 import pandas as pd
 from zoneinfo import ZoneInfo
@@ -483,6 +484,7 @@ class MSifen:
             lote_estado=nuevo_estado,
             lote_msg=lote_msg,
         )
+        emitir_eventos_documentos(doc_ids=list(DocumentHeader.objects.using(dbcon).filter(ek_cdc=cdc).values_list('pk', flat=True)))
         return {
             'exitos': 'Hecho',
             'cdc': cdc,
@@ -532,6 +534,7 @@ class MSifen:
                 lote_msg='CDC encontrado',
             )
             headerobj.refresh_from_db()
+            emitir_eventos_documentos(doc_ids=[headerobj.pk])
             return {'success': 'CDC encontrado — documento marcado como Aprobado', 'ek_estado': headerobj.ek_estado}
         return {'error': rsp.get('error', 'Sin respuesta de SIFEN')}
 

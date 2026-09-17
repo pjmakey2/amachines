@@ -278,7 +278,9 @@ class MEgreso:
             gasto.save()
             events.emit('egreso.gasto.rendido', gasto, business=bobj, userobj=userobj,
                         payload={**gasto.get_workflow_payload(), 'presupuesto': str(gasto.presupuesto_monto),
-                                 'devolucion': str(max(devolucion, Decimal(0)))})
+                                 'devolucion': str(max(devolucion, Decimal(0))),
+                                 'devolucion_cuenta_id': cuenta.pk if cuenta and devolucion > 0 else None,
+                                 'devolucion_caja_id': caja.pk if caja and devolucion > 0 else None})
         msg = f'Gasto {gasto.get_numero_display()} rendido.'
         if devolucion > 0:
             msg += f' Devolución registrada: {devolucion:,.0f}.'
