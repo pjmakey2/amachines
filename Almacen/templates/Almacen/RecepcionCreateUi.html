@@ -1,0 +1,148 @@
+<div class="ui_recepcion">
+    <form id="form_recepcion_{{ rr }}" class="form_recepcion">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        {% if mobj and mobj.estado != 'cargado' %}
+            <div class="alert alert-info py-2">Recepción {{ mobj.estado }}{% if mobj.anulado %} (anulada){% endif %}: solo lectura.</div>
+        {% endif %}
+        <div class="row">
+            <div class="col-md-3 mb-3"><label>Fecha <span class="text-danger">*</span></label>
+                <input type="date" name="fecha" class="form-control" required value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' /></div>
+            <div class="col-md-4 mb-3"><label>Bodega <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight"><select name="bodegaobj_id" class="form-control" required><option value="">Seleccione...</option></select></div></div>
+            <div class="col-md-5 mb-3"><label>Proveedor</label><input type="text" name="proveedor" class="form-control" value="{{ mobj.proveedor|default:'' }}" /></div>
+            <div class="col-md-4 mb-3"><label>Remisión / Factura</label><input type="text" name="documento_ref" class="form-control" value="{{ mobj.documento_ref|default:'' }}" /></div>
+            <div class="col-md-3 mb-3"><label>Orden de compra</label><input type="text" name="orden_compra_ref" class="form-control" value="{{ mobj.orden_compra_ref|default:'' }}" /></div>
+            <div class="col-md-5 mb-3"><label>Observación</label><input type="text" name="observacion" class="form-control" value="{{ mobj.observacion|default:'' }}" /></div>
+        </div>
+        <table class="table table-sm">
+            <thead><tr><th style="width: 30%;">Producto</th><th style="width: 20%;">Ubicación destino</th><th class="text-end">Esperado</th>
+                <th class="text-end">Recibido</th><th class="text-end">Costo unit.</th><th>Lote</th><th>Vence</th><th></th></tr></thead>
+            <tbody name="tbody_detalles"></tbody>
+        </table>
+        <button type="button" class="btn btn-sm btn-outline-primary mb-3" name="btn_add_detalle"><i class="mdi mdi-plus"></i> Agregar producto</button>
+        <div><button class="btn btn-primary" type="submit">Guardar recepción</button>
+            <small class="text-muted ms-2">El stock ingresa a la ubicación cuando la recepción queda <b>aprobada</b>.</small></div>
+    </form>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Recepción {{ mobj.get_numero_display }}{% else %}Nueva recepción de mercadería{% endif %}`;
+    recepcion_sel = (name) => `#form_recepcion_{{ rr }} [name=${name}]`;
+    recepcion_ubicaciones = [];
+    recepcion_seq = 0;
+    recepcion_mask = (digits) => ({ alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: digits, digitsOptional: false,
+                                    rightAlign: true, allowMinus: false, removeMaskOnSubmit: true, autoUnmask: true });
+
+    recepcion_post = (mname, extra) => {
+        let gbe = new FormData();
+        gbe.append('module', 'Almacen');
+        gbe.append('package', 'mng_almacen');
+        gbe.append('attr', 'MAlmacen');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} });
+    }
+
+    recepcion_fill_ubicaciones = (sel, actual) => {
+        sel.innerHTML = '';
+        sel.add(new Option('Seleccione...', ''));
+        recepcion_ubicaciones.forEach((u) => sel.add(new Option(u.text, u.id)));
+        // Por defecto la mercaderia entra por el muelle de recepcion
+        let muelle = recepcion_ubicaciones.find((u) => u.tipo === 'recepcion');
+        sel.value = actual || (muelle ? muelle.id : '');
+    }
+
+    recepcion_load_ubicaciones = () => {
+        return recepcion_post('get_ubicaciones', {bodega_id: $(recepcion_sel('bodegaobj_id')).val() || 0}).then((rsp) => {
+            recepcion_ubicaciones = $(recepcion_sel('bodegaobj_id')).val() ? (rsp.data.ubicaciones || []) : [];
+            document.querySelectorAll('#form_recepcion_{{ rr }} select[name=det_ubicacion]').forEach((sel) => recepcion_fill_ubicaciones(sel, sel.value));
+        });
+    }
+
+    recepcion_add_detalle = (d) => {
+        d = d || {};
+        recepcion_seq += 1;
+        let tr = document.createElement('tr');
+        tr.innerHTML = `<td><select name="det_producto" data-seq="${recepcion_seq}" class="form-control form-control-sm"></select></td>
+            <td><select name="det_ubicacion" class="form-control form-control-sm"></select></td>
+            <td><input type="text" name="det_esperada" class="form-control form-control-sm text-end"></td>
+            <td><input type="text" name="det_recibida" class="form-control form-control-sm text-end"></td>
+            <td><input type="text" name="det_costo" class="form-control form-control-sm text-end"></td>
+            <td><input type="text" name="det_lote" class="form-control form-control-sm"></td>
+            <td><input type="date" name="det_vencimiento" class="form-control form-control-sm"></td>
+            <td><i title="Quitar" class="mdi mdi-close text-danger cursor-pointer" name="det_quitar"></i></td>`;
+        qelem(recepcion_sel('tbody_detalles')).appendChild(tr);
+        let prod = tr.querySelector('[name=det_producto]');
+        if (d.producto_id) prod.add(new Option(d.producto, d.producto_id, true, true));
+        form_search.se_select({
+            surl: '{% url "iom" %}', dele: `#form_recepcion_{{ rr }} select[data-seq="${recepcion_seq}"]`, app_name: 'Sifen', model_name: 'Producto',
+            field_display: ['prod_cod', 'descripcion'], field_id: ['id'], db_fields: ['id', 'prod_cod', 'descripcion'],
+            sterm: ['or_descripcion__icontains', 'or_ean__icontains'], dejoin: ' - ', ml: 2, dbcon: 'default', theme: 'bootstrap-5', width: '100%',
+            placeholder: 'Buscar producto...', headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}, dropdownParent: $('#offcanvasGlobalUi'), clean: false
+        });
+        recepcion_fill_ubicaciones(tr.querySelector('[name=det_ubicacion]'), d.ubicacion_id);
+        tr.querySelector('[name=det_esperada]').value = d.cantidad_esperada || 0;
+        tr.querySelector('[name=det_recibida]').value = d.cantidad_recibida || 0;
+        tr.querySelector('[name=det_costo]').value = d.costo_unitario || 0;
+        tr.querySelector('[name=det_lote]').value = d.lote || '';
+        tr.querySelector('[name=det_vencimiento]').value = d.vencimiento || '';
+        ['det_esperada', 'det_recibida', 'det_costo'].forEach((n) => Inputmask(recepcion_mask(2)).mask(tr.querySelector(`[name=${n}]`)));
+        tr.querySelector('[name=det_quitar]').addEventListener('click', () => tr.remove());
+    }
+    qelem(recepcion_sel('btn_add_detalle')).addEventListener('click', () => recepcion_add_detalle());
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}', dele: recepcion_sel('bodegaobj_id'), app_name: 'Almacen', model_name: 'Bodega', field_display: ['nombre'],
+        field_id: ['id'], db_fields: ['id', 'nombre'], qs_be: [{field: 'activo', value: true}], dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}, first_selected: {% if mobj %}false{% else %}true{% endif %}, width: '100%',
+        dropdownParent: $('#offcanvasGlobalUi'), theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj %}$(recepcion_sel('bodegaobj_id')).val('{{ mobj.bodegaobj_id }}').trigger('change');{% endif %}
+        $(recepcion_sel('bodegaobj_id')).on('change', recepcion_load_ubicaciones);
+        recepcion_load_ubicaciones().then(() => {
+            {% if mobj %}
+                recepcion_post('get_recepcion', {id: '{{ mobj.pk }}'}).then((rsp) => {
+                    (rsp.data.detalles || []).forEach((d) => recepcion_add_detalle(d));
+                    {% if mobj.estado != 'cargado' or mobj.anulado %}
+                        $('#form_recepcion_{{ rr }} :input').prop('disabled', true);
+                        $('#form_recepcion_{{ rr }} button').remove();
+                        $('#form_recepcion_{{ rr }} [name=det_quitar]').remove();
+                    {% endif %}
+                });
+            {% else %}
+                recepcion_add_detalle();
+            {% endif %}
+        });
+    });
+
+    qelem('#form_recepcion_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Almacen');
+        fdata.append('model_name', 'Recepcion');
+        fdata.append('dbcon', 'default');
+        let edata = { detalles: [] };
+        ['id', 'fecha', 'proveedor', 'documento_ref', 'orden_compra_ref', 'observacion'].forEach((n) => { edata[n] = qelem(recepcion_sel(n)).value; });
+        edata['bodegaobj_id'] = $(recepcion_sel('bodegaobj_id')).val();
+        let num = (tr, n) => tr.querySelector(`[name=${n}]`).inputmask.unmaskedvalue().replace(',', '.');
+        document.querySelectorAll('#form_recepcion_{{ rr }} tbody[name=tbody_detalles] tr').forEach((tr) => {
+            edata.detalles.push({ producto_id: $(tr.querySelector('[name=det_producto]')).val(), ubicacion_id: tr.querySelector('[name=det_ubicacion]').value,
+                                  cantidad_esperada: num(tr, 'det_esperada'), cantidad_recibida: num(tr, 'det_recibida'), costo_unitario: num(tr, 'det_costo'),
+                                  lote: tr.querySelector('[name=det_lote]').value, vencimiento: tr.querySelector('[name=det_vencimiento]').value });
+        });
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Almacen', 'package': 'mng_almacen', 'attr': 'MAlmacen', 'mname': 'create_recepcion', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } }).then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: true });
+            if (!got_error) $('#{{ t_guid }}').DataTable().ajax.reload();
+        }).catch((err) => { UiB.MsgError(err); });
+    })
+</script>

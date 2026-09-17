@@ -1,0 +1,164 @@
+<div class="recepcion_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_recepcion" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Nueva recepción</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_recepcion" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_recepcion_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_recepcion = [];
+    recepcion_home_be = function (data, settings) {
+        let tt = qelem(`#table_recepcion_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_recepcion.length > 0) mquery = [...mquery, ...gmquery_recepcion];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_recepcion = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_recepcion,
+          url_exec: '{% url "iom" %}',
+          title: 'Recepción de Mercadería',
+          tselector: 'table_recepcion_ui',
+          app_name: 'Almacen',
+          model_name: 'Recepcion',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: recepcion_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) { return `tr_recepcion_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-recepcion-query text fs-5 mdi mdi-archive-eye-outline me-1"></i><i title="Avanzar al siguiente estado" class="tr-recepcion-avanzar text fs-5 mdi mdi-check-decagram text-success cursor-pointer me-1"></i><i title="Anular" class="tr-recepcion-anular text fs-5 mdi mdi-cancel text-danger cursor-pointer me-1"></i><i title="Historial" class="tr-recepcion-log text fs-5 mdi mdi-history text-muted cursor-pointer me-1"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'numero', tit: 'Nro.', cls: 'align-left', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'bodegaobj__nombre', tit: 'Bodega', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'proveedor', tit: 'Proveedor', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'documento_ref', tit: 'Remisión / Factura', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'orden_compra_ref', tit: 'OC', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'estado', tit: 'Estado', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { if (rowobj.anulado) return '<span class="badge bg-dark">Anulado</span>'; let c = {cargado: 'bg-secondary', verificado: 'bg-info', aprobado: 'bg-success'}[data] || 'bg-primary'; return `<span class="badge ${c}">${data}</span>`; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'anulado', tit: 'Anulado', cls: 'align-left', dtyp: 'bool', hide: true },
+          ]
+      })
+
+    recepcion_form_crud = (pk) => {
+        let dattrs = { title: 'Recepción de Mercadería', t_guid: t_recepcion, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Almacen',
+            model_name: 'Recepcion',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Almacen/RecepcionCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_recepcion').addEventListener('click', () => recepcion_form_crud());
+
+    $(`#${t_recepcion} tbody`).on('click', '.tr-recepcion-query', function() {
+        let rowobj = $(`#${t_recepcion}`).DataTable().row($(this).closest('tr')).data();
+        recepcion_form_crud(rowobj.id);
+    })
+
+    recepcion_workflow = (mname, rowobj, extra) => {
+        let gbe = new FormData();
+        gbe.append('module', 'OptsIO');
+        gbe.append('package', 'mng_workflow');
+        gbe.append('attr', 'MWorkflow');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        gbe.append('model_app_name', 'Almacen');
+        gbe.append('model_name', 'Recepcion');
+        gbe.append('id', rowobj.id);
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) UiB.MsgError(rsp.data.error);
+            else if (rsp.data.success && mname !== 'get_log') UiB.MsgSuccess(rsp.data.success);
+            if (mname !== 'get_log') $(`#${t_recepcion}`).DataTable().ajax.reload(null, false);
+            return rsp.data;
+        });
+    }
+
+    $(`#${t_recepcion} tbody`).on('click', '.tr-recepcion-avanzar', function() {
+        let rowobj = $(`#${t_recepcion}`).DataTable().row($(this).closest('tr')).data();
+        let siguiente = {cargado: 'verificado', verificado: 'aprobado'}[rowobj.estado];
+        if (rowobj.anulado || !siguiente) {
+            UiB.MsgInfo('La operación ya está cerrada.');
+            return;
+        }
+        UiB.MsgSwall({ msg: `¿Pasar la operación ${rowobj.numero} a "${siguiente}"?`, ttype: 'info' }).then((result) => {
+            if (result.isConfirmed) recepcion_workflow('avanzar', rowobj, {estado: siguiente});
+        });
+    })
+
+    $(`#${t_recepcion} tbody`).on('click', '.tr-recepcion-anular', function() {
+        let rowobj = $(`#${t_recepcion}`).DataTable().row($(this).closest('tr')).data();
+        Swal.fire({
+            title: `Anular operación ${rowobj.numero}`, input: 'text', inputLabel: 'Motivo',
+            showCancelButton: true, confirmButtonText: 'Anular', cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) recepcion_workflow('anular', rowobj, {motivo: result.value || ''});
+        });
+    })
+
+    $(`#${t_recepcion} tbody`).on('click', '.tr-recepcion-log', function() {
+        let rowobj = $(`#${t_recepcion}`).DataTable().row($(this).closest('tr')).data();
+        recepcion_workflow('get_log', rowobj).then((data) => {
+            if (!data.log) return;
+            let filas = data.log.map((l) => `<tr><td>${l.fecha}</td><td>${l.estado}</td><td>${$('<span>').text(l.usuario || l.username).html()}</td><td>${$('<span>').text(l.nota || '').html()}</td></tr>`);
+            Swal.fire({
+                title: `Historial operación ${rowobj.numero}`, width: 700,
+                html: `<table class="table table-sm text-start"><thead><tr><th>Fecha</th><th>Estado</th><th>Usuario</th><th>Nota</th></tr></thead><tbody>${filas.join('')}</tbody></table>`
+            });
+        });
+    })
+
+    qelem('#input_buscar_recepcion').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_recepcion = [];
+            let v = qelem('#input_buscar_recepcion').value.trim();
+            if (v !== '') {
+                gmquery_recepcion.push({'field': 'or_proveedor__icontains', 'value': v});
+                gmquery_recepcion.push({'field': 'or_documento_ref__icontains', 'value': v});
+                gmquery_recepcion.push({'field': 'or_orden_compra_ref__icontains', 'value': v});
+            }
+            $(`#${t_recepcion}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_recepcion}`).on('draw.dt', function() {
+        let tt = qelem(`#table_recepcion_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

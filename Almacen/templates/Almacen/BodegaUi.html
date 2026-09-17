@@ -1,0 +1,135 @@
+<div class="bodega_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_bodega" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_bodega" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_bodega" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_bodega_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_bodega = [];
+    bodega_home_be = function (data, settings) {
+        let tt = qelem(`#table_bodega_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_bodega.length > 0) mquery = [...mquery, ...gmquery_bodega];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_bodega = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_bodega,
+          url_exec: '{% url "iom" %}',
+          title: 'Bodegas',
+          tselector: 'table_bodega_ui',
+          app_name: 'Almacen',
+          model_name: 'Bodega',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: bodega_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_bodega_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-bodega-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Nombre', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'direccion', tit: 'Dirección', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activa', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    bodega_form_crud = (pk) => {
+        let dattrs = { title: 'Bodegas', t_guid: t_bodega, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Almacen',
+            model_name: 'Bodega',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Almacen/BodegaCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_bodega').addEventListener('click', () => bodega_form_crud());
+
+    $(`#${t_bodega} tbody`).on('click', '.tr-bodega-query', function() {
+        let rowobj = $(`#${t_bodega}`).DataTable().row($(this).closest('tr')).data();
+        bodega_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_bodega').addEventListener('click', function() {
+        let ids = $(`#${t_bodega}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Almacen');
+            gbe.append('package', 'mng_almacen');
+            gbe.append('attr', 'MAlmacen');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'Bodega');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_bodega}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_bodega').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_bodega = [];
+            let v = qelem('#input_buscar_bodega').value.trim();
+            if (v !== '') {
+                gmquery_bodega.push({'field': 'or_nombre__icontains', 'value': v});
+                gmquery_bodega.push({'field': 'or_direccion__icontains', 'value': v});
+            }
+            $(`#${t_bodega}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_bodega}`).on('draw.dt', function() {
+        let tt = qelem(`#table_bodega_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

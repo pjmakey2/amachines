@@ -288,6 +288,8 @@ def form_tmpl(app, s):
     fks = [f for f in s['fields'] if f['type'] == 'fk']
     pop = ''
     for f in fks:
+        if f.get('no_populate'):
+            continue  # el spec lo resuelve con busqueda ajax (se_select) en form_extra_js
         attr = f['name'][:-3]
         disp = f.get('display', ['nombre'])
         methods = f.get('methods', [])

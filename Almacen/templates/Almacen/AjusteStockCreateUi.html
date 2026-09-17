@@ -1,0 +1,149 @@
+<div class="ui_ajustestock">
+    <form id="form_ajustestock_{{ rr }}" class="form_ajustestock">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-4 mb-3" data-field="fecha">
+                <label>Fecha</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="date" name="fecha" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.fecha|date:"Y-m-d" }}{% else %}{% now "Y-m-d" %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="productoobj_id">
+                <label>Producto <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="productoobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="ubicacionobj_id">
+                <label>Ubicación <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="ubicacionobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="cantidad_contada">
+                <label>Cantidad contada <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="cantidad_contada" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.cantidad_contada|stringformat:"s" }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-12 mb-3" data-field="motivo">
+                <label>Motivo <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="motivo" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.motivo }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Conteo {{ mobj.pk }}{% else %}Cargar conteo físico{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_ajustestock_{{ rr }} select[name=ubicacionobj_id]',
+        app_name: 'Almacen',
+        model_name: 'Ubicacion',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: false,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.ubicacionobj %}
+            $('#form_ajustestock_{{ rr }} select[name=ubicacionobj_id]').val('{{ mobj.ubicacionobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_ajustestock = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_ajustestock_{{ rr }} input[name=cantidad_contada]'));
+    }
+    initializeInputMasks_ajustestock();
+
+    save_ajustestock = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Almacen');
+        fdata.append('model_name', 'AjusteStock');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["productoobj_id", "ubicacionobj_id"].forEach((idx) => {
+            let vv = $(`#form_ajustestock_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["cantidad_contada"].forEach((f) => {
+            let el = qelem(`#form_ajustestock_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        [].forEach((f) => {
+            let el = qelem(`#form_ajustestock_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Almacen', 'package': 'mng_almacen', 'attr': 'MAlmacen', 'mname': 'create_ajuste', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_ajustestock_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_ajustestock Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_ajustestock_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_ajustestock_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_ajustestock(evt.target);
+    })
+
+    form_search.se_select({
+        surl: '{% url "iom" %}', dele: '#form_ajustestock_{{ rr }} select[name=productoobj_id]', app_name: 'Sifen', model_name: 'Producto',
+        field_display: ['prod_cod', 'descripcion'], field_id: ['id'], db_fields: ['id', 'prod_cod', 'descripcion'],
+        sterm: ['or_descripcion__icontains', 'or_ean__icontains'], dejoin: ' - ', ml: 2, dbcon: 'default', theme: 'bootstrap-5', width: '100%',
+        placeholder: 'Buscar producto...', headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')}, dropdownParent: $('#offcanvasGlobalUi')
+    });
+</script>

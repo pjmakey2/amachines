@@ -1,0 +1,80 @@
+<div class="movimientostock_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_movimientostock" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_movimientostock_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_movimientostock = [];
+    movimientostock_home_be = function (data, settings) {
+        let tt = qelem(`#table_movimientostock_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_movimientostock.length > 0) mquery = [...mquery, ...gmquery_movimientostock];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_movimientostock = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_movimientostock,
+          url_exec: '{% url "iom" %}',
+          title: 'Movimientos de Stock',
+          tselector: 'table_movimientostock_ui',
+          app_name: 'Almacen',
+          model_name: 'MovimientoStock',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: movimientostock_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'desc']],
+              rowId: function(row, se) { return `tr_movimientostock_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'fecha', tit: 'Fecha', cls: 'align-left', dtyp: 'date', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'productoobj__descripcion', tit: 'Producto', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'mdb', idx: 'get_ubicacion', tit: 'Ubicación', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'cantidad', tit: 'Cantidad', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(2)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'saldo', tit: 'Saldo ubic.', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(2)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'concepto', tit: 'Concepto', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'cargado_usuario', tit: 'Usuario', cls: 'align-left', dtyp: 'str', hide: false },
+          ]
+      })
+
+    qelem('#input_buscar_movimientostock').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_movimientostock = [];
+            let v = qelem('#input_buscar_movimientostock').value.trim();
+            if (v !== '') {
+                gmquery_movimientostock.push({'field': 'or_productoobj__descripcion__icontains', 'value': v});
+                gmquery_movimientostock.push({'field': 'or_concepto__icontains', 'value': v});
+            }
+            $(`#${t_movimientostock}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_movimientostock}`).on('draw.dt', function() {
+        let tt = qelem(`#table_movimientostock_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

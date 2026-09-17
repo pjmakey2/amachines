@@ -1,0 +1,118 @@
+<div class="stockubicacion_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_stockubicacion" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_stockubicacion_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_stockubicacion = [];
+    stockubicacion_home_be = function (data, settings) {
+        let tt = qelem(`#table_stockubicacion_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [{"field": "cantidad__gt", "value": 0}];
+        if (gmquery_stockubicacion.length > 0) mquery = [...mquery, ...gmquery_stockubicacion];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_stockubicacion = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_stockubicacion,
+          url_exec: '{% url "iom" %}',
+          title: 'Stock por Ubicación',
+          tselector: 'table_stockubicacion_ui',
+          app_name: 'Almacen',
+          model_name: 'StockUbicacion',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: stockubicacion_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_stockubicacion_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Trasladar / almacenar" class="tr-stock-trasladar text fs-5 mdi mdi-transfer text-primary cursor-pointer"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'productoobj__prod_cod', tit: 'Código', cls: 'align-left', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'productoobj__descripcion', tit: 'Producto', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'mdb', idx: 'get_ubicacion', tit: 'Ubicación', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'ubicacionobj__tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'cantidad', tit: 'Cantidad', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(2)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'productoobj_id', tit: 'pid', cls: 'align-left', dtyp: 'int', hide: true },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'ubicacionobj_id', tit: 'uid', cls: 'align-left', dtyp: 'int', hide: true },
+          ]
+      })
+
+    // Almacenaje: mover stock de esta ubicacion a otra
+    $(`#${t_stockubicacion} tbody`).on('click', '.tr-stock-trasladar', function() {
+        let rowobj = $(`#${t_stockubicacion}`).DataTable().row($(this).closest('tr')).data();
+        let gbe = new FormData();
+        gbe.append('module', 'Almacen');
+        gbe.append('package', 'mng_almacen');
+        gbe.append('attr', 'MAlmacen');
+        gbe.append('mname', 'get_ubicaciones');
+        gbe.append('dbcon', 'default');
+        axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            let opciones = (rsp.data.ubicaciones || []).filter((u) => u.id !== rowobj.ubicacionobj_id)
+                .map((u) => `<option value="${u.id}">${$('<span>').text(u.text).html()}</option>`).join('');
+            Swal.fire({
+                title: 'Trasladar / almacenar',
+                html: `<div class="text-start"><p class="mb-2"><b>${$('<span>').text(rowobj.productoobj__descripcion).html()}</b><br>
+                       Desde ${$('<span>').text(rowobj.get_ubicacion).html()} — hay ${parseFloat(rowobj.cantidad)}</p>
+                       <label>Destino</label><select id="swal_traslado_destino" class="form-select mb-2">${opciones}</select>
+                       <label>Cantidad</label><input id="swal_traslado_cantidad" type="text" class="form-control text-end" value="${parseFloat(rowobj.cantidad)}"></div>`,
+                showCancelButton: true, confirmButtonText: 'Trasladar', cancelButtonText: 'Cancelar',
+                preConfirm: () => ({ destino_id: qelem('#swal_traslado_destino').value, cantidad: qelem('#swal_traslado_cantidad').value.replace(',', '.') })
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+                let g2 = new FormData();
+                g2.append('module', 'Almacen');
+                g2.append('package', 'mng_almacen');
+                g2.append('attr', 'MAlmacen');
+                g2.append('mname', 'trasladar');
+                g2.append('dbcon', 'default');
+                g2.append('producto_id', rowobj.productoobj_id);
+                g2.append('origen_id', rowobj.ubicacionobj_id);
+                g2.append('destino_id', result.value.destino_id);
+                g2.append('cantidad', result.value.cantidad);
+                axios.post('{% url "iom" %}', g2, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((r2) => {
+                    if (r2.data.error) UiB.MsgError(r2.data.error); else UiB.MsgSuccess(r2.data.success);
+                    $(`#${t_stockubicacion}`).DataTable().ajax.reload(null, false);
+                });
+            });
+        });
+    })
+
+    qelem('#input_buscar_stockubicacion').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_stockubicacion = [];
+            let v = qelem('#input_buscar_stockubicacion').value.trim();
+            if (v !== '') {
+                gmquery_stockubicacion.push({'field': 'or_productoobj__descripcion__icontains', 'value': v});
+                gmquery_stockubicacion.push({'field': 'or_ubicacionobj__codigo__icontains', 'value': v});
+            }
+            $(`#${t_stockubicacion}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_stockubicacion}`).on('draw.dt', function() {
+        let tt = qelem(`#table_stockubicacion_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>
