@@ -61,15 +61,23 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'channels',
-    'OptsIO',
-    'Sifen',
-    'Anime',
-    'Finance',
-    'am_shopify',  # Shopify Integration
-    'fl_facturacion_legacy',  # Frontliner Legacy Integration
-    'Cobro',  # Gestión de Cobros
-    'Egreso',  # Gestión de Egresos (Órdenes de Compra)
     'django_extensions',
+]
+
+# Nucleo: siempre instalado. Sifen define Business (multi-tenant) y depende de Finance.f_calcs.
+AMACHINE_CORE_APPS = ['OptsIO', 'Sifen', 'Finance']
+
+# Plugins: apps opcionales por instalacion, definidas en .env (AMACHINE_PLUGINS=a,b,c).
+# El default replica el set historico para no alterar instalaciones existentes.
+AMACHINE_PLUGINS = [
+    p.strip() for p in os.environ.get(
+        'AMACHINE_PLUGINS',
+        'Anime,am_shopify,fl_facturacion_legacy,Cobro,Egreso'
+    ).split(',') if p.strip()
+]
+
+INSTALLED_APPS += AMACHINE_CORE_APPS + [
+    p for p in AMACHINE_PLUGINS if p not in AMACHINE_CORE_APPS
 ]
 
 MIDDLEWARE = [

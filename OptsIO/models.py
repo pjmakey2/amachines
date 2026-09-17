@@ -435,3 +435,65 @@ class ReferenceDataLoad(models.Model):
 
     def __str__(self):
         return f"{self.get_data_type_display()} - {self.loaded_at}"
+
+
+class BusinessEvent(models.Model):
+    """
+    Outbox de eventos de negocio. Un evento se registra una sola vez por
+    idempotency_key y se procesa de forma asincrona (Celery o comando process_events).
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('processing', 'Procesando'),
+        ('done', 'Procesado'),
+        ('error', 'Error'),
+    ]
+
+    event_type = models.CharField(max_length=120, db_index=True)
+    idempotency_key = models.CharField(max_length=255, unique=True)
+    business = models.ForeignKey('Sifen.Business', on_delete=models.CASCADE, null=True, blank=True)
+    source_app = models.CharField(max_length=80)
+    source_model = models.CharField(max_length=80)
+    source_id = models.BigIntegerField()
+    payload = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    attempts = models.IntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=120, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [models.Index(fields=['source_app', 'source_model', 'source_id'])]
+
+    def __str__(self):
+        return f"{self.event_type} [{self.source_app}.{self.source_model}#{self.source_id}] {self.status}"
+
+    def get_source(self):
+        from django.apps import apps as django_apps
+        model = django_apps.get_model(self.source_app, self.source_model)
+        return model.objects.get(pk=self.source_id)
+
+
+class BusinessEventDelivery(models.Model):
+    """Resultado de un handler para un evento. unique(event, handler) garantiza una sola ejecucion exitosa."""
+    STATUS_CHOICES = [
+        ('pending', 'Pendiente'),
+        ('done', 'Procesado'),
+        ('error', 'Error'),
+    ]
+
+    event = models.ForeignKey(BusinessEvent, on_delete=models.CASCADE, related_name='deliveries')
+    handler = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    attempts = models.IntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    result = models.JSONField(default=dict, blank=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('event', 'handler')
+
+    def __str__(self):
+        return f"{self.event_id} -> {self.handler} [{self.status}]"

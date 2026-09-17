@@ -157,6 +157,18 @@ class BasePlugin:
         """
         return []
 
+    def get_event_handlers(self) -> Dict[str, List[str]]:
+        """
+        Suscripciones al bus de eventos (OptsIO.events). La clave acepta comodines.
+
+        Ejemplo:
+        return {
+            'cobro.pago.aprobado': ['Contabilidad.handlers.asiento_cobro'],
+            '*.aprobado': ['MiApp.handlers.auditar'],
+        }
+        """
+        return {}
+
     def get_setup_steps(self) -> List[Dict]:
         """
         Retorna pasos de setup específicos del plugin.

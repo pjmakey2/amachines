@@ -199,3 +199,13 @@ def demo_quick_task(self):
     """
     return demo_task_with_progress(self, total_steps=3, step_delay=1, task_name="Quick Demo")
 
+
+
+@shared_task(bind=True, max_retries=5, default_retry_delay=60)
+def process_business_event(self, event_id):
+    """Procesa un BusinessEvent del outbox. Reintenta mientras queden handlers con error."""
+    from OptsIO.events import process_event
+    result = process_event(event_id)
+    if result.get('status') == 'error':
+        raise self.retry(exc=Exception('; '.join(result.get('errors', []))))
+    return result

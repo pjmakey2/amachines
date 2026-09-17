@@ -305,3 +305,53 @@ bp.save()
 
 **Última actualización**: 2026-01-04
 **Mantenido por**: Equipo de Desarrollo Amachine
+
+## Core vs Plugins por instalación
+
+`settings.py` arma `INSTALLED_APPS` = Django + `AMACHINE_CORE_APPS` (`OptsIO`, `Sifen`, `Finance`) + `AMACHINE_PLUGINS`.
+Los plugins de cada instalación se definen en `.env`:
+
+```bash
+AMACHINE_PLUGINS=Cobro,Egreso,am_shopify
+```
+
+Sin la variable se usa el set histórico (`Anime,am_shopify,fl_facturacion_legacy,Cobro,Egreso`).
+El core nunca importa un plugin de forma directa: usar `apps.is_installed()` + `apps.get_model()`.
+
+## Bus de eventos (`OptsIO/events.py`)
+
+Outbox idempotente procesado **siempre por Celery** (`OptsIO.tasks.process_business_event`, con reintentos).
+`python manage.py process_events` existe solo para recuperación manual (ej: broker caído); no se programa en cron.
+
+```python
+from OptsIO import events
+events.emit('cobro.pago.aprobado', pagoobj, business=bobj, payload={...}, userobj=userobj)
+```
+
+- `idempotency_key` = `evento:app.modelo:pk[:sufijo]` → emitir dos veces no duplica.
+- Cada handler se ejecuta con éxito una sola vez por evento (`BusinessEventDelivery`); su efecto y la marca `done` van en la misma transacción.
+- Suscripción desde el plugin (acepta comodines):
+
+```python
+def get_event_handlers(self):
+    return {'*.aprobado': ['Contabilidad.handlers.generar_asiento']}
+```
+
+Un handler recibe el `BusinessEvent` (`event.get_source()`, `event.payload`, `event.business`).
+
+## Workflow de operaciones (`OptsIO/workflow.py`)
+
+`WorkflowMixin` (abstracto): `estado`, `estado_usuario`, `estado_fecha`, `workflow_log`.
+
+```python
+class Gasto(WorkflowMixin, models.Model):
+    WORKFLOW_STATES = ['cargado', 'verificado', 'aprobado']   # extensible
+    WORKFLOW_EVENT = 'egreso.gasto'                           # emite egreso.gasto.<estado>
+    WORKFLOW_DISTINCT_USERS = True                            # segregación de funciones
+    class Meta:
+        permissions = [('gasto_verificado', 'Verificar gasto'), ('gasto_aprobado', 'Aprobar gasto')]
+
+gasto.registrar_carga(userobj); gasto.save()
+gasto.avanzar(userobj)            # cargado -> verificado
+gasto.avanzar(userobj2)           # verificado -> aprobado (cierre: dispara contabilidad, depósitos, etc.)
+```

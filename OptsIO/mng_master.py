@@ -6,7 +6,14 @@ from OptsIO.io_serial import IoS
 from OptsIO.io_json import to_json, from_json
 from OptsIO.models import UserProfile, UserBusiness
 from Sifen.models import Business
-from fl_facturacion_legacy.models import UserFLSucursal
+from django.apps import apps as django_apps
+
+
+def _user_fl_sucursal_model():
+    """Modelo del plugin fl_facturacion_legacy, o None si no esta instalado."""
+    if django_apps.is_installed('fl_facturacion_legacy'):
+        return django_apps.get_model('fl_facturacion_legacy', 'UserFLSucursal')
+    return None
 
 logger = logging.getLogger(__name__)
 
@@ -166,6 +173,9 @@ class MMaster:
 
     def _sync_fl_sucursales(self, profile, sucursales):
         """Sincroniza las sucursales FL de un UserProfile. Lista vacía = acceso a todas."""
+        UserFLSucursal = _user_fl_sucursal_model()
+        if UserFLSucursal is None:
+            return
         UserFLSucursal.objects.filter(userprofileobj=profile).delete()
         for suc in sucursales:
             UserFLSucursal.objects.create(userprofileobj=profile, sucursal=int(suc))
@@ -175,7 +185,8 @@ class MMaster:
         from OptsIO.io_json import from_json
         q = kwargs.get('qdict', {})
         user_ids = from_json(q.get('user_ids', '[]'))
-        if not user_ids:
+        UserFLSucursal = _user_fl_sucursal_model()
+        if not user_ids or UserFLSucursal is None:
             return {'sucursales_map': {}}
         try:
             users = User.objects.filter(pk__in=user_ids).values('id', 'username')
@@ -198,7 +209,8 @@ class MMaster:
         """Retorna las sucursales FL asignadas a un usuario por su ID."""
         q = kwargs.get('qdict', {})
         user_id = q.get('user_id')
-        if not user_id:
+        UserFLSucursal = _user_fl_sucursal_model()
+        if not user_id or UserFLSucursal is None:
             return {'sucursales': []}
         try:
             user_instance = User.objects.get(pk=user_id)
