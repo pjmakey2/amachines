@@ -42,3 +42,26 @@ def generar_depositos_de_cobro(event) -> dict:
             dep.save()
         creados.append(dep.pk)
     return {'depositos': creados}
+
+
+@precision_monetaria
+def generar_deposito_de_pedido(event) -> dict:
+    """ecommerce.pedido.pagado -> deposito pendiente (transferencia recibida, o efectivo si fue contra entrega)."""
+    business, payload = event.business, event.payload
+    clave = f"ecommerce.pedido:{event.source_id}"
+    monto = Decimal(payload.get('total') or 0)
+    if monto <= 0 or Deposito.objects.filter(clave=clave).exists():
+        return {'depositos': []}
+    moneda = MONEDAS.get(payload.get('moneda'), 'PYG')
+    cuentas = list(CuentaBancaria.objects.filter(businessobj=business, activo=True, moneda=moneda)[:2])
+    with transaction.atomic():
+        dep = Deposito(
+            businessobj=business, numero=siguiente_numero(Deposito, business), fecha=payload.get('fecha') or datetime.now().date(),
+            tipo='transferencia' if payload.get('metodo_pago') == 'transferencia' else 'efectivo', monto=monto, moneda=moneda,
+            cuentaobj=cuentas[0] if len(cuentas) == 1 else None, boleta_numero=(payload.get('referencia') or '')[:60],
+            automatico=True, clave=clave, origen_app=event.source_app, origen_model=event.source_model, origen_id=event.source_id,
+            origen_desc=f"Pedido online {payload.get('numero')} - {payload.get('cliente', '')}"[:200])
+        dep.registrar_carga(None)
+        dep.cargado_usuario = 'sistema (tienda online)'
+        dep.save()
+    return {'depositos': [dep.pk]}

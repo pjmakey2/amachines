@@ -1,0 +1,9 @@
+{% load humanize %}
+<div class="producto-card">
+    <a class="foto" href="{% url 'ecommerce_producto' tienda.slug pt.slug %}" {% if pt.get_imagen %}style="background-image: url('{{ pt.get_imagen }}');"{% endif %} aria-label="{{ pt.titulo }}"></a>
+    <div class="cuerpo">
+        <a class="titulo" href="{% url 'ecommerce_producto' tienda.slug pt.slug %}">{{ pt.titulo }}</a>
+        <div class="precio">{{ tienda.moneda }} {{ pt.precio|floatformat:"0"|intcomma }}
+            {% if pt.precio_comparacion > pt.precio %}<span class="precio-antes">{{ pt.precio_comparacion|floatformat:"0"|intcomma }}</span>{% endif %}</div>
+    </div>
+</div>

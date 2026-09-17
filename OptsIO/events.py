@@ -55,7 +55,11 @@ def emit(event_type: str, source, business=None, payload: Optional[dict] = None,
     Registra un evento para `source` (instancia de modelo ya guardada).
     Emitir dos veces el mismo evento para el mismo objeto devuelve el evento original
     sin volver a despacharlo. key_suffix permite eventos repetibles (ej: numero de cuota).
+    Devuelve None si ningun plugin instalado escucha el evento.
     """
+    # Sin oyentes no hay nada que procesar: no se persiste (una instalacion sin plugins oyentes no toca el outbox)
+    if not get_handlers(event_type):
+        return None
     meta = source._meta
     key = f"{event_type}:{meta.app_label}.{meta.model_name}:{source.pk}"
     if key_suffix:

@@ -1,0 +1,141 @@
+<div class="ui_tematienda">
+    <form id="form_tematienda_{{ rr }}" class="form_tematienda">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-6 mb-3" data-field="nombre">
+                <label>Nombre <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="layout">
+                <label>Layout base</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="layout" class="form-control">
+                        <option value="clasico" {% if mobj and mobj.layout == "clasico" %}selected{% endif %}>Clásico</option>
+                        <option value="minimal" {% if mobj and mobj.layout == "minimal" %}selected{% endif %}>Minimal</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2 mb-3" data-field="activo">
+                <label>Activo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="activo" class="form-control">
+                        <option value="true" {% if not mobj or mobj.activo %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.activo %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3" data-field="color_primario">
+                <label>Color primario (cabecera/pie)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="color" name="color_primario" class="form-control form-control-color" value='{% if mobj %}{{ mobj.color_primario }}{% else %}#111827{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-3 mb-3" data-field="color_acento">
+                <label>Color de acento (botones/enlaces)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="color" name="color_acento" class="form-control form-control-color" value='{% if mobj %}{{ mobj.color_acento }}{% else %}#2563eb{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-3 mb-3" data-field="color_fondo">
+                <label>Fondo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="color" name="color_fondo" class="form-control form-control-color" value='{% if mobj %}{{ mobj.color_fondo }}{% else %}#ffffff{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-3 mb-3" data-field="color_texto">
+                <label>Texto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="color" name="color_texto" class="form-control form-control-color" value='{% if mobj %}{{ mobj.color_texto }}{% else %}#1f2937{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12 mb-3" data-field="fuente">
+                <label>Tipografía (font-family CSS)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="fuente" class="form-control" placeholder=""Inter", sans-serif" value='{% if mobj %}{{ mobj.fuente }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12 mb-3" data-field="css_archivo">
+                <label>Archivo CSS propio</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="css_archivo" class="form-control" />
+                </div>
+                <small class="text-muted">Se carga después del CSS base: puede redefinir cualquier estilo (.tienda-header, .producto-card, .btn-tienda...). {% if mobj and mobj.css_archivo %}<a href="{{ mobj.css_archivo.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+            <div class="col-md-12 mb-3" data-field="css_extra">
+                <label>CSS adicional (rápido)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea name="css_extra" class="form-control" rows="6" placeholder=".tienda-banner { padding: 9rem 1rem; }">{% if mobj %}{{ mobj.css_extra }}{% endif %}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Tema {{ mobj.pk }}{% else %}Crear Tema{% endif %}`;{% endif %}
+
+    save_tematienda = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Ecommerce');
+        fdata.append('model_name', 'TemaTienda');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        [].forEach((idx) => {
+            let vv = $(`#form_tematienda_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        [].forEach((f) => {
+            let el = qelem(`#form_tematienda_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        ["css_archivo"].forEach((f) => {
+            let el = qelem(`#form_tematienda_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Ecommerce', 'package': 'mng_ecommerce', 'attr': 'MEcommerce', 'mname': 'save_tema', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_tematienda_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_tematienda Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_tematienda_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_tematienda_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_tematienda(evt.target);
+    })
+</script>

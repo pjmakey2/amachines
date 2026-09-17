@@ -1,0 +1,57 @@
+{% extends "Ecommerce/tienda/base.html" %}
+{% load humanize %}
+{% block titulo %}Finalizar compra — {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="container py-4">
+    <h1 class="h3 mb-3">Finalizar compra</h1>
+    {% if errores.general %}<div class="alert alert-danger">{{ errores.general }}</div>{% endif %}
+    <form method="post" novalidate>{% csrf_token %}
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <h2 class="h5">Tus datos</h2>
+            <div class="row g-3">
+                <div class="col-md-7"><label class="form-label" for="f_nombre">Nombre y apellido / Razón social *</label>
+                    <input id="f_nombre" class="form-control {% if errores.cliente_nombre %}is-invalid{% endif %}" name="cliente_nombre" value="{{ datos.cliente_nombre|default:'' }}" autocomplete="name">
+                    <div class="invalid-feedback">{{ errores.cliente_nombre }}</div></div>
+                <div class="col-md-5"><label class="form-label" for="f_doc">RUC o CI (para la factura)</label>
+                    <input id="f_doc" class="form-control" name="cliente_documento" value="{{ datos.cliente_documento|default:'' }}" placeholder="Ej: 1234567-8"></div>
+                <div class="col-md-7"><label class="form-label" for="f_email">Email *</label>
+                    <input id="f_email" type="email" class="form-control {% if errores.cliente_email %}is-invalid{% endif %}" name="cliente_email" value="{{ datos.cliente_email|default:'' }}" autocomplete="email">
+                    <div class="invalid-feedback">{{ errores.cliente_email }}</div></div>
+                <div class="col-md-5"><label class="form-label" for="f_tel">Teléfono *</label>
+                    <input id="f_tel" class="form-control {% if errores.cliente_telefono %}is-invalid{% endif %}" name="cliente_telefono" value="{{ datos.cliente_telefono|default:'' }}" autocomplete="tel">
+                    <div class="invalid-feedback">{{ errores.cliente_telefono }}</div></div>
+                <div class="col-md-8"><label class="form-label" for="f_dir">Dirección de entrega *</label>
+                    <input id="f_dir" class="form-control {% if errores.direccion %}is-invalid{% endif %}" name="direccion" value="{{ datos.direccion|default:'' }}" autocomplete="street-address">
+                    <div class="invalid-feedback">{{ errores.direccion }}</div></div>
+                <div class="col-md-4"><label class="form-label" for="f_ciudad">Ciudad</label>
+                    <input id="f_ciudad" class="form-control" name="ciudad" value="{{ datos.ciudad|default:'' }}" autocomplete="address-level2"></div>
+                <div class="col-12"><label class="form-label" for="f_notas">Notas para la entrega</label>
+                    <input id="f_notas" class="form-control" name="notas" value="{{ datos.notas|default:'' }}"></div>
+            </div>
+            <h2 class="h5 mt-4">Forma de pago</h2>
+            {% if errores.metodo_pago %}<div class="text-danger small mb-2">{{ errores.metodo_pago }}</div>{% endif %}
+            {% if tienda.acepta_transferencia %}
+            <div class="form-check border rounded p-3 mb-2"><input class="form-check-input ms-0 me-2" type="radio" name="metodo_pago" id="mp_transferencia" value="transferencia" {% if datos.metodo_pago == "transferencia" %}checked{% endif %}>
+                <label class="form-check-label" for="mp_transferencia"><b>Transferencia bancaria</b><br><small class="text-muted">Te mostramos los datos de la cuenta al confirmar. Preparamos tu pedido cuando acreditamos el pago.</small></label></div>
+            {% endif %}
+            {% if tienda.acepta_contra_entrega %}
+            <div class="form-check border rounded p-3 mb-2"><input class="form-check-input ms-0 me-2" type="radio" name="metodo_pago" id="mp_contra" value="contra_entrega" {% if datos.metodo_pago == "contra_entrega" %}checked{% endif %}>
+                <label class="form-check-label" for="mp_contra"><b>Pago contra entrega</b><br><small class="text-muted">Pagás en efectivo al recibir tu pedido.</small></label></div>
+            {% endif %}
+        </div>
+        <div class="col-lg-5">
+            <div class="border rounded p-3">
+                <h2 class="h5">Tu pedido</h2>
+                {% for l in lineas %}<div class="d-flex justify-content-between small py-1"><span>{{ l.cantidad }} × {{ l.pt.titulo }}</span><span>{{ l.total|floatformat:"0"|intcomma }}</span></div>{% endfor %}
+                <hr>
+                <div class="d-flex justify-content-between"><span>Subtotal</span><span>{{ totales.subtotal|floatformat:"0"|intcomma }}</span></div>
+                <div class="d-flex justify-content-between"><span>Envío</span><span>{% if totales.envio %}{{ totales.envio|floatformat:"0"|intcomma }}{% else %}Gratis{% endif %}</span></div>
+                <div class="d-flex justify-content-between fs-5 fw-bold mt-2"><span>Total {{ tienda.moneda }}</span><span>{{ totales.total|floatformat:"0"|intcomma }}</span></div>
+                <button class="btn btn-tienda btn-lg w-100 mt-3" type="submit">Confirmar pedido</button>
+            </div>
+        </div>
+    </div>
+    </form>
+</div>
+{% endblock %}

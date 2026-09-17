@@ -1,0 +1,238 @@
+<div class="ui_productotienda">
+    <form id="form_productotienda_{{ rr }}" class="form_productotienda">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-6 mb-3" data-field="tiendaobj_id">
+                <label>Tienda <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="tiendaobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="productoobj_id">
+                <label>Producto del maestro <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="productoobj_id" class="form-control" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="titulo">
+                <label>Título en la tienda</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="titulo" class="form-control" placeholder="Si queda vacío usa la descripción del producto" value='{% if mobj %}{{ mobj.titulo }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="coleccionobj_id">
+                <label>Colección</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="coleccionobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="precio_online">
+                <label>Precio online</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="precio_online" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.precio_online|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+                <small class="text-muted">0 = precio del maestro</small>
+            </div>
+            <div class="col-md-4 mb-3" data-field="precio_comparacion">
+                <label>Precio tachado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="precio_comparacion" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.precio_comparacion|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="orden">
+                <label>Orden</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="orden" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.orden|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="destacado">
+                <label>Destacado en portada</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="destacado" class="form-control">
+                        <option value="true" {% if not mobj or mobj.destacado %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.destacado %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="publicado">
+                <label>Publicado</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="publicado" class="form-control">
+                        <option value="true" {% if not mobj or mobj.publicado %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.publicado %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-12 mb-3" data-field="descripcion_larga">
+                <label>Descripción</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea name="descripcion_larga" class="form-control" rows="6" placeholder="">{% if mobj %}{{ mobj.descripcion_larga }}{% endif %}</textarea>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="imagen">
+                <label>Imagen principal</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="imagen" class="form-control" />
+                </div>
+                <small class="text-muted">{% if mobj and mobj.imagen %}<a href="{{ mobj.imagen.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+            <div class="col-md-4 mb-3" data-field="imagen_2">
+                <label>Imagen 2</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="imagen_2" class="form-control" />
+                </div>
+                <small class="text-muted">{% if mobj and mobj.imagen_2 %}<a href="{{ mobj.imagen_2.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+            <div class="col-md-4 mb-3" data-field="imagen_3">
+                <label>Imagen 3</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="imagen_3" class="form-control" />
+                </div>
+                <small class="text-muted">{% if mobj and mobj.imagen_3 %}<a href="{{ mobj.imagen_3.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Publicación {{ mobj.pk }}{% else %}Crear Publicación{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_productotienda_{{ rr }} select[name=tiendaobj_id]',
+        app_name: 'Ecommerce',
+        model_name: 'Tienda',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activa", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: false,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.tiendaobj %}
+            $('#form_productotienda_{{ rr }} select[name=tiendaobj_id]').val('{{ mobj.tiendaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_productotienda_{{ rr }} select[name=coleccionobj_id]',
+        app_name: 'Ecommerce',
+        model_name: 'Coleccion',
+        field_display: ["get_descripcion"],
+        field_id: ['id'],
+        db_fields: ["id"],
+        db_methods: ["get_descripcion"],
+        qs_be: [{"field": "activa", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.coleccionobj %}
+            $('#form_productotienda_{{ rr }} select[name=coleccionobj_id]').val('{{ mobj.coleccionobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_productotienda = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_productotienda_{{ rr }} input[name=precio_online]'));
+        Inputmask(maskDecimal).mask(qelem('#form_productotienda_{{ rr }} input[name=precio_comparacion]'));
+        Inputmask(maskEntero).mask(qelem('#form_productotienda_{{ rr }} input[name=orden]'));
+    }
+    initializeInputMasks_productotienda();
+
+    save_productotienda = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Ecommerce');
+        fdata.append('model_name', 'ProductoTienda');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["tiendaobj_id", "productoobj_id", "coleccionobj_id"].forEach((idx) => {
+            let vv = $(`#form_productotienda_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["precio_online", "precio_comparacion", "orden"].forEach((f) => {
+            let el = qelem(`#form_productotienda_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        ["imagen", "imagen_2", "imagen_3"].forEach((f) => {
+            let el = qelem(`#form_productotienda_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Ecommerce', 'package': 'mng_ecommerce', 'attr': 'MEcommerce', 'mname': 'save_productotienda', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_productotienda_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_productotienda Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_productotienda_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_productotienda_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_productotienda(evt.target);
+    })
+
+    form_search.se_select({
+        surl: '{% url "iom" %}', dele: '#form_productotienda_{{ rr }} select[name=productoobj_id]', app_name: 'Sifen', model_name: 'Producto',
+        field_display: ['prod_cod', 'descripcion'], field_id: ['id'], db_fields: ['id', 'prod_cod', 'descripcion'],
+        sterm: ['or_descripcion__icontains', 'or_ean__icontains'], dejoin: ' - ', ml: 2, dbcon: 'default', theme: 'bootstrap-5', width: '100%',
+        placeholder: 'Buscar en el maestro de productos...', headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        dropdownParent: $('#offcanvasGlobalUi'), clean: false
+    });
+    {% if mobj %}
+        $('#form_productotienda_{{ rr }} select[name=productoobj_id]').append(new Option('{{ mobj.productoobj.prod_cod }} - {{ mobj.productoobj.descripcion|escapejs }}', '{{ mobj.productoobj_id }}', true, true)).trigger('change');
+    {% endif %}
+</script>

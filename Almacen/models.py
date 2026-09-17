@@ -237,6 +237,13 @@ def stock_en_ubicacion(productoobj, ubicacionobj) -> Decimal:
 
 
 @precision_monetaria
+def stock_fisico_vendible(businessobj, productoobj) -> Decimal:
+    return StockUbicacion.objects.filter(
+        businessobj=businessobj, productoobj=productoobj, ubicacionobj__activo=True,
+        ubicacionobj__tipo__in=list(Ubicacion.PRIORIDAD_DESPACHO)).aggregate(t=Sum('cantidad'))['t'] or Decimal(0)
+
+
+@precision_monetaria
 def stock_disponible(businessobj, productoobj) -> Decimal:
     """Stock vendible (picking/almacenaje/recepcion) menos lo reservado por pedidos sin despachar."""
     fisico = StockUbicacion.objects.filter(

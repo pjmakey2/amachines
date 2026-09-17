@@ -1,0 +1,17 @@
+{% extends "Ecommerce/tienda/base.html" %}
+{% block contenido %}
+{% if not q %}
+<section class="tienda-banner" {% if tienda.banner %}style="background-image: linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.35)), url('{{ tienda.banner.url }}');"{% endif %}>
+    <h1>{{ tienda.banner_titulo|default:tienda.nombre }}</h1>
+    {% if tienda.banner_texto or tienda.descripcion %}<p class="lead mb-0">{{ tienda.banner_texto|default:tienda.descripcion }}</p>{% endif %}
+</section>
+{% endif %}
+<div class="container py-4">
+    {% if destacados %}
+        <h2 class="h4 mb-3">Destacados</h2>
+        <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">{% for pt in destacados %}<div class="col">{% include "Ecommerce/tienda/_producto_card.html" %}</div>{% endfor %}</div>
+    {% endif %}
+    <h2 class="h4 mb-3">{% if q %}Resultados para “{{ q }}”{% else %}Todos los productos{% endif %}</h2>
+    {% include "Ecommerce/tienda/_grilla.html" %}
+</div>
+{% endblock %}

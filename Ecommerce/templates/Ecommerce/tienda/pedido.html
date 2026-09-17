@@ -1,0 +1,27 @@
+{% extends "Ecommerce/tienda/base.html" %}
+{% load humanize %}
+{% block titulo %}Pedido {{ pedido.get_numero_display }} — {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="container py-4" style="max-width: 860px;">
+    <h1 class="h3">¡Gracias, {{ pedido.cliente_nombre }}!</h1>
+    <p class="text-muted">Pedido <b>#{{ pedido.get_numero_display }}</b> del {{ pedido.fecha|date:"d/m/Y H:i" }}. Guardá este enlace para seguir tu pedido.</p>
+    {% if pedido.anulado %}
+        <div class="alert alert-secondary">Este pedido fue anulado.</div>
+    {% else %}
+        <div class="pasos-pedido mb-4">{% for paso in pasos %}<div class="paso {% if forloop.counter0 <= paso_actual %}hecho{% endif %}">{{ paso }}</div>{% endfor %}</div>
+        {% if pedido.estado == "recibido" and pedido.metodo_pago == "transferencia" %}
+            <div class="alert alert-info"><b>Para completar tu compra transferí {{ pedido.moneda }} {{ pedido.total|floatformat:"0"|intcomma }}</b> e indicá el pedido #{{ pedido.get_numero_display }} como referencia.
+                <div class="mt-2">{{ tienda.datos_transferencia|linebreaksbr }}</div></div>
+        {% endif %}
+    {% endif %}
+    <table class="table">
+        <tbody>{% for d in pedido.detalles.all %}<tr><td>{{ d.cantidad|floatformat:"0" }} × {{ d.titulo }}</td><td class="text-end">{{ d.total|floatformat:"0"|intcomma }}</td></tr>{% endfor %}</tbody>
+        <tfoot>
+            <tr><td class="text-end">Envío</td><td class="text-end">{% if pedido.costo_envio %}{{ pedido.costo_envio|floatformat:"0"|intcomma }}{% else %}Gratis{% endif %}</td></tr>
+            <tr class="fw-bold fs-5"><td class="text-end">Total {{ pedido.moneda }}</td><td class="text-end">{{ pedido.total|floatformat:"0"|intcomma }}</td></tr>
+        </tfoot>
+    </table>
+    <p class="small text-muted">Entrega en: {{ pedido.direccion }}{% if pedido.ciudad %}, {{ pedido.ciudad }}{% endif %} · {{ pedido.get_metodo_pago_display }}</p>
+    <a class="btn btn-outline-secondary" href="{% url 'ecommerce_home' tienda.slug %}">Seguir comprando</a>
+</div>
+{% endblock %}

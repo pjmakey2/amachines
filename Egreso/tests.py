@@ -6,6 +6,7 @@ from django.test import TestCase
 
 from Egreso.mng_egreso import MEgreso, fecha_aplicacion, sumar_meses
 from Egreso.models import CategoriaGasto, Gasto, GastoRecurrente, PagoProveedor, Proveedor, TransferenciaInterna
+from OptsIO import events
 from OptsIO.mng_workflow import MWorkflow
 from OptsIO.models import BusinessEvent
 from OptsIO.testing import check_ui, grid_records, make_business, make_user
@@ -47,7 +48,8 @@ class GastoPagoTest(EgresoBase):
         g = self.gasto()
         self.assertEqual((g.numero, g.estado, g.total, g.iva_10), (1, 'cargado', 1100000, Decimal('100000')))
         self.aprobar(g)
-        self.assertTrue(BusinessEvent.objects.filter(event_type='egreso.gasto.aprobado', source_id=g.pk).exists())
+        self.assertEqual(BusinessEvent.objects.filter(event_type='egreso.gasto.aprobado', source_id=g.pk).exists(),
+                         bool(events.get_handlers('egreso.gasto.aprobado')))
         self.assertIn('error', self.call(self.me.create_gasto, id=g.pk, tipo='comun', fecha='2026-09-01',
                                          categoriaobj_id=self.cat.pk, proveedorobj_id=self.prov.pk, concepto='x', gravada_10='1'))
 

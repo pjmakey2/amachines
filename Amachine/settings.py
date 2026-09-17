@@ -14,6 +14,8 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 
+from Amachine.plugin_loader import resolver_plugins
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -76,9 +78,10 @@ AMACHINE_PLUGINS = [
     ).split(',') if p.strip()
 ]
 
-INSTALLED_APPS += AMACHINE_CORE_APPS + [
-    p for p in AMACHINE_PLUGINS if p not in AMACHINE_CORE_APPS
-]
+# Las dependencias declaradas en cada plugin.py se instalan solas (ej: Egreso trae Tesoreria)
+AMACHINE_PLUGINS = resolver_plugins(BASE_DIR, AMACHINE_PLUGINS, AMACHINE_CORE_APPS)
+
+INSTALLED_APPS += AMACHINE_CORE_APPS + AMACHINE_PLUGINS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

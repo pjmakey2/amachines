@@ -1,0 +1,9 @@
+{% extends "Ecommerce/tienda/base.html" %}
+{% block titulo %}{{ coleccion.nombre }} — {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="container py-4">
+    <h1 class="h3">{{ coleccion.nombre }}</h1>
+    {% if coleccion.descripcion %}<p class="text-muted">{{ coleccion.descripcion }}</p>{% endif %}
+    {% include "Ecommerce/tienda/_grilla.html" %}
+</div>
+{% endblock %}

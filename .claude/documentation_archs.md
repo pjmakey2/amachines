@@ -27,10 +27,11 @@ Leer estos documentos (todos en `.claude/`) antes de codificar. Cada uno describ
 
 ## Core y plugins
 
-- `INSTALLED_APPS` = Django + core (`OptsIO`, `Sifen`, `Finance`) + `AMACHINE_PLUGINS` del `.env` de cada instalación.
+- `INSTALLED_APPS` = Django + core (`OptsIO`, `Sifen`, `Finance`) + `AMACHINE_PLUGINS` del `.env` de cada instalación. `Amachine/plugin_loader.py` agrega solo las dependencias declaradas en cada `plugin.py` (pedir `Ecommerce` instala `Almacen`).
+- Un plugin con páginas públicas expone `urls.py` con `URL_PREFIX`; `Amachine/urls.py` lo monta solo (ej: `Ecommerce` → `/tienda/<slug>/`).
 - Un plugin es una app Django con `plugin.py` (`BasePlugin`): menús, datos de referencia, handlers de eventos. Sus templates viven en `<App>/templates/<App>/`.
 - **El core nunca importa un plugin.** Un plugin puede depender de otro (declararlo en `dependencies`). Si el core necesita un modelo opcional: `apps.is_installed()` + `apps.get_model()`.
-- Dependencias entre plugins financieros: `Tesoreria` ← `Egreso`, `Deposito`, `Cobro`; `Contabilidad` escucha eventos de todos y ninguno depende de ella.
+- Dependencias: `Tesoreria` ← `Egreso`, `Deposito`; `Almacen` ← `Ecommerce`; `Contabilidad` y `Deposito` escuchan eventos de los demás y nadie depende de ellos.
 
 ## Multi-tenant
 
@@ -49,6 +50,7 @@ Leer estos documentos (todos en `.claude/`) antes de codificar. Cada uno describ
 - `OptsIO.events.emit('<plugin>.<modelo>.<estado>', obj, business=...)` registra el evento una sola vez (clave de idempotencia) y lo procesa **Celery**. No usar crontab de sondeo para lógica de negocio.
 - Cada handler se ejecuta con éxito una sola vez por evento, en la misma transacción que su efecto. Aun así, un handler debe ser idempotente por sí mismo (ej: `MTesoreria.registrar_movimiento(clave=...)`).
 - Suscripción en `plugin.py` con `get_event_handlers()`; acepta comodines (`'*.aprobado'`).
+- Un evento sin oyentes instalados no se persiste (`emit` devuelve `None`): instalar un plugin oyente más tarde no recupera lo anterior a su instalación.
 
 ### Eventos publicados
 
@@ -59,6 +61,8 @@ Leer estos documentos (todos en `.claude/`) antes de codificar. Cada uno describ
 | `deposito.deposito.<estado>` | Deposito (workflow) | Contabilidad |
 | `egreso.gasto.<estado>`, `egreso.gasto.rendido` | Egreso | Contabilidad |
 | `egreso.pago.<estado>`, `egreso.transferencia.<estado>` | Egreso | Contabilidad |
+| `ecommerce.pedido.<estado>` | Ecommerce (`recibido → pagado → preparado → despachado`) | `pagado`: Ecommerce (factura electrónica), Deposito (depósito pendiente) |
+| `almacen.recepcion.<estado>`, `almacen.ajuste.<estado>` | Almacen | — |
 | `<plugin>.<modelo>.anulado` | `WorkflowMixin.anular()` | Contabilidad (contra-asiento) |
 
 El payload lleva todo lo que el oyente necesita (montos, ids de cuenta/caja/categoría, número, fecha): un plugin
@@ -74,6 +78,15 @@ oyente no importa modelos del emisor.
   falta configuración; `MContabilidad.reprocesar_eventos` lo recupera sin duplicar.
 - Para que un plugin nuevo asiente: emitir su evento de cierre con el payload, agregar un handler en
   `Contabilidad/handlers.py`, su formato en `plantillas/formatos.py` y suscribirlo en `Contabilidad/plugin.py`.
+
+## Inventario y tienda online
+
+- `Almacen`: todo cambio de stock pasa por `Almacen.models.mover_stock` (idempotente por `clave`, nunca negativo, sincroniza `Producto.stock`).
+  Para vender: `reservar` → `despachar` (picking → almacenaje → recepción) o `liberar_reservas`. `averiados` no es vendible.
+- `Ecommerce`: publica productos del maestro `Sifen.Producto` en una `Tienda`. El carrito vive en la sesión; precios y stock se validan
+  siempre en el servidor. El seguimiento público del pedido usa un `token` UUID, nunca el número correlativo.
+- Temas: `TemaTienda` = layout base + variables de color/tipografía + archivo CSS propio + CSS rápido, cargados después de
+  `Ecommerce/static/Ecommerce/tienda.css`. Los valores del tema se validan/sanitizan antes de salir en un `<style>` público.
 
 ## Directrices de código (resumen; el detalle está en `context.md` y `crud_patterm.md`)
 

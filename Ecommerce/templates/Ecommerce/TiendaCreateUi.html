@@ -1,0 +1,223 @@
+<div class="ui_tienda">
+    <form id="form_tienda_{{ rr }}" class="form_tienda">
+        <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
+        <div class="row">
+            <div class="col-md-6 mb-3" data-field="nombre">
+                <label>Nombre <span class="text-danger">*</span></label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre }}{% else %}{% endif %}' required />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="slug">
+                <label>Dirección pública (slug)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="slug" class="form-control" placeholder="se genera del nombre" value='{% if mobj %}{{ mobj.slug }}{% else %}{% endif %}' />
+                </div>
+                <small class="text-muted">La tienda queda en /tienda/&lt;slug&gt;/</small>
+            </div>
+            <div class="col-md-12 mb-3" data-field="descripcion">
+                <label>Descripción corta</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="descripcion" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.descripcion }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="temaobj_id">
+                <label>Tema</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="temaobj_id" class="form-control">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3" data-field="activa">
+                <label>Activa</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="activa" class="form-control">
+                        <option value="true" {% if not mobj or mobj.activa %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.activa %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_portada"><h6 class="border-bottom pb-1 mt-2">Portada</h6></div>
+            <div class="col-md-6 mb-3" data-field="logo">
+                <label>Logo</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="logo" class="form-control" />
+                </div>
+                <small class="text-muted">{% if mobj and mobj.logo %}<a href="{{ mobj.logo.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+            <div class="col-md-6 mb-3" data-field="banner">
+                <label>Imagen de portada</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="file" name="banner" class="form-control" />
+                </div>
+                <small class="text-muted">{% if mobj and mobj.banner %}<a href="{{ mobj.banner.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+            </div>
+            <div class="col-md-6 mb-3" data-field="banner_titulo">
+                <label>Título de portada</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="banner_titulo" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.banner_titulo }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="banner_texto">
+                <label>Texto de portada</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="banner_texto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.banner_texto }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_contacto"><h6 class="border-bottom pb-1 mt-2">Contacto</h6></div>
+            <div class="col-md-6 mb-3" data-field="email">
+                <label>Email</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="email" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.email }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-6 mb-3" data-field="whatsapp">
+                <label>WhatsApp (con código de país)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="whatsapp" class="form-control" placeholder="5959xxxxxxxx" value='{% if mobj %}{{ mobj.whatsapp }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-12" data-field="sec_envio"><h6 class="border-bottom pb-1 mt-2">Envío y pago</h6></div>
+            <div class="col-md-4 mb-3" data-field="costo_envio">
+                <label>Costo de envío</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="costo_envio" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.costo_envio|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="envio_gratis_desde">
+                <label>Envío gratis desde</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="envio_gratis_desde" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.envio_gratis_desde|stringformat:"s" }}{% else %}0{% endif %}' />
+                </div>
+                <small class="text-muted">0 = nunca gratis</small>
+            </div>
+            <div class="col-md-4 mb-3" data-field="acepta_contra_entrega">
+                <label>Pago contra entrega</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="acepta_contra_entrega" class="form-control">
+                        <option value="true" {% if not mobj or mobj.acepta_contra_entrega %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.acepta_contra_entrega %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="acepta_transferencia">
+                <label>Transferencia bancaria</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="acepta_transferencia" class="form-control">
+                        <option value="true" {% if not mobj or mobj.acepta_transferencia %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.acepta_transferencia %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="datos_transferencia">
+                <label>Datos para transferir (los ve el cliente)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <textarea name="datos_transferencia" class="form-control" rows="3" placeholder="Banco, número de cuenta, titular, RUC">{% if mobj %}{{ mobj.datos_transferencia }}{% endif %}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-md-12 text-start">
+                <button class="btn btn-primary" type="submit">Guardar</button>
+            </div>
+        </div>
+    </form>
+</div>
+<script type="text/javascript">
+    {% if not en_modal %}qelem('#offcanvasGlobalUiLabel').innerHTML = `{% if mobj %}Modificar Tienda {{ mobj.pk }}{% else %}Crear Tienda{% endif %}`;{% endif %}
+
+    form_search.se_populate({
+        surl: '{% url "iom" %}',
+        dele: '#form_tienda_{{ rr }} select[name=temaobj_id]',
+        app_name: 'Ecommerce',
+        model_name: 'TemaTienda',
+        field_display: ["nombre"],
+        field_id: ['id'],
+        db_fields: ["id", "nombre"],
+        db_methods: [],
+        qs_be: [{"field": "activo", "value": true}],
+        dbcon: 'default',
+        headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')},
+        first_selected: false,
+        allowClear: true,
+        width: '100%',
+        dropdownParent: {% if en_modal %}$('.swal2-container'){% else %}$('#offcanvasGlobalUi'){% endif %},
+        theme: 'bootstrap-5'
+    }).then(() => {
+        {% if mobj and mobj.temaobj %}
+            $('#form_tienda_{{ rr }} select[name=temaobj_id]').val('{{ mobj.temaobj.id }}').trigger('change');
+        {% endif %}
+    });
+
+    initializeInputMasks_tienda = () => {
+        let maskDecimal = {
+            alias: 'numeric', groupSeparator: ',', radixPoint: '.', autoGroup: true, digits: 2,
+            digitsOptional: false, rightAlign: true, allowMinus: false,
+            removeMaskOnSubmit: true, autoUnmask: true
+        };
+        let maskEntero = Object.assign({}, maskDecimal, { digits: 0, groupSeparator: '', autoGroup: false });
+        Inputmask(maskDecimal).mask(qelem('#form_tienda_{{ rr }} input[name=costo_envio]'));
+        Inputmask(maskDecimal).mask(qelem('#form_tienda_{{ rr }} input[name=envio_gratis_desde]'));
+    }
+    initializeInputMasks_tienda();
+
+    save_tienda = (target) => {
+        let fdata = new FormData();
+        fdata.append('module', 'OptsIO');
+        fdata.append('package', 'io_maction');
+        fdata.append('attr', 'IOMaction');
+        fdata.append('mname', 'process_record');
+        fdata.append('model_app_name', 'Ecommerce');
+        fdata.append('model_name', 'Tienda');
+        fdata.append('dbcon', 'default');
+        let edata = form_serials.form_to_json(new FormData(target));
+        ["temaobj_id"].forEach((idx) => {
+            let vv = $(`#form_tienda_{{ rr }} select[name=${idx}]`).val();
+            if (vv !== undefined) edata[idx] = vv;
+        });
+        // Leer valores sin mascara directamente del inputmask (el backend recibe punto decimal)
+        ["costo_envio", "envio_gratis_desde"].forEach((f) => {
+            let el = qelem(`#form_tienda_{{ rr }} input[name=${f}]`);
+            if (el && el.inputmask) edata[f] = el.inputmask.unmaskedvalue().replace(',', '.');
+        });
+        ["logo", "banner"].forEach((f) => {
+            let el = qelem(`#form_tienda_{{ rr }} input[name=${f}]`);
+            delete edata[f];
+            if (el && el.files.length > 0) fdata.append(f, el.files[0]);
+        });
+        
+        fdata.append('uc_fields', jfy(edata));
+        fdata.append('b_vals', jfy([]));
+        fdata.append('c_a', jfy([{ 'module': 'Ecommerce', 'package': 'mng_ecommerce', 'attr': 'MEcommerce', 'mname': 'save_tienda', 'cont': false, 'show_success': true }]));
+        fdata.append('a_vals', jfy([]));
+        let fele = document.querySelector('#form_tienda_{{ rr }}');
+        fele.classList.add('overlay-container');
+        fele.classList.add('overlay');
+        return axios.post('{% url "iom" %}', fdata, { headers: { 'X-CSRFToken': OptsIO.getCookie('csrftoken') } })
+        .then((rsp) => {
+            let msgs = rsp.data.hasOwnProperty('msgs') ? rsp.data.msgs : [rsp.data];
+            let got_error = msgs.some((ee) => ee.error);
+            UiB.BeMsgHandle({ rsps: msgs, timer: 2000, offcanvasglobal: {% if en_modal %}false{% else %}true{% endif %} });
+            if (!got_error) {
+                $('#{{ t_guid }}').DataTable().ajax.reload();
+                
+            }
+        }).catch((err) => {
+            log.error(`#form_tienda Error in save record: ` + JSON.stringify(err, null, 2));
+            UiB.MsgError(err);
+        }).finally(() => {
+            let ft = document.querySelector('#form_tienda_{{ rr }}');
+            if (ft) {
+                ft.classList.remove('overlay-container');
+                ft.classList.remove('overlay');
+            }
+        });
+    }
+
+    qelem('#form_tienda_{{ rr }}').addEventListener('submit', (evt) => {
+        evt.preventDefault();
+        save_tienda(evt.target);
+    })
+</script>

@@ -25,4 +25,5 @@ class Plugin(BasePlugin):
         }]
 
     def get_event_handlers(self) -> Dict[str, List[str]]:
-        return {'cobro.recibo.aprobado': ['Deposito.handlers.generar_depositos_de_cobro']}
+        return {'cobro.recibo.aprobado': ['Deposito.handlers.generar_depositos_de_cobro'],
+                'ecommerce.pedido.pagado': ['Deposito.handlers.generar_deposito_de_pedido']}

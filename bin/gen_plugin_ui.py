@@ -14,7 +14,8 @@ WORKFLOW_ACC = ('<i title="Avanzar al siguiente estado" class="tr-{k}-avanzar te
                 '<i title="Historial" class="tr-{k}-log text fs-5 mdi mdi-history text-muted cursor-pointer me-1"></i>')
 
 
-def workflow_js(app, k, M):
+def workflow_js(app, k, M, estados=('cargado', 'verificado', 'aprobado')):
+    siguiente_map = json.dumps({a: b for a, b in zip(estados, estados[1:])})
     return """
     {k}_workflow = (mname, rowobj, extra) => {{
         let gbe = new FormData();
@@ -37,7 +38,7 @@ def workflow_js(app, k, M):
 
     $(`#${{t_{k}}} tbody`).on('click', '.tr-{k}-avanzar', function() {{
         let rowobj = $(`#${{t_{k}}}`).DataTable().row($(this).closest('tr')).data();
-        let siguiente = {{cargado: 'verificado', verificado: 'aprobado'}}[rowobj.estado];
+        let siguiente = {siguiente_map}[rowobj.estado];
         if (rowobj.anulado || !siguiente) {{
             UiB.MsgInfo('La operación ya está cerrada.');
             return;
@@ -68,7 +69,7 @@ def workflow_js(app, k, M):
             }});
         }});
     }})
-""".format(k=k, app=app, M=M)
+""".format(k=k, app=app, M=M, siguiente_map=siguiente_map)
 BOOL = "return data ? 'Sí' : 'No';"
 
 def list_tmpl(app, s):
@@ -82,7 +83,7 @@ def list_tmpl(app, s):
     if s.get('workflow'):
         can_delete = False
         s = dict(s, acc=s.get('acc', f'<i title="Ver/Editar" class="tr-{k}-query text fs-5 mdi mdi-archive-eye-outline me-1"></i>') + WORKFLOW_ACC.format(k=k),
-                 extra_js=workflow_js(app, k, M) + s.get('extra_js', ''))
+                 extra_js=workflow_js(app, k, M, s.get('workflow_states', ('cargado', 'verificado', 'aprobado'))) + s.get('extra_js', ''))
         cols = cols + "\n" + col('anulado', 'Anulado', 'bool', hide=True)
     btns = ''
     if can_create:
@@ -239,7 +240,11 @@ def field_html(k, f):
     star = ' <span class="text-danger">*</span>' if f.get('required') else ''
     w = f.get('col', 6)
     ro = ' {% if mobj %}readonly{% endif %}' if f.get('readonly_on_edit') else ''
-    if typ in ('text', 'number', 'date'):
+    if typ == 'color':
+        inner = f"""<input type="color" name="{n}" class="form-control form-control-color" value='{{% if mobj %}}{{{{ mobj.{n} }}}}{{% else %}}{f.get('default', '#000000')}{{% endif %}}' />"""
+    elif typ == 'textarea':
+        inner = f"""<textarea name="{n}" class="form-control" rows="{f.get('rows', 4)}" placeholder="{f.get('ph', '')}">{{% if mobj %}}{{{{ mobj.{n} }}}}{{% endif %}}</textarea>"""
+    elif typ in ('text', 'number', 'date'):
         default = f.get('default', '')
         if typ == 'date':
             val = f"""{{% if mobj %}}{{{{ mobj.{n}|date:"Y-m-d" }}}}{{% else %}}{{% now "Y-m-d" %}}{{% endif %}}""" if f.get('today') else f"""{{% if mobj %}}{{{{ mobj.{n}|date:"Y-m-d" }}}}{{% endif %}}"""

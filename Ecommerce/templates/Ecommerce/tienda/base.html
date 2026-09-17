@@ -1,0 +1,49 @@
+{% load static humanize %}<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titulo %}{{ tienda.nombre }}{% endblock %}</title>
+    <meta name="description" content="{% block descripcion %}{{ tienda.descripcion }}{% endblock %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{% static 'Ecommerce/tienda.css' %}" rel="stylesheet">
+    {% if tema %}
+        <style>:root { {{ tema.get_css_variables|safe }} }</style>
+        {% if tema.css_archivo %}<link href="{{ tema.css_archivo.url }}" rel="stylesheet">{% endif %}
+        {% if tema.css_extra %}<style>{{ tema.get_css_extra|safe }}</style>{% endif %}
+    {% endif %}
+</head>
+<body class="tienda tienda-layout-{{ layout }}">
+    <header class="tienda-header">
+        <div class="container d-flex align-items-center justify-content-between py-2">
+            <a class="navbar-brand fw-bold fs-4" href="{% url 'ecommerce_home' tienda.slug %}">
+                {% if tienda.logo %}<img class="tienda-logo" src="{{ tienda.logo.url }}" alt="{{ tienda.nombre }}">{% else %}{{ tienda.nombre }}{% endif %}
+            </a>
+            <form class="d-none d-md-flex flex-grow-1 mx-4" action="{% url 'ecommerce_home' tienda.slug %}" method="get" role="search">
+                <input class="form-control" type="search" name="q" value="{{ q|default:'' }}" placeholder="Buscar productos..." aria-label="Buscar">
+            </form>
+            <a class="position-relative fs-4" href="{% url 'ecommerce_carrito' tienda.slug %}" aria-label="Carrito">
+                <i class="bi bi-bag"></i>
+                {% if carrito_cantidad %}<span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger fs-6">{{ carrito_cantidad }}</span>{% endif %}
+            </a>
+        </div>
+    </header>
+    {% if colecciones %}
+    <nav class="tienda-nav"><div class="container">
+        <a href="{% url 'ecommerce_home' tienda.slug %}">Todo</a>
+        {% for c in colecciones %}<a class="{% if coleccion.pk == c.pk %}activa{% endif %}" href="{% url 'ecommerce_coleccion' tienda.slug c.slug %}">{{ c.nombre }}</a>{% endfor %}
+    </div></nav>
+    {% endif %}
+    <main>{% block contenido %}{% endblock %}</main>
+    <footer class="tienda-footer"><div class="container d-flex flex-wrap justify-content-between gap-2">
+        <span>&copy; {% now "Y" %} {{ tienda.nombre }}</span>
+        <span>
+            {% if tienda.whatsapp %}<a href="https://wa.me/{{ tienda.whatsapp }}" rel="noopener"><i class="bi bi-whatsapp"></i> WhatsApp</a>{% endif %}
+            {% if tienda.email %} &nbsp; <a href="mailto:{{ tienda.email }}"><i class="bi bi-envelope"></i> {{ tienda.email }}</a>{% endif %}
+        </span>
+    </div></footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

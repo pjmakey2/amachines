@@ -1,0 +1,11 @@
+<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
+    {% for pt in pagina %}<div class="col">{% include "Ecommerce/tienda/_producto_card.html" %}</div>
+    {% empty %}<div class="col-12 w-100 text-center text-muted py-5">No encontramos productos.</div>{% endfor %}
+</div>
+{% if pagina.paginator.num_pages > 1 %}
+<nav class="mt-4" aria-label="Páginas"><ul class="pagination justify-content-center">
+    {% if pagina.has_previous %}<li class="page-item"><a class="page-link" href="?p={{ pagina.previous_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}">Anterior</a></li>{% endif %}
+    <li class="page-item disabled"><span class="page-link">{{ pagina.number }} / {{ pagina.paginator.num_pages }}</span></li>
+    {% if pagina.has_next %}<li class="page-item"><a class="page-link" href="?p={{ pagina.next_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}">Siguiente</a></li>{% endif %}
+</ul></nav>
+{% endif %}

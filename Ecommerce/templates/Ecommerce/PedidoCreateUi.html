@@ -1,0 +1,73 @@
+<div class="ui_pedido" id="pedido_detalle_{{ rr }}">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <h5 class="mb-0">Pedido #{{ mobj.get_numero_display }} — {{ mobj.tiendaobj.nombre }}</h5>
+            <small class="text-muted">{{ mobj.fecha|date:"d/m/Y H:i" }} · estado <b>{{ mobj.estado }}</b>{% if mobj.anulado %} · <span class="text-danger">anulado</span>{% endif %}</small>
+        </div>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ mobj.get_url }}" target="_blank" rel="noopener"><i class="mdi mdi-open-in-new"></i> Vista del cliente</a>
+    </div>
+    <div class="row g-2 mb-3">
+        <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-body">
+            <h6>Cliente</h6>
+            <div>{{ mobj.cliente_nombre }}{% if mobj.cliente_documento %} · RUC/CI {{ mobj.cliente_documento }}{% endif %}</div>
+            <div><i class="mdi mdi-phone"></i> {{ mobj.cliente_telefono }} · <i class="mdi mdi-email-outline"></i> {{ mobj.cliente_email }}</div>
+            <div><i class="mdi mdi-map-marker"></i> {{ mobj.direccion }}{% if mobj.ciudad %}, {{ mobj.ciudad }}{% endif %}</div>
+            {% if mobj.notas %}<div class="text-muted small mt-1">Notas: {{ mobj.notas }}</div>{% endif %}
+        </div></div></div>
+        <div class="col-md-6"><div class="card shadow-sm h-100"><div class="card-body">
+            <h6>Pago y factura</h6>
+            <div>{{ mobj.get_metodo_pago_display }}</div>
+            {% if mobj.estado == 'recibido' and not mobj.anulado %}
+                <div class="input-group input-group-sm mt-2">
+                    <input type="text" name="pago_referencia" class="form-control" placeholder="Nro. de comprobante de la transferencia" value="{{ mobj.pago_referencia }}">
+                    <button class="btn btn-outline-primary" type="button" name="btn_referencia">Guardar referencia</button>
+                </div>
+                <small class="text-muted">Al confirmar el pago (ícono ✔ de la grilla) se genera la factura y el depósito pendiente.</small>
+            {% else %}
+                <div>Referencia: {{ mobj.pago_referencia|default:"-" }}</div>
+                <div class="mt-1">Factura: {% if mobj.documentheader_id %}<b>#{{ mobj.documentheader_id }}</b>{% else %}
+                    <span class="text-warning">pendiente</span> <button class="btn btn-sm btn-outline-primary ms-2" type="button" name="btn_facturar">Facturar ahora</button>{% endif %}</div>
+            {% endif %}
+        </div></div></div>
+    </div>
+    <table class="table table-sm">
+        <thead><tr><th>Código</th><th>Producto</th><th class="text-end">Cant.</th><th class="text-end">Precio</th><th class="text-end">Total</th></tr></thead>
+        <tbody name="tbody_detalles"></tbody>
+        <tfoot>
+            <tr><td colspan="4" class="text-end">Envío</td><td class="text-end" name="envio"></td></tr>
+            <tr class="fw-bold"><td colspan="4" class="text-end">Total {{ mobj.moneda }}</td><td class="text-end" name="total"></td></tr>
+        </tfoot>
+    </table>
+</div>
+<script type="text/javascript">
+    qelem('#offcanvasGlobalUiLabel').innerHTML = `Pedido online {{ mobj.get_numero_display }}`;
+    pedido_post = (mname, extra) => {
+        let gbe = new FormData();
+        gbe.append('module', 'Ecommerce');
+        gbe.append('package', 'mng_ecommerce');
+        gbe.append('attr', 'MEcommerce');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        gbe.append('id', '{{ mobj.pk }}');
+        Object.keys(extra || {}).forEach((key) => gbe.append(key, extra[key]));
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            if (rsp.data.error) UiB.MsgError(rsp.data.error);
+            else if (mname !== 'get_pedido') { UiB.MsgSuccess(rsp.data.success || rsp.data.info); $('#{{ t_guid }}').DataTable().ajax.reload(null, false); }
+            return rsp.data;
+        });
+    }
+    pedido_post('get_pedido').then((d) => {
+        let esc = (v) => $('<span>').text(v == null ? '' : v).html();
+        qelem('#pedido_detalle_{{ rr }} [name=tbody_detalles]').innerHTML = (d.detalles || []).map((l) => `<tr><td>${l.prod_cod}</td><td>${esc(l.titulo)}</td>
+            <td class="text-end">${l.cantidad}</td><td class="text-end">${UiN.formatNumberU(l.precio.toFixed(0))}</td><td class="text-end">${UiN.formatNumberU(l.total.toFixed(0))}</td></tr>`).join('');
+        qelem('#pedido_detalle_{{ rr }} [name=envio]').textContent = UiN.formatNumberU(parseFloat('{{ mobj.costo_envio|stringformat:"s" }}').toFixed(0));
+        qelem('#pedido_detalle_{{ rr }} [name=total]').textContent = UiN.formatNumberU(parseFloat('{{ mobj.total|stringformat:"s" }}').toFixed(0));
+    });
+    {% if mobj.estado == 'recibido' and not mobj.anulado %}
+        qelem('#pedido_detalle_{{ rr }} [name=btn_referencia]').addEventListener('click', () => {
+            pedido_post('set_pago_referencia', {referencia: qelem('#pedido_detalle_{{ rr }} [name=pago_referencia]').value});
+        });
+    {% elif not mobj.documentheader_id %}
+        qelem('#pedido_detalle_{{ rr }} [name=btn_facturar]').addEventListener('click', () => pedido_post('facturar_pedido'));
+    {% endif %}
+</script>

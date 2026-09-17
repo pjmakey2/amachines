@@ -1,0 +1,138 @@
+<div class="tematienda_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_tematienda" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_tematienda" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_tematienda" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_tematienda_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_tematienda = [];
+    tematienda_home_be = function (data, settings) {
+        let tt = qelem(`#table_tematienda_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_tematienda.length > 0) mquery = [...mquery, ...gmquery_tematienda];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_tematienda = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_tematienda,
+          url_exec: '{% url "iom" %}',
+          title: 'Temas de Tienda',
+          tselector: 'table_tematienda_ui',
+          app_name: 'Ecommerce',
+          model_name: 'TemaTienda',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: tematienda_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_tematienda_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-tematienda-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Tema', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'layout', tit: 'Layout', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'color_primario', tit: 'Primario', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { return `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid #ccc;background:${data}"></span> ${data}`; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'color_acento', tit: 'Acento', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { return `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid #ccc;background:${data}"></span> ${data}`; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activo', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    tematienda_form_crud = (pk) => {
+        let dattrs = { title: 'Temas de Tienda', t_guid: t_tematienda, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Ecommerce',
+            model_name: 'TemaTienda',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Ecommerce/TemaTiendaCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_tematienda').addEventListener('click', () => tematienda_form_crud());
+
+    $(`#${t_tematienda} tbody`).on('click', '.tr-tematienda-query', function() {
+        let rowobj = $(`#${t_tematienda}`).DataTable().row($(this).closest('tr')).data();
+        tematienda_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_tematienda').addEventListener('click', function() {
+        let ids = $(`#${t_tematienda}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Ecommerce');
+            gbe.append('package', 'mng_ecommerce');
+            gbe.append('attr', 'MEcommerce');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'TemaTienda');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_tematienda}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_tematienda').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_tematienda = [];
+            let v = qelem('#input_buscar_tematienda').value.trim();
+            if (v !== '') {
+                gmquery_tematienda.push({'field': 'or_nombre__icontains', 'value': v});
+            }
+            $(`#${t_tematienda}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_tematienda}`).on('draw.dt', function() {
+        let tt = qelem(`#table_tematienda_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

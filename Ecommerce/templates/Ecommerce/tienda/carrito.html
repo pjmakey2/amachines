@@ -1,0 +1,40 @@
+{% extends "Ecommerce/tienda/base.html" %}
+{% load humanize %}
+{% block titulo %}Carrito — {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="container py-4">
+    <h1 class="h3 mb-3">Tu carrito</h1>
+    {% if lineas %}
+    <form method="post" action="{% url 'ecommerce_carrito_actualizar' tienda.slug %}">{% csrf_token %}
+        <div class="table-responsive"><table class="table align-middle">
+            <thead><tr><th colspan="2">Producto</th><th class="text-end">Precio</th><th style="width: 110px;">Cantidad</th><th class="text-end">Total</th></tr></thead>
+            <tbody>
+            {% for l in lineas %}
+                <tr>
+                    <td style="width: 72px;">{% if l.pt.get_imagen %}<img src="{{ l.pt.get_imagen }}" alt="" width="64" height="64" style="object-fit: cover; border-radius: .4rem;">{% endif %}</td>
+                    <td><a href="{% url 'ecommerce_producto' tienda.slug l.pt.slug %}">{{ l.pt.titulo }}</a>
+                        {% if l.sin_stock %}<br><span class="text-danger small">Solo quedan {{ l.disponible|floatformat:"0" }}: ajustá la cantidad</span>{% endif %}</td>
+                    <td class="text-end">{{ l.precio|floatformat:"0"|intcomma }}</td>
+                    <td><input type="number" name="cantidad_{{ l.pt.pk }}" value="{{ l.cantidad }}" min="0" max="99" class="form-control form-control-sm" aria-label="Cantidad de {{ l.pt.titulo }}"></td>
+                    <td class="text-end fw-bold">{{ l.total|floatformat:"0"|intcomma }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr><td colspan="4" class="text-end">Subtotal</td><td class="text-end">{{ totales.subtotal|floatformat:"0"|intcomma }}</td></tr>
+                <tr><td colspan="4" class="text-end">Envío</td><td class="text-end">{% if totales.envio %}{{ totales.envio|floatformat:"0"|intcomma }}{% else %}Gratis{% endif %}</td></tr>
+                <tr class="fs-5 fw-bold"><td colspan="4" class="text-end">Total {{ tienda.moneda }}</td><td class="text-end">{{ totales.total|floatformat:"0"|intcomma }}</td></tr>
+            </tfoot>
+        </table></div>
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-arrow-repeat"></i> Actualizar cantidades</button>
+            {% if hay_faltantes %}<span class="text-danger align-self-center">Ajustá las cantidades para continuar</span>
+            {% else %}<a class="btn btn-tienda btn-lg" href="{% url 'ecommerce_checkout' tienda.slug %}">Finalizar compra <i class="bi bi-arrow-right"></i></a>{% endif %}
+        </div>
+    </form>
+    {% else %}
+        <p class="text-muted">Tu carrito está vacío.</p>
+        <a class="btn btn-tienda" href="{% url 'ecommerce_home' tienda.slug %}">Ver productos</a>
+    {% endif %}
+</div>
+{% endblock %}

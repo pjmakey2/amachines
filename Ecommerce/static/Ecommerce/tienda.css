@@ -1,0 +1,41 @@
+/* CSS base de la tienda. Un tema lo personaliza con variables (--t-*) y con su propio archivo CSS, que se carga despues. */
+:root { --t-primario: #111827; --t-acento: #2563eb; --t-fondo: #ffffff; --t-texto: #1f2937; --t-fuente: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body.tienda { background: var(--t-fondo); color: var(--t-texto); font-family: var(--t-fuente); min-height: 100vh; display: flex; flex-direction: column; }
+.tienda main { flex: 1; }
+.tienda a { color: var(--t-acento); text-decoration: none; }
+.tienda-header { background: var(--t-primario); }
+.tienda-header a, .tienda-header .navbar-brand { color: #fff; }
+.tienda-header .tienda-logo { max-height: 40px; }
+.tienda-nav { border-bottom: 1px solid rgba(0,0,0,.08); }
+.tienda-nav a { color: var(--t-texto); padding: .6rem .9rem; display: inline-block; font-size: .92rem; }
+.tienda-nav a:hover, .tienda-nav a.activa { color: var(--t-acento); }
+.tienda-banner { background: var(--t-primario) center/cover no-repeat; color: #fff; padding: 5rem 1rem; text-align: center; }
+.tienda-banner h1 { font-weight: 700; }
+.tienda .btn-tienda { background: var(--t-acento); border-color: var(--t-acento); color: #fff; }
+.tienda .btn-tienda:hover { filter: brightness(.92); color: #fff; }
+.producto-card { border: 1px solid rgba(0,0,0,.08); border-radius: .5rem; overflow: hidden; height: 100%; background: #fff; transition: box-shadow .15s; }
+.producto-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.10); }
+.producto-card .foto { aspect-ratio: 1 / 1; background: #f3f4f6 center/cover no-repeat; display: block; }
+.producto-card .cuerpo { padding: .75rem; }
+.producto-card .titulo { color: var(--t-texto); font-weight: 600; font-size: .95rem; display: block; min-height: 2.6em; }
+.precio { font-weight: 700; font-size: 1.05rem; }
+.precio-antes { text-decoration: line-through; opacity: .55; font-weight: 400; font-size: .9rem; margin-left: .35rem; }
+.badge-agotado { background: #6b7280; }
+.producto-galeria img { width: 100%; border-radius: .5rem; }
+.producto-galeria .miniaturas img { width: 72px; height: 72px; object-fit: cover; cursor: pointer; border: 2px solid transparent; }
+.producto-galeria .miniaturas img.activa { border-color: var(--t-acento); }
+.pasos-pedido { display: flex; gap: .5rem; flex-wrap: wrap; }
+.pasos-pedido .paso { flex: 1; min-width: 110px; text-align: center; padding: .6rem; border-radius: .5rem; background: #f3f4f6; font-size: .9rem; text-transform: capitalize; }
+.pasos-pedido .paso.hecho { background: var(--t-acento); color: #fff; }
+.tienda-footer { background: var(--t-primario); color: rgba(255,255,255,.8); padding: 1.5rem 0; margin-top: 3rem; font-size: .9rem; }
+.tienda-footer a { color: #fff; }
+
+/* Layout minimal */
+body.tienda-layout-minimal .tienda-header { background: var(--t-fondo); border-bottom: 1px solid rgba(0,0,0,.08); }
+body.tienda-layout-minimal .tienda-header a, body.tienda-layout-minimal .tienda-header .navbar-brand { color: var(--t-texto); }
+body.tienda-layout-minimal .tienda-nav { text-align: center; border-bottom: 0; }
+body.tienda-layout-minimal .tienda-banner { padding: 8rem 1rem; }
+body.tienda-layout-minimal .tienda-banner h1 { font-size: 3.2rem; letter-spacing: -.02em; }
+body.tienda-layout-minimal .producto-card { border: 0; border-radius: 0; }
+body.tienda-layout-minimal .producto-card:hover { box-shadow: none; }
+body.tienda-layout-minimal .producto-card .cuerpo { padding: .75rem 0; text-align: center; }

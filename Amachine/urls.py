@@ -4,6 +4,9 @@ URL configuration for Amachine project.
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.2/topics/http/urls/
 """
+import importlib
+import importlib.util
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -32,6 +35,12 @@ urlpatterns = [
     # OptsIO URLs (incluye login, logout, api, etc.)
     path('io/', include('OptsIO.urls')),
 ]
+
+# URLs publicas de plugins: un plugin con `urls.py` se monta bajo su URL_PREFIX
+for plugin_app in settings.AMACHINE_PLUGINS:
+    if importlib.util.find_spec(f'{plugin_app}.urls'):
+        plugin_urls = importlib.import_module(f'{plugin_app}.urls')
+        urlpatterns.append(path(plugin_urls.URL_PREFIX, include(f'{plugin_app}.urls')))
 
 # Servir archivos estáticos y media en modo desarrollo
 if settings.DEBUG:

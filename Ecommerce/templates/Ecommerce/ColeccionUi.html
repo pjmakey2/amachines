@@ -1,0 +1,137 @@
+<div class="coleccion_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_coleccion" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_coleccion" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_coleccion" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_coleccion_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_coleccion = [];
+    coleccion_home_be = function (data, settings) {
+        let tt = qelem(`#table_coleccion_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_coleccion.length > 0) mquery = [...mquery, ...gmquery_coleccion];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_coleccion = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_coleccion,
+          url_exec: '{% url "iom" %}',
+          title: 'Colecciones',
+          tselector: 'table_coleccion_ui',
+          app_name: 'Ecommerce',
+          model_name: 'Coleccion',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: coleccion_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_coleccion_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-coleccion-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'tiendaobj__nombre', tit: 'Tienda', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Colección', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'slug', tit: 'Slug', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'orden', tit: 'Orden', cls: 'align-right', dtyp: 'int', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activa', tit: 'Activa', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    coleccion_form_crud = (pk) => {
+        let dattrs = { title: 'Colecciones', t_guid: t_coleccion, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Ecommerce',
+            model_name: 'Coleccion',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Ecommerce/ColeccionCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_coleccion').addEventListener('click', () => coleccion_form_crud());
+
+    $(`#${t_coleccion} tbody`).on('click', '.tr-coleccion-query', function() {
+        let rowobj = $(`#${t_coleccion}`).DataTable().row($(this).closest('tr')).data();
+        coleccion_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_coleccion').addEventListener('click', function() {
+        let ids = $(`#${t_coleccion}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Ecommerce');
+            gbe.append('package', 'mng_ecommerce');
+            gbe.append('attr', 'MEcommerce');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'Coleccion');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_coleccion}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    qelem('#input_buscar_coleccion').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_coleccion = [];
+            let v = qelem('#input_buscar_coleccion').value.trim();
+            if (v !== '') {
+                gmquery_coleccion.push({'field': 'or_nombre__icontains', 'value': v});
+                gmquery_coleccion.push({'field': 'or_tiendaobj__nombre__icontains', 'value': v});
+            }
+            $(`#${t_coleccion}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_coleccion}`).on('draw.dt', function() {
+        let tt = qelem(`#table_coleccion_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>

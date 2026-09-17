@@ -1,0 +1,143 @@
+<div class="tienda_ui_container container-fluid">
+    <div class="toolbar mb-3 d-flex justify-content-between align-items-center">
+        <div class="toolbar-buttons">
+            <button id="btn_crear_tienda" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
+            <button id="btn_borrar_tienda" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+        </div>
+        <div class="toolbar-search">
+            <input type="text" id="input_buscar_tienda" class="form-control" placeholder="Buscar...">
+        </div>
+    </div>
+    <div id="table_tienda_ui"></div>
+</div>
+<script type="text/javascript">
+    var gmquery_tienda = [];
+    tienda_home_be = function (data, settings) {
+        let tt = qelem(`#table_tienda_ui`);
+        tt.classList.add('overlay-container');
+        tt.classList.add('overlay');
+        let crdata = Object.assign({}, settings.ajax.initquery);
+        let mquery = [];
+        if (gmquery_tienda.length > 0) mquery = [...mquery, ...gmquery_tienda];
+        if (mquery.length > 0) crdata.mquery = jfy(mquery);
+        return Object.assign(data, crdata);
+    }
+    t_tienda = `dtable_${OptsIO.s4generate()}`;
+    Grid.datatables_wrapper({
+          t_guid: t_tienda,
+          url_exec: '{% url "iom" %}',
+          title: 'Tiendas',
+          tselector: 'table_tienda_ui',
+          app_name: 'Ecommerce',
+          model_name: 'Tienda',
+          cls_table: 'cell-border row-border table table-sm',
+          cls_thead: 'border-gray-900',
+          mquery: [],
+          plength: 100,
+          builder_be: tienda_home_be,
+          t_opts: {
+              select: true,
+              fixedHeader: true,
+              responsive: null,
+              scrollCollapse: true,
+              scrollX: true,
+              scrollY: 600,
+              paging: true,
+              order: [[1, 'asc']],
+              rowId: function(row, se) { return `tr_tienda_${row.id}` }
+          },
+          columns: [
+               { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
+                dfcon: `<i title="Ver/Editar" class="tr-tienda-query text fs-5 mdi mdi-archive-eye-outline me-1"></i><i title="Abrir la tienda pública" class="tr-tienda-abrir text fs-5 mdi mdi-open-in-new text-primary cursor-pointer"></i>` },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Tienda', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'slug', tit: 'Dirección (/tienda/...)', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'temaobj__nombre', tit: 'Tema', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'costo_envio', tit: 'Envío', cls: 'align-right', dtyp: 'float', hide: false,
+                 render: (data, type, rowobj) => { return UiN.formatNumberU(parseFloat(data || 0).toFixed(0)); } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'activa', tit: 'Activa', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+          ]
+      })
+
+    tienda_form_crud = (pk) => {
+        let dattrs = { title: 'Tiendas', t_guid: t_tienda, sui_rr: '{{ rr }}', offcanvasglobal: true };
+        let tps = {
+            model_app_name: 'Ecommerce',
+            model_name: 'Tienda',
+            dbcon: 'default',
+            url: '{% url "dtmpl" %}',
+            dattrs: dattrs,
+            template: 'Ecommerce/TiendaCreateUi.html',
+            raw: true,
+        }
+        if (pk) tps['pk'] = pk;
+        OptsIO.getTmpl(tps).then((rsp) => {
+            $('#offcanvasGlobalUiBody').html(rsp.data);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            document.getElementById('offcanvasGlobalUi').addEventListener('hidden.bs.offcanvas', () => {
+                $('#offcanvasGlobalUiBody').html('');
+            }, { once: true })
+            UiB.kILLLoaderAjax();
+        })
+    }
+
+
+    qelem('#btn_crear_tienda').addEventListener('click', () => tienda_form_crud());
+
+    $(`#${t_tienda} tbody`).on('click', '.tr-tienda-query', function() {
+        let rowobj = $(`#${t_tienda}`).DataTable().row($(this).closest('tr')).data();
+        tienda_form_crud(rowobj.id);
+    })
+
+    qelem('#btn_borrar_tienda').addEventListener('click', function() {
+        let ids = $(`#${t_tienda}`).DataTable().rows({ selected: true }).data().toArray().map(row => row.id);
+        if (ids.length === 0) {
+            UiB.MsgError('Por favor, selecciona al menos un registro.');
+            return;
+        }
+        UiB.MsgSwall({
+            msg: `¿Borrar ${ids.length} registro(s)? Esta acción no se puede deshacer.`,
+            ttype: 'info'
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+            let gbe = new FormData();
+            gbe.append('module', 'Ecommerce');
+            gbe.append('package', 'mng_ecommerce');
+            gbe.append('attr', 'MEcommerce');
+            gbe.append('mname', 'delete_catalogo');
+            gbe.append('dbcon', 'default');
+            gbe.append('ids', jfy(ids));
+            gbe.append('model_name', 'Tienda');
+            axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+                UiB.BeMsgHandle({ rsps: rsp.data.msgs, timer: 2000, offcanvasglobal: true });
+                $(`#${t_tienda}`).DataTable().ajax.reload();
+            }).catch((err) => {
+                log.error(`Error: ${jfy(err)}`);
+                UiB.MsgError('Ocurrió un error. Por favor, intenta de nuevo.');
+            });
+        });
+    });
+
+    $(`#${t_tienda} tbody`).on('click', '.tr-tienda-abrir', function() {
+        let rowobj = $(`#${t_tienda}`).DataTable().row($(this).closest('tr')).data();
+        window.open(`/tienda/${rowobj.slug}/`, '_blank', 'noopener');
+    })
+
+    qelem('#input_buscar_tienda').onkeydown = (evt) => {
+        if (evt.key === 'Enter') {
+            gmquery_tienda = [];
+            let v = qelem('#input_buscar_tienda').value.trim();
+            if (v !== '') {
+                gmquery_tienda.push({'field': 'or_nombre__icontains', 'value': v});
+                gmquery_tienda.push({'field': 'or_slug__icontains', 'value': v});
+            }
+            $(`#${t_tienda}`).DataTable().ajax.reload();
+        }
+    }
+
+    $(`#${t_tienda}`).on('draw.dt', function() {
+        let tt = qelem(`#table_tienda_ui`);
+        tt.classList.remove('overlay-container');
+        tt.classList.remove('overlay');
+    })
+</script>
