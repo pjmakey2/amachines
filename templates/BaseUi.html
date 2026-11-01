@@ -125,6 +125,7 @@
 
                     // Execute scripts in the loaded content (await external scripts first)
                     await executeScriptsInContainer(viewContainer);
+                    AmTheme.refreshButtons();
 
                     // After view is loaded, check business status
                     setTimeout(function() {

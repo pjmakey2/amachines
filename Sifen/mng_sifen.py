@@ -3445,6 +3445,7 @@ class MSifen:
         q: dict = kwargs.get('qdict', {})
         ruc = q.get('ruc', '').strip()
         eser = ekuatia_serials.Eserial()
+        clobj = Clientes.objects.filter(pdv_ruc=ruc).first()
         if clobj:
             msg = 'RUC LOCAL'
             pdv_nombrefactura = clobj.pdv_nombrefactura

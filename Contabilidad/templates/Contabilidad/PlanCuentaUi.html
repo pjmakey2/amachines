@@ -49,7 +49,9 @@
           columns: [
                { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
                 dfcon: `<i title="Ver/Editar" class="tr-plancuenta-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
-              { fdis: true, gre: true, btyp: 'fdb', idx: 'codigo', tit: 'Código', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'codigo', tit: 'Código', cls: 'align-left', dtyp: 'str', hide: false,
+                 render: (data, type, rowobj) => { return `<span class="font-monospace">${data}</span>`; } },
+              { fdis: true, gre: true, btyp: 'mdb', idx: 'get_codigo_corto', tit: 'Corto', cls: 'align-left', dtyp: 'str', hide: false },
               { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Cuenta', cls: 'align-left', dtyp: 'str', hide: false,
                  render: (data, type, rowobj) => { let pad = (rowobj.nivel - 1) * 18; return `<span style="padding-left:${pad}px; ${rowobj.imputable ? '' : 'font-weight:600;'}">${$('<span>').text(data).html()}</span>`; } },
               { fdis: true, gre: true, btyp: 'fdb', idx: 'tipo', tit: 'Tipo', cls: 'align-left', dtyp: 'str', hide: false },

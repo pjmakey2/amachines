@@ -2,22 +2,13 @@
     <form id="form_tematienda_{{ rr }}" class="form_tematienda">
         <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
         <div class="row">
-            <div class="col-md-6 mb-3" data-field="nombre">
+            <div class="col-md-8 mb-3" data-field="nombre">
                 <label>Nombre <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre }}{% else %}{% endif %}' required />
                 </div>
             </div>
-            <div class="col-md-4 mb-3" data-field="layout">
-                <label>Layout base</label>
-                <div class="input-group flex-nowrap am_focus_highlight">
-                    <select name="layout" class="form-control">
-                        <option value="clasico" {% if mobj and mobj.layout == "clasico" %}selected{% endif %}>Clásico</option>
-                        <option value="minimal" {% if mobj and mobj.layout == "minimal" %}selected{% endif %}>Minimal</option>
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-2 mb-3" data-field="activo">
+            <div class="col-md-4 mb-3" data-field="activo">
                 <label>Activo</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <select name="activo" class="form-control">
@@ -26,14 +17,37 @@
                     </select>
                 </div>
             </div>
+            <div class="col-md-12 mb-3" data-field="preset">
+                <label>Estilo base</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="preset" class="form-control">
+                        <option value="clasico" {% if mobj and mobj.preset == "clasico" %}selected{% endif %}>Clásico — General</option>
+                        <option value="minimal" {% if mobj and mobj.preset == "minimal" %}selected{% endif %}>Minimal — Moda / diseño</option>
+                        <option value="bazaar" {% if mobj and mobj.preset == "bazaar" %}selected{% endif %}>Bazaar — Electrónica / marketplace</option>
+                        <option value="fresco" {% if mobj and mobj.preset == "fresco" %}selected{% endif %}>Fresco — Almacén / alimentos</option>
+                        <option value="hogar" {% if mobj and mobj.preset == "hogar" %}selected{% endif %}>Hogar — Muebles / decoración</option>
+                    </select>
+                </div>
+                <small class="text-muted">Cada estilo trae su CSS, colores, tipografía y estructura (sidebar de categorías, tipo de portada).</small>
+            </div>
+            <div class="col-md-12" data-field="sec_colores"><h6 class="border-bottom pb-1 mt-2">Colores</h6></div>
+            <div class="col-md-12 mb-3" data-field="colores_propios">
+                <label>Usar colores propios (si no, los del estilo)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <select name="colores_propios" class="form-control">
+                        <option value="true" {% if not mobj or mobj.colores_propios %}selected{% endif %}>Sí</option>
+                        <option value="false" {% if mobj and not mobj.colores_propios %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+            </div>
             <div class="col-md-3 mb-3" data-field="color_primario">
-                <label>Color primario (cabecera/pie)</label>
+                <label>Primario (cabecera/pie)</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="color" name="color_primario" class="form-control form-control-color" value='{% if mobj %}{{ mobj.color_primario }}{% else %}#111827{% endif %}' />
                 </div>
             </div>
             <div class="col-md-3 mb-3" data-field="color_acento">
-                <label>Color de acento (botones/enlaces)</label>
+                <label>Acento (botones/badges)</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="color" name="color_acento" class="form-control form-control-color" value='{% if mobj %}{{ mobj.color_acento }}{% else %}#2563eb{% endif %}' />
                 </div>
@@ -56,17 +70,18 @@
                     <input type="text" name="fuente" class="form-control" placeholder=""Inter", sans-serif" value='{% if mobj %}{{ mobj.fuente }}{% else %}{% endif %}' />
                 </div>
             </div>
+            <div class="col-md-12" data-field="sec_css"><h6 class="border-bottom pb-1 mt-2">CSS propio</h6></div>
             <div class="col-md-12 mb-3" data-field="css_archivo">
                 <label>Archivo CSS propio</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="file" name="css_archivo" class="form-control" />
                 </div>
-                <small class="text-muted">Se carga después del CSS base: puede redefinir cualquier estilo (.tienda-header, .producto-card, .btn-tienda...). {% if mobj and mobj.css_archivo %}<a href="{{ mobj.css_archivo.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
+                <small class="text-muted">Se carga después del estilo base: puede redefinir cualquier clase (.tienda-header, .producto-card, .hero-principal, .btn-tienda...). {% if mobj and mobj.css_archivo %}<a href="{{ mobj.css_archivo.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
             </div>
             <div class="col-md-12 mb-3" data-field="css_extra">
                 <label>CSS adicional (rápido)</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <textarea name="css_extra" class="form-control" rows="6" placeholder=".tienda-banner { padding: 9rem 1rem; }">{% if mobj %}{{ mobj.css_extra }}{% endif %}</textarea>
+                    <textarea name="css_extra" class="form-control" rows="6" placeholder=".hero-principal { min-height: 480px; }">{% if mobj %}{{ mobj.css_extra }}{% endif %}</textarea>
                 </div>
             </div>
         </div>
@@ -138,4 +153,14 @@
         evt.preventDefault();
         save_tematienda(evt.target);
     })
+
+    tematienda_toggle_colores = () => {
+        let propios = qelem('#form_tematienda_{{ rr }} select[name=colores_propios]').value === 'true';
+        ['color_primario', 'color_acento', 'color_fondo', 'color_texto', 'fuente'].forEach((n) => {
+            let el = qelem(`#form_tematienda_{{ rr }} [data-field=${n}]`);
+            if (el) el.hidden = !propios;
+        });
+    }
+    qelem('#form_tematienda_{{ rr }} select[name=colores_propios]').addEventListener('change', tematienda_toggle_colores);
+    tematienda_toggle_colores();
 </script>

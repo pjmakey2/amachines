@@ -1,9 +1,20 @@
 {% load humanize %}
 <div class="producto-card">
-    <a class="foto" href="{% url 'ecommerce_producto' tienda.slug pt.slug %}" {% if pt.get_imagen %}style="background-image: url('{{ pt.get_imagen }}');"{% endif %} aria-label="{{ pt.titulo }}"></a>
+    <a class="foto" href="{% url 'ecommerce_producto' tienda.slug pt.slug %}" {% if pt.get_imagen %}style="background-image: url('{{ pt.get_imagen }}');"{% endif %} aria-label="{{ pt.titulo }}">
+        {% with pct=pt.get_descuento_pct %}
+        {% if pct %}<span class="badge-oferta">{{ pct }}% OFF</span>{% elif pt.etiqueta %}<span class="badge-etiqueta">{{ pt.etiqueta }}</span>{% endif %}
+        {% endwith %}
+    </a>
     <div class="cuerpo">
+        {% if pt.coleccionobj %}<div class="categoria">{{ pt.coleccionobj.nombre }}</div>{% endif %}
         <a class="titulo" href="{% url 'ecommerce_producto' tienda.slug pt.slug %}">{{ pt.titulo }}</a>
-        <div class="precio">{{ tienda.moneda }} {{ pt.precio|floatformat:"0"|intcomma }}
-            {% if pt.precio_comparacion > pt.precio %}<span class="precio-antes">{{ pt.precio_comparacion|floatformat:"0"|intcomma }}</span>{% endif %}</div>
+        <div class="precio-linea">
+            <span class="precio">{{ tienda.moneda }} {{ pt.precio|floatformat:"0"|intcomma }}</span>
+            {% if pt.precio_comparacion > pt.precio %}<span class="precio-antes">{{ pt.precio_comparacion|floatformat:"0"|intcomma }}</span>{% endif %}
+        </div>
+        <form method="post" action="{% url 'ecommerce_carrito_agregar' tienda.slug %}" class="agregar-rapido">{% csrf_token %}
+            <input type="hidden" name="producto_id" value="{{ pt.pk }}"><input type="hidden" name="cantidad" value="1">
+            <button type="submit" class="btn-tienda btn-sm" aria-label="Agregar {{ pt.titulo }} al carrito"><i class="bi bi-bag-plus"></i><span>Agregar</span></button>
+        </form>
     </div>
 </div>

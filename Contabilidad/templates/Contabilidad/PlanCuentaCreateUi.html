@@ -2,14 +2,14 @@
     <form id="form_plancuenta_{{ rr }}" class="form_plancuenta">
         <input type="hidden" name="id" {% if mobj %} value="{{ mobj.pk }}" {% endif %}>
         <div class="row">
-            <div class="col-md-4 mb-3" data-field="codigo">
+            <div class="col-md-5 mb-3" data-field="codigo">
                 <label>Código <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
-                    <input type="text" name="codigo" class="form-control" placeholder="6.1.13" value='{% if mobj %}{{ mobj.codigo }}{% else %}{% endif %}' required {% if mobj %}readonly{% endif %} />
+                    <input type="text" name="codigo" class="form-control" placeholder="3.1.3.2" value='{% if mobj %}{{ mobj.codigo }}{% else %}{% endif %}' required {% if mobj %}readonly{% endif %} />
                 </div>
-                <small class="text-muted">La cuenta cuelga del código más cercano (6.1.13 cuelga de 6.1) y hereda su tipo.</small>
+                <small class="text-muted">Cargue solo los niveles con valor (3.1.3.2). Se completa al formato del negocio y hereda el tipo del padre.</small>
             </div>
-            <div class="col-md-8 mb-3" data-field="nombre">
+            <div class="col-md-7 mb-3" data-field="nombre">
                 <label>Nombre <span class="text-danger">*</span></label>
                 <div class="input-group flex-nowrap am_focus_highlight">
                     <input type="text" name="nombre" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.nombre }}{% else %}{% endif %}' required />
@@ -37,6 +37,10 @@
                     </select>
                 </div>
             </div>
+        </div>
+
+        <div class="alert alert-secondary py-2" name="codigo_preview">
+            {% if mobj %}<b>{{ mobj.codigo }}</b> · nivel {{ mobj.nivel }}<br><span class="small">{{ mobj.get_ruta }}</span>{% else %}Escriba el código para ver cómo queda.{% endif %}
         </div>
 
         <div class="row mt-2">
@@ -106,4 +110,36 @@
         evt.preventDefault();
         save_plancuenta(evt.target);
     })
+
+    {% if not mobj %}
+    plancuenta_preview_timer = null;
+    plancuenta_preview = () => {
+        let gbe = new FormData();
+        gbe.append('module', 'Contabilidad');
+        gbe.append('package', 'mng_contabilidad');
+        gbe.append('attr', 'MContabilidad');
+        gbe.append('mname', 'preview_codigo');
+        gbe.append('dbcon', 'default');
+        gbe.append('codigo', qelem('#form_plancuenta_{{ rr }} input[name=codigo]').value);
+        axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => {
+            let box = qelem('#form_plancuenta_{{ rr }} [name=codigo_preview]');
+            let d = rsp.data, esc = (v) => $('<span>').text(v == null ? '' : v).html();
+            let tipoSel = qelem('#form_plancuenta_{{ rr }} select[name=tipo]');
+            if (d.error) { box.className = 'alert alert-danger py-2'; box.innerHTML = esc(d.error) + ` <span class="small">(formato ${esc(d.formato)})</span>`; return; }
+            if (!d.codigo) { box.className = 'alert alert-secondary py-2'; box.textContent = 'Escriba el código para ver cómo queda.'; return; }
+            let padre = d.padre === null ? '<span class="text-danger">La cuenta padre no existe: créela primero.</span>' :
+                        (d.padre ? `Cuelga de: <b>${esc(d.padre)}</b>` : 'Cuenta de primer nivel: elija el tipo.');
+            box.className = 'alert py-2 ' + (d.existente ? 'alert-warning' : (d.padre === null ? 'alert-danger' : 'alert-info'));
+            box.innerHTML = `<b class="font-monospace">${d.codigo}</b> · nivel ${d.nivel}<br><span class="small">${padre}${d.existente ? ' · <b>Ya existe:</b> ' + esc(d.existente) : ''}</span>`;
+            tipoSel.disabled = !!d.padre;
+            if (d.tipo) tipoSel.value = d.tipo;
+        });
+    }
+    qelem('#form_plancuenta_{{ rr }} input[name=codigo]').addEventListener('input', () => {
+        clearTimeout(plancuenta_preview_timer);
+        plancuenta_preview_timer = setTimeout(plancuenta_preview, 300);
+    });
+    {% else %}
+    qelem('#form_plancuenta_{{ rr }} select[name=tipo]').disabled = true;
+    {% endif %}
 </script>

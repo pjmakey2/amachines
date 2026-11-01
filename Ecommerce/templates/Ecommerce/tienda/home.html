@@ -1,17 +1,37 @@
 {% extends "Ecommerce/tienda/base.html" %}
 {% block contenido %}
-{% if not q %}
-<section class="tienda-banner" {% if tienda.banner %}style="background-image: linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.35)), url('{{ tienda.banner.url }}');"{% endif %}>
-    <h1>{{ tienda.banner_titulo|default:tienda.nombre }}</h1>
-    {% if tienda.banner_texto or tienda.descripcion %}<p class="lead mb-0">{{ tienda.banner_texto|default:tienda.descripcion }}</p>{% endif %}
-</section>
-{% endif %}
-<div class="container py-4">
-    {% if destacados %}
-        <h2 class="h4 mb-3">Destacados</h2>
-        <div class="row row-cols-2 row-cols-md-4 g-3 mb-5">{% for pt in destacados %}<div class="col">{% include "Ecommerce/tienda/_producto_card.html" %}</div>{% endfor %}</div>
-    {% endif %}
-    <h2 class="h4 mb-3">{% if q %}Resultados para “{{ q }}”{% else %}Todos los productos{% endif %}</h2>
-    {% include "Ecommerce/tienda/_grilla.html" %}
+<div class="container tienda-cuerpo">
+    {% if preset.sidebar %}{% include "Ecommerce/tienda/_sidebar.html" %}{% endif %}
+    <div class="tienda-contenido">
+        {% if not q %}
+            {% if preset.hero == 'carrusel' and promos_carrusel %}
+                <section class="promo-carrusel">{% for promo in promos_carrusel %}{% include "Ecommerce/tienda/_promo.html" %}{% endfor %}</section>
+            {% else %}
+            <section class="hero {% if preset.hero == 'split' and promos_laterales %}hero-split{% endif %}">
+                <div class="hero-principal" {% if tienda.banner %}style="background-image: url('{{ tienda.banner.url }}');"{% endif %}>
+                    <div class="hero-texto">
+                        <h1>{{ tienda.banner_titulo|default:tienda.nombre }}</h1>
+                        {% if tienda.banner_texto or tienda.descripcion %}<p>{{ tienda.banner_texto|default:tienda.descripcion }}</p>{% endif %}
+                        {% if tienda.banner_cta_texto %}<a class="btn-tienda btn-lg" href="{{ tienda.banner_cta_url|default:'#productos' }}">{{ tienda.banner_cta_texto }}</a>{% endif %}
+                    </div>
+                </div>
+                {% if preset.hero == 'split' and promos_laterales %}
+                    <div class="hero-lateral">{% for promo in promos_laterales %}{% include "Ecommerce/tienda/_promo.html" %}{% endfor %}</div>
+                {% endif %}
+            </section>
+            {% endif %}
+            {% if destacados %}
+                <section class="seccion"><h2 class="seccion-titulo">Destacados</h2>
+                <div class="grilla-productos grilla-destacados">{% for pt in destacados %}{% include "Ecommerce/tienda/_producto_card.html" %}{% endfor %}</div></section>
+            {% endif %}
+        {% endif %}
+        <section class="seccion" id="productos">
+            <div class="seccion-cabecera">
+                <h2 class="seccion-titulo">{% if q %}Resultados para “{{ q }}”{% else %}Todos los productos{% endif %}</h2>
+                <span class="seccion-conteo">{{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }}</span>
+            </div>
+            {% include "Ecommerce/tienda/_grilla.html" %}
+        </section>
+    </div>
 </div>
 {% endblock %}

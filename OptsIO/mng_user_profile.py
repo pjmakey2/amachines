@@ -12,6 +12,10 @@ import logging
 
 log = logging.getLogger(__name__)
 
+# Preferencias que el front puede guardar y sus valores validos
+PREFERENCIAS_PERMITIDAS = {'theme': ('corp', 'modern')}
+
+
 class MUserProfile:
     """User Profile Management Class"""
 
@@ -43,6 +47,18 @@ class MUserProfile:
             'profile': profile_data,
             'created': created
         }
+
+    def set_preference(self, *args, **kwargs) -> dict:
+        """Guarda una preferencia de interfaz del usuario sin pisar las demas (ej: key='theme', value='modern')."""
+        userobj = kwargs.get('userobj')
+        q: dict = kwargs.get('qdict', {})
+        key, value = q.get('key'), q.get('value')
+        if key not in PREFERENCIAS_PERMITIDAS or value not in PREFERENCIAS_PERMITIDAS[key]:
+            return {'error': 'Preferencia inválida'}
+        profile, _ = UserProfile.objects.get_or_create(username=userobj.username, defaults={'preferences': {}})
+        profile.preferences = {**(profile.preferences or {}), key: value}
+        profile.save(update_fields=['preferences'])
+        return {'success': True, 'preferences': profile.preferences}
 
     def update_profile(self, *args, **kwargs) -> dict:
         """

@@ -26,8 +26,9 @@ class Plugin(BasePlugin):
                 item('ecommerce_pedidos', 'Pedidos', 'mdi mdi-cart-check', 'PedidoUi.html', 1),
                 item('ecommerce_productos', 'Productos Publicados', 'mdi mdi-tag-outline', 'ProductoTiendaUi.html', 2),
                 item('ecommerce_colecciones', 'Colecciones', 'mdi mdi-shape-outline', 'ColeccionUi.html', 3),
-                item('ecommerce_tiendas', 'Tiendas', 'mdi mdi-storefront-outline', 'TiendaUi.html', 4, '#831843'),
-                item('ecommerce_temas', 'Temas (apariencia y CSS)', 'mdi mdi-palette-outline', 'TemaTiendaUi.html', 5, '#831843'),
+                item('ecommerce_promos', 'Promociones de portada', 'mdi mdi-bullhorn-outline', 'PromoTiendaUi.html', 4),
+                item('ecommerce_tiendas', 'Tiendas', 'mdi mdi-storefront-outline', 'TiendaUi.html', 5, '#831843'),
+                item('ecommerce_temas', 'Temas (apariencia y CSS)', 'mdi mdi-palette-outline', 'TemaTiendaUi.html', 6, '#831843'),
             ],
         }]
 

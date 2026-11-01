@@ -4,6 +4,7 @@
 {% block descripcion %}{{ pt.descripcion_larga|truncatechars:150 }}{% endblock %}
 {% block contenido %}
 <div class="container py-4">
+    <nav class="migas mb-3" aria-label="Ubicación"><a href="{% url 'ecommerce_home' tienda.slug %}">Inicio</a>{% if pt.coleccionobj %}<span>›</span><a href="{% url 'ecommerce_coleccion' tienda.slug pt.coleccionobj.slug %}">{{ pt.coleccionobj.nombre }}</a>{% endif %}<span>›</span><b>{{ pt.titulo }}</b></nav>
     <div class="row g-4">
         <div class="col-md-6 producto-galeria">
             {% with imagenes=pt.get_imagenes %}
@@ -31,7 +32,7 @@
     </div>
     {% if relacionados %}
         <h2 class="h5 mt-5 mb-3">También te puede interesar</h2>
-        <div class="row row-cols-2 row-cols-md-4 g-3">{% for pt in relacionados %}<div class="col">{% include "Ecommerce/tienda/_producto_card.html" %}</div>{% endfor %}</div>
+        <div class="grilla-productos grilla-destacados">{% for pt in relacionados %}{% include "Ecommerce/tienda/_producto_card.html" %}{% endfor %}</div>
     {% endif %}
 </div>
 {% endblock %}

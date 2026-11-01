@@ -1,0 +1,9 @@
+<a class="promo-card" href="{{ promo.url|default:'#' }}" {% if promo.get_color_fondo %}style="background-color: {{ promo.get_color_fondo }};"{% endif %}>
+    <div class="promo-texto">
+        {% if promo.etiqueta %}<div class="promo-etiqueta">{{ promo.etiqueta }}</div>{% endif %}
+        <div class="promo-titulo">{{ promo.titulo }}</div>
+        {% if promo.subtitulo %}<div class="promo-sub">{{ promo.subtitulo }}</div>{% endif %}
+        <span class="promo-link">Ver más <i class="bi bi-arrow-right"></i></span>
+    </div>
+    {% if promo.imagen %}<img class="promo-img" src="{{ promo.imagen.url }}" alt="">{% endif %}
+</a>

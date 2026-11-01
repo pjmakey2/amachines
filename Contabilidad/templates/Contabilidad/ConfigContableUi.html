@@ -9,6 +9,12 @@
         </div></div></div>
         <div class="col-12 col-lg-5"><div class="card shadow-sm h-100"><div class="card-body">
             <h6>Arranque y reproceso</h6>
+            <label class="small">Formato del código de cuenta (dígitos por nivel)</label>
+            <div class="input-group mb-1">
+                <input type="text" name="formato_codigo" class="form-control font-monospace" placeholder="3.3.3.3.3.3">
+                <button class="btn btn-outline-primary" name="btn_formato">Guardar</button>
+            </div>
+            <small class="text-muted d-block mb-3" name="formato_ayuda"></small>
             <label class="small">La contabilidad corre desde</label>
             <div class="input-group mb-3">
                 <input type="date" name="fecha_inicio" class="form-control">
@@ -68,18 +74,26 @@
         post('get_config').then((d) => {
             if (!d.success) return;
             root.querySelector('[name=fecha_inicio]').value = d.fecha_inicio;
+            let fmt = root.querySelector('[name=formato_codigo]');
+            fmt.value = d.formato_codigo;
+            fmt.disabled = root.querySelector('[name=btn_formato]').disabled = !d.plan_vacio;
+            root.querySelector('[name=formato_ayuda]').textContent = d.plan_vacio
+                ? 'Ejemplo: con 3.3.3.3.3.3 la cuenta 3.1 queda 003.001.000.000.000.000. Se fija antes de aplicar la plantilla.'
+                : 'El plan ya tiene cuentas: el formato quedó fijo en ' + d.formato_codigo + '.';
             root.querySelector('[name=plantillas]').innerHTML = d.plantillas.map((p) => `
                 <div class="d-flex justify-content-between align-items-center border rounded p-2 mb-2">
                     <div><b>${esc(p.nombre)}</b> ${d.plantilla === p.clave ? '<span class="badge bg-success">aplicada</span>' : ''}<br>
                         <small class="text-muted">${esc(p.descripcion)} (${p.cuentas} cuentas)</small></div>
-                    <button class="btn btn-sm btn-primary" data-plantilla="${p.clave}">Aplicar</button>
+                    <div class="d-flex gap-1"><button class="btn btn-sm btn-secondary" data-ver="${p.clave}"><i class="mdi mdi-file-tree"></i> Ver plan</button>
+                    <button class="btn btn-sm btn-primary" data-plantilla="${p.clave}">Aplicar</button></div>
                 </div>`).join('');
             root.querySelectorAll('[data-plantilla]').forEach((btn) => btn.addEventListener('click', () => {
                 UiB.MsgSwall({ msg: '¿Aplicar la plantilla? Solo agrega lo que falta.', ttype: 'info' }).then((result) => {
                     if (!result.isConfirmed) return;
-                    post('aplicar_plantilla', {plantilla: btn.dataset.plantilla, fecha_inicio: root.querySelector('[name=fecha_inicio]').value}).then(cargar);
+                    post('aplicar_plantilla', {plantilla: btn.dataset.plantilla, fecha_inicio: root.querySelector('[name=fecha_inicio]').value, formato_codigo: root.querySelector('[name=formato_codigo]').value}).then(cargar);
                 });
             }));
+            root.querySelectorAll('[data-ver]').forEach((btn) => btn.addEventListener('click', () => verPlantilla(btn.dataset.ver)));
             let tbRoles = root.querySelector('[name=tbody_roles]');
             tbRoles.innerHTML = '';
             d.roles.forEach((r) => {
@@ -102,6 +116,56 @@
             });
         });
     }
+    // Arbol de la plantilla en el offcanvas: cada cuenta agrupadora se pliega; los roles muestran a que asientos/modulos afectan
+    const TIPO_BADGE = {activo: 'bg-info', pasivo: 'bg-warning', patrimonio: 'bg-secondary', ingreso: 'bg-success', costo: 'bg-danger', gasto: 'bg-danger'};
+    function verPlantilla(clave) {
+        post('get_plantilla', {plantilla: clave}).then((d) => {
+            if (!d.success) return;
+            let filas = d.cuentas.map((c, i) => {
+                let padres = d.cuentas.slice(0, i).filter((p) => c.corto.startsWith(p.corto + '.')).map((p) => p.corto).join(' ');
+                let modulos = c.modulos.map((m) => `<span class="badge bg-primary me-1" title="${esc(m.asientos.join(' · '))}">${esc(m.modulo)}</span>`).join('');
+                return `<tr class="plan-fila ${c.imputable ? '' : 'fw-semibold'} ${c.existe ? '' : 'table-success'}" data-corto="${c.corto}" data-padres="${padres}" data-nivel="${c.nivel}">
+                    <td class="font-monospace small text-nowrap">${c.codigo}</td>
+                    <td style="padding-left: ${(c.nivel - 1) * 18 + 8}px; white-space: nowrap;">
+                        ${c.imputable ? '<i class="mdi mdi-circle-small text-muted"></i>' : `<i class="mdi mdi-menu-down plan-toggle cursor-pointer" data-toggle="${c.corto}"></i>`}
+                        ${esc(c.nombre)}</td>
+                    <td><span class="badge ${TIPO_BADGE[c.tipo]}">${c.tipo}</span></td>
+                    <td class="small">${c.rol ? `<b>${esc(c.rol)}</b><br><span class="text-muted">${esc(c.rol_desc)}</span>` : ''}</td>
+                    <td>${modulos}</td>
+                    <td class="text-center">${c.existe ? '<i class="mdi mdi-check text-success" title="Ya existe en el plan"></i>' : '<span class="badge bg-success">nueva</span>'}</td></tr>`;
+            });
+            $('#offcanvasGlobalUiLabel').html(`Plantilla: ${esc(d.nombre)}`);
+            $('#offcanvasGlobalUiBody').html(`
+                <p class="text-muted small">${esc(d.descripcion)}<br>Formato ${esc(d.formato)} · ${d.cuentas.length} cuentas, <b>${d.nuevas}</b> nuevas para este negocio (filas en verde).
+                Las cuentas con <b>rol</b> son las que usan los asientos automáticos: el badge indica el módulo y, al pasar el mouse, el asiento.</p>
+                <div class="mb-2"><button class="btn btn-sm btn-secondary" id="plan_expandir">Expandir todo</button> <button class="btn btn-sm btn-secondary" id="plan_plegar">Solo primeros niveles</button></div>
+                <div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Código</th><th>Cuenta</th><th>Tipo</th><th>Rol</th><th>Afecta a</th><th></th></tr></thead>
+                <tbody id="plan_tbody">${filas.join('')}</tbody></table></div>`);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+            let colapsados = new Set();
+            function pintar() {
+                document.querySelectorAll('#plan_tbody .plan-fila').forEach((tr) => {
+                    let oculta = tr.dataset.padres.split(' ').some((p) => p && colapsados.has(p));
+                    tr.hidden = oculta;
+                });
+                document.querySelectorAll('#plan_tbody .plan-toggle').forEach((i) => {
+                    i.className = 'mdi plan-toggle cursor-pointer ' + (colapsados.has(i.dataset.toggle) ? 'mdi-menu-right' : 'mdi-menu-down');
+                });
+            }
+            $('#plan_tbody').on('click', '.plan-toggle', function() {
+                let c = this.dataset.toggle;
+                if (colapsados.has(c)) colapsados.delete(c); else colapsados.add(c);
+                pintar();
+            });
+            qelem('#plan_expandir').addEventListener('click', () => { colapsados.clear(); pintar(); });
+            qelem('#plan_plegar').addEventListener('click', () => {
+                colapsados = new Set(d.cuentas.filter((c) => !c.imputable && c.nivel >= 3).map((c) => c.corto));
+                pintar();
+            });
+            qelem('#plan_plegar').click();
+        });
+    }
+    root.querySelector('[name=btn_formato]').addEventListener('click', () => post('set_formato', {formato_codigo: root.querySelector('[name=formato_codigo]').value}).then(cargar));
     root.querySelector('[name=btn_fecha_inicio]').addEventListener('click', () => post('set_fecha_inicio', {fecha_inicio: root.querySelector('[name=fecha_inicio]').value}));
     root.querySelector('[name=btn_reprocesar]').addEventListener('click', () => post('reprocesar_eventos', {
         desde: root.querySelector('[name=rep_desde]').value, hasta: root.querySelector('[name=rep_hasta]').value}));

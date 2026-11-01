@@ -1,0 +1,30 @@
+/* Preset Hogar (muebles / decoracion): tonos calidos, portada grande con CTA amarillo y tarjetas laterales. */
+.tienda-preset-hogar {
+    --t-radio: 18px; --t-superficie: #ffffff; --t-superficie-2: #f1ece4; --t-borde: rgba(30,41,59,.09);
+    --t-anuncio-bg: #1e293b; --t-anuncio-color: #f8fafc;
+    --t-header-bg: #ffffff; --t-header-color: var(--t-texto); --t-oferta: #dc2626;
+}
+.tienda-preset-hogar .tienda-anuncio .container::before { content: 'HOT'; display: inline-block; background: var(--t-acento); color: #1e293b; font-weight: 700; font-size: .7rem; padding: .15rem .55rem; border-radius: 999px; margin-right: .6rem; }
+.tienda-preset-hogar .tienda-header { box-shadow: 0 1px 0 var(--t-borde); }
+.tienda-preset-hogar .tienda-header-inner { padding: 1rem 0; }
+.tienda-preset-hogar .tienda-menu a { font-weight: 600; opacity: .8; }
+.tienda-preset-hogar .tienda-menu a:hover, .tienda-preset-hogar .tienda-menu a.activa { background: var(--t-superficie-2); opacity: 1; }
+.tienda-preset-hogar .tienda-buscador input { border-radius: 10px; background: var(--t-superficie-2); border-color: transparent; }
+.tienda-preset-hogar .tienda-accion { background: var(--t-superficie-2); color: var(--t-texto); }
+.tienda-preset-hogar .sidebar-cats a i { color: var(--t-texto); opacity: .7; }
+.tienda-preset-hogar .sidebar-cats a.activa { background: var(--t-acento); color: #1e293b; }
+.tienda-preset-hogar .sidebar-cats a.activa i, .tienda-preset-hogar .sidebar-cats a.activa em { color: rgba(30,41,59,.7); }
+.tienda-preset-hogar .hero-principal { min-height: 460px; background-color: #e8e4de; color: var(--t-texto); }
+.tienda-preset-hogar .hero-principal::before { background: linear-gradient(90deg, rgba(232,228,222,.92) 30%, rgba(232,228,222,.05)); }
+.tienda-preset-hogar .hero-texto h1 { font-size: 3.2rem; font-weight: 700; letter-spacing: -.03em; }
+.tienda-preset-hogar .hero-texto p { color: var(--t-muted); opacity: 1; font-size: 1.15rem; }
+.tienda-preset-hogar .btn-tienda { color: #1e293b; border-radius: 12px; font-weight: 700; }
+.tienda-preset-hogar .btn-tienda:hover { color: #1e293b; }
+.tienda-preset-hogar .promo-card { background: var(--t-superficie); border: 1px solid var(--t-borde); flex-direction: column; align-items: flex-start; }
+.tienda-preset-hogar .promo-card .promo-img { width: 100%; height: 140px; }
+.tienda-preset-hogar .promo-titulo { font-size: 1.4rem; }
+.tienda-preset-hogar .promo-sub { color: var(--t-texto); font-weight: 500; }
+.tienda-preset-hogar .producto-card { border-radius: var(--t-radio); }
+.tienda-preset-hogar .producto-card .foto { background-color: var(--t-superficie-2); }
+.tienda-preset-hogar .badge-etiqueta { background: var(--t-acento); color: #1e293b; }
+.tienda-preset-hogar .tienda-footer { background: #1e293b; }

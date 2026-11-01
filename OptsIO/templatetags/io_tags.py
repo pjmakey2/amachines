@@ -37,6 +37,19 @@ def to_json(value):
 def rr() -> int:
     return randint(1, 100)
 
+@register.simple_tag(takes_context=True, name="am_user_theme")
+def am_user_theme(context):
+    """Tema visual guardado en las preferencias del usuario ('' si no eligio o no hay sesion)."""
+    # io_tags es builtin de templates: se carga antes que las apps, por eso el import de modelos va aca
+    from OptsIO.models import UserProfile
+    request = context.get('request')
+    if not request or not request.user.is_authenticated:
+        return ''
+    profile = UserProfile.objects.filter(username=request.user.username).only('preferences').first()
+    tema = (profile.preferences or {}).get('theme', '') if profile else ''
+    return tema if tema in ('corp', 'modern') else ''
+
+
 @register.simple_tag(takes_context=True, name="business_logo")
 def business_logo(context):
     """Get active business logo URL or default logo"""
@@ -70,7 +83,8 @@ def first_business_logo():
     try:
         from Sifen.models import Business
         business = Business.objects.filter(logo__isnull=False).exclude(logo='').first()
-        if business and business.logo:
+        # Solo si el archivo existe: un logo cargado en la base pero borrado del disco daba imagen rota
+        if business and business.logo and business.logo.storage.exists(business.logo.name):
             return business.logo.url
     except Exception:
         pass

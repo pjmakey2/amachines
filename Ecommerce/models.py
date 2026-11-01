@@ -6,6 +6,7 @@ from decimal import Decimal
 from django.db import models
 
 from Almacen.models import despachar, liberar_reservas, stock_disponible, stock_fisico_vendible
+from Ecommerce.presets import PRESET_CHOICES, PRESET_DEFAULT, get_preset
 from OptsIO.io_money import precision_monetaria
 from OptsIO.workflow import WorkflowMixin
 
@@ -25,14 +26,14 @@ class EcomTrack(models.Model):
 
 class TemaTienda(EcomTrack):
     """
-    Apariencia de una tienda: layout base + colores + CSS propio. El CSS subido se carga despues del
-    CSS base, asi que puede redefinir cualquier cosa sin tocar templates.
+    Apariencia de una tienda: un preset (CSS listo por rubro) + colores propios opcionales + CSS propio.
+    Orden de carga: tienda.css (base) -> temas/<preset>.css -> variables de color -> CSS del tema.
     """
-    LAYOUTS = [('clasico', 'Clásico (grilla con barra superior)'), ('minimal', 'Minimal (tipografía grande, mucho aire)')]
-
     businessobj = models.ForeignKey('Sifen.Business', on_delete=models.CASCADE)
     nombre = models.CharField(max_length=120)
-    layout = models.CharField(max_length=20, choices=LAYOUTS, default='clasico')
+    preset = models.CharField(max_length=20, choices=PRESET_CHOICES, default=PRESET_DEFAULT)
+    # False = colores y tipografia del preset; True = los de abajo
+    colores_propios = models.BooleanField(default=False)
     color_primario = models.CharField(max_length=9, default='#111827')
     color_acento = models.CharField(max_length=9, default='#2563eb')
     color_fondo = models.CharField(max_length=9, default='#ffffff')
@@ -49,8 +50,16 @@ class TemaTienda(EcomTrack):
     def __str__(self):
         return self.nombre
 
+    def get_preset(self) -> dict:
+        return get_preset(self.preset)
+
+    def get_preset_nombre(self):
+        return self.get_preset()['nombre']
+
     def get_css_variables(self) -> str:
         """Variables CSS del tema. Solo salen valores validados: van dentro de un <style> publico."""
+        if not self.colores_propios:
+            return ''
         colores = {'--t-primario': self.color_primario, '--t-acento': self.color_acento,
                    '--t-fondo': self.color_fondo, '--t-texto': self.color_texto}
         partes = [f"{k}: {v};" for k, v in colores.items() if RE_COLOR.match(v or '')]
@@ -73,6 +82,10 @@ class Tienda(EcomTrack):
     banner = models.ImageField(upload_to='ecommerce/tiendas', max_length=300, null=True, blank=True)
     banner_titulo = models.CharField(max_length=120, blank=True, default='')
     banner_texto = models.CharField(max_length=300, blank=True, default='')
+    banner_cta_texto = models.CharField(max_length=40, blank=True, default='', help_text='Texto del botón de la portada, ej: Ver ofertas')
+    banner_cta_url = models.CharField(max_length=300, blank=True, default='', help_text='Destino del botón: /tienda/<slug>/coleccion/<slug>/ o una URL')
+    anuncio_texto = models.CharField(max_length=160, blank=True, default='', help_text='Barra superior, ej: Envío gratis desde Gs 300.000')
+    anuncio_url = models.CharField(max_length=300, blank=True, default='')
     email = models.CharField(max_length=120, blank=True, default='')
     whatsapp = models.CharField(max_length=30, blank=True, default='')
     moneda = models.CharField(max_length=4, default='PYG')
@@ -106,6 +119,7 @@ class Coleccion(EcomTrack):
     slug = models.SlugField(max_length=80)
     descripcion = models.CharField(max_length=300, blank=True, default='')
     imagen = models.ImageField(upload_to='ecommerce/colecciones', max_length=300, null=True, blank=True)
+    icono = models.CharField(max_length=60, blank=True, default='', help_text='Ícono Bootstrap Icons para el menú lateral, ej: bi-basket')
     orden = models.IntegerField(default=0)
     activa = models.BooleanField(default=True)
 
@@ -135,6 +149,7 @@ class ProductoTienda(EcomTrack):
     imagen = models.ImageField(upload_to='ecommerce/productos', max_length=300, null=True, blank=True)
     imagen_2 = models.ImageField(upload_to='ecommerce/productos', max_length=300, null=True, blank=True)
     imagen_3 = models.ImageField(upload_to='ecommerce/productos', max_length=300, null=True, blank=True)
+    etiqueta = models.CharField(max_length=30, blank=True, default='', help_text='Badge sobre la foto, ej: Nuevo, Más vendido')
     destacado = models.BooleanField(default=False)
     publicado = models.BooleanField(default=True)
     orden = models.IntegerField(default=0)
@@ -165,6 +180,38 @@ class ProductoTienda(EcomTrack):
     def get_imagen(self) -> str:
         urls = self.get_imagenes()
         return urls[0] if urls else ''
+
+    def get_descuento_pct(self) -> int:
+        """Porcentaje de rebaja respecto del precio tachado (0 si no hay)."""
+        if self.precio_comparacion and self.precio_comparacion > self.precio:
+            return int(round((1 - self.precio / self.precio_comparacion) * 100))
+        return 0
+
+
+class PromoTienda(EcomTrack):
+    """Bloques promocionales de la portada: tarjetas laterales del hero o carrusel de ofertas."""
+    POSICIONES = [('lateral', 'Tarjeta lateral de la portada'), ('carrusel', 'Carrusel de promociones')]
+
+    businessobj = models.ForeignKey('Sifen.Business', on_delete=models.CASCADE)
+    tiendaobj = models.ForeignKey(Tienda, on_delete=models.CASCADE)
+    posicion = models.CharField(max_length=20, choices=POSICIONES, default='lateral')
+    etiqueta = models.CharField(max_length=40, blank=True, default='', help_text='Texto chico arriba, ej: Novedades')
+    titulo = models.CharField(max_length=80)
+    subtitulo = models.CharField(max_length=120, blank=True, default='', help_text='Ej: 20% OFF')
+    imagen = models.ImageField(upload_to='ecommerce/promos', max_length=300, null=True, blank=True)
+    color_fondo = models.CharField(max_length=9, blank=True, default='', help_text='Fondo de la tarjeta (hex); vacío = del tema')
+    url = models.CharField(max_length=300, blank=True, default='')
+    orden = models.IntegerField(default=0)
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['posicion', 'orden', 'id']
+
+    def __str__(self):
+        return self.titulo
+
+    def get_color_fondo(self) -> str:
+        return self.color_fondo if RE_COLOR.match(self.color_fondo or '') else ''
 
 
 class Pedido(WorkflowMixin, EcomTrack):

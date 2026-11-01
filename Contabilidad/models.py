@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models import Sum
 
+from Contabilidad.codigos import FORMATO_DEFAULT, corto, nivel as nivel_de
 from OptsIO.io_money import precision_monetaria
 from OptsIO.workflow import WorkflowMixin
 
@@ -21,6 +22,8 @@ class ConfigContable(ContaTrack):
     """Parametros contables del negocio."""
     businessobj = models.OneToOneField('Sifen.Business', on_delete=models.CASCADE)
     plantilla = models.CharField(max_length=60, blank=True, default='')
+    # Digitos por nivel del codigo de cuenta (Contabilidad/codigos.py). Solo se cambia con el plan vacio.
+    formato_codigo = models.CharField(max_length=30, default=FORMATO_DEFAULT)
     # Documentos con fecha anterior no generan asiento (arranque de la contabilidad)
     fecha_inicio = models.DateField(null=True, blank=True)
 
@@ -31,7 +34,8 @@ class PlanCuenta(ContaTrack):
     DEUDORAS = ('activo', 'costo', 'gasto')
 
     businessobj = models.ForeignKey('Sifen.Business', on_delete=models.CASCADE)
-    codigo = models.CharField(max_length=30)
+    # Codigo completo de largo fijo segun ConfigContable.formato_codigo, ej: 003.001.003.000.000.000
+    codigo = models.CharField(max_length=60)
     nombre = models.CharField(max_length=200)
     tipo = models.CharField(max_length=20, choices=TIPOS)
     padreobj = models.ForeignKey('self', on_delete=models.PROTECT, null=True, blank=True, related_name='hijas')
@@ -49,6 +53,17 @@ class PlanCuenta(ContaTrack):
 
     def get_descripcion(self):
         return str(self)
+
+    def get_codigo_corto(self):
+        return corto(self.codigo)
+
+    def get_ruta(self) -> str:
+        """Nombres desde el primer nivel hasta la cuenta: 'GASTOS - GASTOS OPERATIVOS - ... - Software'."""
+        nombres, nodo = [], self
+        while nodo is not None:
+            nombres.append(nodo.nombre)
+            nodo = nodo.padreobj
+        return ' - '.join(reversed(nombres))
 
     @property
     def deudora(self) -> bool:

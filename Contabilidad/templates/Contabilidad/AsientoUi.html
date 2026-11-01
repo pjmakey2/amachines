@@ -112,7 +112,7 @@
 
     $(`#${t_asiento} tbody`).on('click', '.tr-asiento-avanzar', function() {
         let rowobj = $(`#${t_asiento}`).DataTable().row($(this).closest('tr')).data();
-        let siguiente = {cargado: 'verificado', verificado: 'aprobado'}[rowobj.estado];
+        let siguiente = {"cargado": "verificado", "verificado": "aprobado"}[rowobj.estado];
         if (rowobj.anulado || !siguiente) {
             UiB.MsgInfo('La operación ya está cerrada.');
             return;

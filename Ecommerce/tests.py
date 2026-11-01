@@ -8,7 +8,7 @@ from django.test import TestCase
 from Almacen.models import Bodega, Ubicacion, mover_stock, stock_disponible, stock_en_ubicacion
 from Deposito.models import Deposito
 from Ecommerce.mng_ecommerce import MEcommerce
-from Ecommerce.models import Coleccion, Pedido, ProductoTienda, TemaTienda, Tienda
+from Ecommerce.models import Coleccion, Pedido, ProductoTienda, PromoTienda, TemaTienda, Tienda
 from OptsIO import events
 from OptsIO.models import BusinessEvent
 from OptsIO.testing import check_ui, grid_records, make_business, make_user
@@ -24,10 +24,11 @@ class EcommerceBase(TestCase):
         self.ubi = Ubicacion.objects.create(businessobj=self.b, bodegaobj=bodega, codigo='PK-01', tipo='picking')
         self.prod = Producto.objects.create(prod_cod=2001, descripcion='Remera básica', precio=90000)
         mover_stock(self.b, self.prod, self.ubi, 5, 'ajuste', 'Stock inicial')
-        tema = self.guardar(self.me.save_tema, nombre='Marca', layout='minimal', color_primario='#0f172a', color_acento='#e11d48',
+        tema = self.guardar(self.me.save_tema, nombre='Marca', preset='minimal', colores_propios='true', color_primario='#0f172a', color_acento='#e11d48',
                             color_fondo='#ffffff', color_texto='#111111', fuente='"Inter", sans-serif; } body { display:none',
                             css_extra='.tienda-banner { padding: 9rem; } </style><script>alert(1)</script>')
         tienda = self.guardar(self.me.save_tienda, nombre='Mi Tienda', temaobj_id=tema, costo_envio='25000', envio_gratis_desde='200000',
+                              anuncio_texto='Envío gratis desde 200.000', banner_cta_texto='Ver remeras',
                               acepta_transferencia='true', acepta_contra_entrega='true', datos_transferencia='Banco A cta 123')
         self.tienda = Tienda.objects.get(pk=tienda)
         col = self.guardar(self.me.save_coleccion, tiendaobj_id=tienda, nombre='Remeras')
@@ -54,14 +55,24 @@ class TiendaPublicaTest(EcommerceBase):
     def test_catalogo_tema_y_busqueda(self):
         self.assertEqual(self.tienda.slug, 'mi-tienda')
         html = self.client.get(self.url('home')).content.decode()
-        self.assertIn('tienda-layout-minimal', html)
+        self.assertIn('tienda-preset-minimal', html)
+        self.assertIn('temas/minimal.css', html)
+        self.assertIn('Envío gratis desde 200.000', html)
+        self.assertIn('Ver remeras', html)
+        self.assertIn('tienda-sidebar', html)
         self.assertIn('--t-acento: #e11d48;', html)
         self.assertNotIn('<script>alert(1)', html)      # el CSS del tema no puede inyectar HTML
         self.assertNotIn('display:none', html)          # ni romper la declaracion de la fuente
         self.assertIn('Remera básica', html)
         self.assertIn('80\xa0000', html)
         self.assertIn('Remeras', html)
+        self.assertIn('20% OFF', html)  # 80.000 vs 100.000 tachado
         self.assertNotIn('Remera', self.client.get(self.url('home'), {'q': 'zapato'}).content.decode().split('<main>')[1].split('No encontramos')[0][-200:])
+        # ?preset= solo cambia el estilo para usuarios logueados
+        self.assertIn('tienda-preset-minimal', self.client.get(self.url('home'), {'preset': 'bazaar'}).content.decode())
+        self.client.force_login(self.u)
+        self.assertIn('tienda-preset-bazaar', self.client.get(self.url('home'), {'preset': 'bazaar'}).content.decode())
+        self.client.logout()
         self.assertEqual(self.client.get(f"/tienda/{self.tienda.slug}/coleccion/remeras/").status_code, 200)
         det = self.client.get(f"/tienda/{self.tienda.slug}/producto/{self.pt.slug}/").content.decode()
         self.assertIn('Agregar al carrito', det)
@@ -147,15 +158,15 @@ class PedidoWorkflowTest(EcommerceBase):
 class AdminTest(EcommerceBase):
     def test_validaciones_de_tema_y_aislamiento(self):
         rsp = self.me.save_tema(userobj=self.u, files={}, qdict={'uc_fields': json.dumps(
-            {'nombre': 'X', 'layout': 'clasico', 'color_primario': 'red', 'color_acento': '#fff', 'color_fondo': '#fff', 'color_texto': '#000'})})[0]
+            {'nombre': 'X', 'preset': 'clasico', 'colores_propios': 'true', 'color_primario': 'red', 'color_acento': '#fff', 'color_fondo': '#fff', 'color_texto': '#000'})})[0]
         self.assertIn('hexadecimal', rsp['error'])
+        self.assertIn('preset', self.me.save_tema(userobj=self.u, files={}, qdict={'uc_fields': json.dumps({'nombre': 'X', 'preset': 'zzz'})})[0]['error'])
         malo = SimpleUploadedFile('tema.js', b'alert(1)')
         rsp = self.me.save_tema(userobj=self.u, files={'css_archivo': malo}, qdict={'uc_fields': json.dumps(
-            {'nombre': 'X', 'layout': 'clasico', 'color_primario': '#000', 'color_acento': '#fff', 'color_fondo': '#fff', 'color_texto': '#000'})})[0]
+            {'nombre': 'X', 'preset': 'clasico'})})[0]
         self.assertIn('.css', rsp['error'])
         css = SimpleUploadedFile('marca.css', b'.tienda-header { background: black; }')
-        tema_id = self.guardar(self.me.save_tema, files={'css_archivo': css}, nombre='Con CSS', layout='clasico', color_primario='#000000',
-                               color_acento='#ffffff', color_fondo='#ffffff', color_texto='#000000')
+        tema_id = self.guardar(self.me.save_tema, files={'css_archivo': css}, nombre='Con CSS', preset='clasico')
         Tienda.objects.filter(pk=self.tienda.pk).update(temaobj_id=tema_id)
         self.assertIn(TemaTienda.objects.get(pk=tema_id).css_archivo.url, self.client.get(self.url('home')).content.decode())
 
@@ -164,10 +175,25 @@ class AdminTest(EcommerceBase):
         self.assertIn('error', rsp)
         self.assertEqual(grid_records(self, ajeno, 'Ecommerce', 'Pedido', ['id']), [])
 
+    def test_promos_y_presets(self):
+        pid = self.guardar(self.me.save_promo, tiendaobj_id=self.tienda.pk, posicion='lateral', etiqueta='Novedades', titulo='Buzos de invierno', subtitulo='20% OFF', color_fondo='#fce7f3')
+        self.assertIn('error', self.me.save_promo(userobj=self.u, files={}, qdict={'uc_fields': json.dumps({'tiendaobj_id': self.tienda.pk, 'titulo': 'x', 'posicion': 'lateral', 'color_fondo': 'rosa'})})[0])
+        TemaTienda.objects.filter(pk=self.tienda.temaobj_id).update(preset='bazaar')
+        html = self.client.get(self.url('home')).content.decode()
+        self.assertIn('hero-split', html)
+        self.assertIn('Buzos de invierno', html)
+        self.assertIn('background-color: #fce7f3', html)
+        TemaTienda.objects.filter(pk=self.tienda.temaobj_id).update(preset='fresco')
+        PromoTienda.objects.filter(pk=pid).update(posicion='carrusel')
+        self.assertIn('promo-carrusel', self.client.get(self.url('home')).content.decode())
+        presets = self.me.get_presets(userobj=self.u, qdict={})
+        self.assertEqual([p['clave'] for p in presets['presets']], ['clasico', 'minimal', 'bazaar', 'fresco', 'hogar'])
+        self.assertEqual(presets['tienda_url'], self.tienda.get_url())
+
     def test_pantallas_de_administracion(self):
         self.comprar(1)
         pedido = Pedido.objects.get()
-        for t in ['TiendaUi', 'TiendaCreateUi', 'TemaTiendaUi', 'TemaTiendaCreateUi', 'ColeccionUi', 'ColeccionCreateUi',
+        for t in ['TiendaUi', 'TiendaCreateUi', 'TemaTiendaUi', 'TemaTiendaCreateUi', 'ColeccionUi', 'ColeccionCreateUi', 'PromoTiendaUi', 'PromoTiendaCreateUi',
                   'ProductoTiendaUi', 'ProductoTiendaCreateUi', 'PedidoUi']:
             check_ui(self, self.u, f'Ecommerce/{t}.html')
         check_ui(self, self.u, 'Ecommerce/PedidoCreateUi.html', ('Ecommerce', 'Pedido'), pedido.pk)

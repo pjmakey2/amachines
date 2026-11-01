@@ -17,7 +17,7 @@ from django.db.models import Q, Sum
 from openpyxl import Workbook
 from openpyxl.styles import Font
 
-from Contabilidad import handlers, rg90
+from Contabilidad import codigos, handlers, rg90
 from Contabilidad.models import (
     Asiento, AsientoDetalle, ConfigContable, CuentaRol, FormatoAsiento, FormatoAsientoLinea, MapeoCuenta, PlanCuenta,
 )
@@ -30,7 +30,6 @@ from OptsIO.models import BusinessEvent
 
 RE_DECIMAL = re.compile(r'^\d+(\.\d+)?$')
 RE_FECHA = re.compile(r'^\d{4}-\d{2}-\d{2}$')
-RE_CODIGO = re.compile(r'^\d+(\.\d+)*$')
 RE_PERIODO = re.compile(r'^\d{4}-(0[1-9]|1[0-2])$')
 
 # Evento -> handler que genera su asiento (mismo mapa que publica plugin.py)
@@ -44,6 +43,8 @@ HANDLERS = {
     'egreso.pago.aprobado': handlers.asiento_pago,
     'egreso.transferencia.aprobado': handlers.asiento_transferencia,
 }
+# Prefijo de evento -> modulo que lo genera (para mostrar a que afecta cada cuenta de una plantilla)
+MODULO_POR_EVENTO = {'sifen': 'Ventas (SIFEN)', 'cobro': 'Cobros', 'deposito': 'Depósitos', 'egreso': 'Egresos', 'ecommerce': 'Tienda online'}
 # Registros de otros plugins que pueden tener cuenta contable propia: tipo -> (app, modelo)
 MAPEABLES = {'cuenta_bancaria': ('Tesoreria', 'CuentaBancaria'), 'caja': ('Tesoreria', 'Caja'),
              'categoria_gasto': ('Egreso', 'CategoriaGasto')}
@@ -59,14 +60,9 @@ def _fecha(value, default=None):
     return datetime.strptime(texto, '%Y-%m-%d').date() if RE_FECHA.match(texto) else default
 
 
-def _padre_de(codigo: str, cuentas: dict):
-    """Cuenta existente cuyo codigo es el prefijo mas largo de `codigo` (1.1.01 es padre de 1.1.01.04)."""
-    partes = codigo.split('.')
-    for n in range(len(partes) - 1, 0, -1):
-        padre = cuentas.get('.'.join(partes[:n]))
-        if padre:
-            return padre
-    return None
+def _formato(bobj) -> str:
+    config = ConfigContable.objects.filter(businessobj=bobj).only('formato_codigo').first()
+    return config.formato_codigo if config else codigos.FORMATO_DEFAULT
 
 
 class MContabilidad:
@@ -88,6 +84,8 @@ class MContabilidad:
         return {
             'success': True,
             'plantilla': config.plantilla if config else '',
+            'formato_codigo': config.formato_codigo if config else codigos.FORMATO_DEFAULT,
+            'plan_vacio': not PlanCuenta.objects.filter(businessobj=bobj).exists(),
             'fecha_inicio': config.fecha_inicio.strftime('%Y-%m-%d') if config and config.fecha_inicio else '',
             'plantillas': [{'clave': k, 'nombre': v['nombre'], 'descripcion': v['descripcion'], 'cuentas': len(v['cuentas'])}
                            for k, v in PLANTILLAS.items()],
@@ -95,6 +93,36 @@ class MContabilidad:
             'mapeables': mapeables,
             'cuentas': [{'id': c.pk, 'text': str(c)} for c in PlanCuenta.objects.filter(businessobj=bobj, imputable=True, activo=True)],
         }
+
+    def get_plantilla(self, *args, **kwargs) -> dict:
+        """
+        Plantilla desplegada en arbol con los codigos ya en el formato del negocio, que cuentas existen en su plan,
+        y a que asientos/modulos afecta cada cuenta (por el rol que cumple en los formatos de asiento).
+        """
+        q = kwargs.get('qdict', {})
+        bobj = get_active_business(kwargs.get('userobj'))
+        plantilla = PLANTILLAS.get(q.get('plantilla'))
+        if not bobj or not plantilla:
+            return {'error': 'Plantilla inválida'}
+        formato = _formato(bobj)
+        existentes = set(PlanCuenta.objects.filter(businessobj=bobj).values_list('codigo', flat=True))
+        usos = {}
+        for f in FORMATOS:
+            modulo = MODULO_POR_EVENTO.get(f['evento'].split('.')[0], f['evento'])
+            for lado, rol, monto, glosa in f['lineas']:
+                usos.setdefault(rol, {}).setdefault(modulo, set()).add(f['nombre'])
+        cortos = [c[0] for c in plantilla['cuentas']]
+        cuentas = []
+        for corto, nombre, tipo, rol in sorted(plantilla['cuentas'], key=lambda c: codigos.normalizar(c[0], formato)):
+            codigo = codigos.normalizar(corto, formato)
+            cuentas.append({
+                'codigo': codigo, 'corto': corto, 'nombre': plantilla['renombrar'].get(corto, nombre), 'tipo': tipo,
+                'nivel': codigos.nivel(codigo), 'imputable': not any(o.startswith(corto + '.') for o in cortos),
+                'rol': rol, 'rol_desc': ROLES.get(rol, ''), 'existe': codigo in existentes,
+                'modulos': [{'modulo': m, 'asientos': sorted(a)} for m, a in sorted(usos.get(rol, {}).items())] if rol else [],
+            })
+        return {'success': True, 'nombre': plantilla['nombre'], 'descripcion': plantilla['descripcion'], 'formato': formato,
+                'cuentas': cuentas, 'nuevas': sum(1 for c in cuentas if not c['existe'])}
 
     def aplicar_plantilla(self, *args, **kwargs) -> dict:
         """
@@ -107,23 +135,29 @@ class MContabilidad:
         if not bobj or not plantilla:
             return {'error': 'Plantilla inválida'}
         ahora, usuario = datetime.now(), user_label(userobj)
+        formato = (q.get('formato_codigo') or codigos.FORMATO_DEFAULT).strip()
+        if codigos.validar_formato(formato):
+            return {'error': codigos.validar_formato(formato)}
         with transaction.atomic():
             config, _ = ConfigContable.objects.get_or_create(businessobj=bobj, defaults={
-                'cargado_fecha': ahora, 'cargado_usuario': usuario, 'fecha_inicio': _fecha(q.get('fecha_inicio'))})
+                'cargado_fecha': ahora, 'cargado_usuario': usuario, 'fecha_inicio': _fecha(q.get('fecha_inicio')),
+                'formato_codigo': formato})
             config.plantilla = q.get('plantilla')
             if _fecha(q.get('fecha_inicio')):
                 config.fecha_inicio = _fecha(q.get('fecha_inicio'))
             config.save()
 
+            formato = config.formato_codigo
             cuentas = {c.codigo: c for c in PlanCuenta.objects.filter(businessobj=bobj)}
-            codigos = [c[0] for c in plantilla['cuentas']]
+            completos = {corto: codigos.normalizar(corto, formato) for corto, _, _, _ in plantilla['cuentas']}
             creadas = 0
-            for codigo, nombre, tipo, rol in sorted(plantilla['cuentas'], key=lambda c: [int(p) for p in c[0].split('.')]):
+            for corto, nombre, tipo, rol in sorted(plantilla['cuentas'], key=lambda c: completos[c[0]]):
+                codigo = completos[corto]
                 if codigo not in cuentas:
-                    agrupa = any(otro.startswith(codigo + '.') for otro in codigos)
+                    agrupa = any(otro.startswith(corto + '.') for otro in completos)
                     cuentas[codigo] = PlanCuenta.objects.create(
-                        businessobj=bobj, codigo=codigo, nombre=plantilla['renombrar'].get(codigo, nombre), tipo=tipo,
-                        padreobj=_padre_de(codigo, cuentas), nivel=len(codigo.split('.')), imputable=not agrupa,
+                        businessobj=bobj, codigo=codigo, nombre=plantilla['renombrar'].get(corto, nombre), tipo=tipo,
+                        padreobj=cuentas.get(codigos.padre(codigo)), nivel=codigos.nivel(codigo), imputable=not agrupa,
                         cargado_fecha=ahora, cargado_usuario=usuario)
                     creadas += 1
                 if rol and cuentas[codigo].imputable:
@@ -144,6 +178,37 @@ class MContabilidad:
         bobj = get_active_business(kwargs.get('userobj'))
         n = ConfigContable.objects.filter(businessobj=bobj).update(fecha_inicio=_fecha(kwargs.get('qdict', {}).get('fecha_inicio')))
         return {'success': 'Fecha de inicio actualizada'} if n else {'error': 'Aplique primero una plantilla'}
+
+    def set_formato(self, *args, **kwargs) -> dict:
+        """Digitos por nivel del codigo. Solo se cambia con el plan vacio: los codigos guardados son de largo fijo."""
+        userobj, q = kwargs.get('userobj'), kwargs.get('qdict', {})
+        bobj = get_active_business(userobj)
+        formato = (q.get('formato_codigo') or '').strip()
+        error = codigos.validar_formato(formato)
+        if error:
+            return {'error': error}
+        if PlanCuenta.objects.filter(businessobj=bobj).exists():
+            return {'error': 'El plan ya tiene cuentas: el formato del código no se puede cambiar'}
+        ConfigContable.objects.update_or_create(businessobj=bobj, defaults={
+            'formato_codigo': formato, 'actualizado_fecha': datetime.now(), 'actualizado_usuario': user_label(userobj)})
+        return {'success': f'Formato {formato}: ejemplo {codigos.normalizar("1.1", formato)}'}
+
+    def preview_codigo(self, *args, **kwargs) -> dict:
+        """Como queda un codigo corto en el formato del negocio, con su padre y el tipo que hereda (para el formulario)."""
+        bobj = get_active_business(kwargs.get('userobj'))
+        formato = _formato(bobj)
+        entrada = kwargs.get('qdict', {}).get('codigo') or ''
+        if not entrada.strip():
+            return {'success': True, 'formato': formato, 'codigo': '', 'padre': '', 'tipo': ''}
+        try:
+            codigo = codigos.normalizar(entrada, formato)
+        except ValueError as e:
+            return {'error': str(e), 'formato': formato}
+        padre = PlanCuenta.objects.filter(businessobj=bobj, codigo=codigos.padre(codigo) or '').first() if codigos.padre(codigo) else None
+        existente = PlanCuenta.objects.filter(businessobj=bobj, codigo=codigo).first()
+        return {'success': True, 'formato': formato, 'codigo': codigo, 'nivel': codigos.nivel(codigo),
+                'padre': padre.get_ruta() if padre else ('' if codigos.nivel(codigo) == 1 else None),
+                'tipo': padre.tipo if padre else '', 'existente': str(existente) if existente else ''}
 
     def set_rol(self, *args, **kwargs) -> dict:
         userobj, q = kwargs.get('userobj'), kwargs.get('qdict', {})
@@ -179,30 +244,34 @@ class MContabilidad:
     # ------------------------------------------------------------------ Plan de cuentas
 
     def create_cuenta(self, *args, **kwargs) -> tuple:
-        """c_a de PlanCuentaCreateUi. El padre y el nivel salen del codigo; el tipo se hereda del padre."""
+        """c_a de PlanCuentaCreateUi. El codigo se carga corto (3.1.3) y se completa al formato; padre, nivel y tipo salen de ahi."""
         userobj = kwargs.get('userobj')
         f = from_json(kwargs.get('qdict', {}).get('uc_fields', '{}'))
         bobj = get_active_business(userobj)
         if not bobj:
             return {'error': 'El usuario no tiene un negocio activo'}, args, kwargs
-        codigo, nombre = (f.get('codigo') or '').strip(), (f.get('nombre') or '').strip()
-        if not RE_CODIGO.match(codigo) or not nombre:
-            return {'error': 'Código (ej: 6.1.13) y nombre son obligatorios'}, args, kwargs
-        cuentas = {c.codigo: c for c in PlanCuenta.objects.filter(businessobj=bobj)}
-        activo = str(f.get('activo', 'true')).lower() in ('true', '1', 'on')
+        nombre, activo = (f.get('nombre') or '').strip(), str(f.get('activo', 'true')).lower() in ('true', '1', 'on')
+        if not nombre:
+            return {'error': 'El nombre es obligatorio'}, args, kwargs
         with transaction.atomic():
             if f.get('id'):
                 cuenta = PlanCuenta.objects.filter(pk=f.get('id'), businessobj=bobj).first()
                 if not cuenta:
                     return {'error': 'Cuenta inexistente'}, args, kwargs
-                if cuenta.codigo != codigo:
-                    return {'error': 'El código de una cuenta no se modifica: cree otra y desactive esta'}, args, kwargs
                 PlanCuenta.objects.filter(pk=cuenta.pk).update(
                     nombre=nombre, activo=activo, actualizado_fecha=datetime.now(), actualizado_usuario=user_label(userobj))
-                return {'success': f'Cuenta {codigo} actualizada', 'record_id': cuenta.pk}, args, kwargs
-            if codigo in cuentas:
-                return {'error': f'Ya existe la cuenta {cuentas[codigo]}'}, args, kwargs
-            padre = _padre_de(codigo, cuentas)
+                return {'success': f'Cuenta {cuenta.get_codigo_corto()} actualizada', 'record_id': cuenta.pk}, args, kwargs
+            try:
+                codigo = codigos.normalizar(f.get('codigo') or '', _formato(bobj))
+            except ValueError as e:
+                return {'error': str(e)}, args, kwargs
+            if PlanCuenta.objects.filter(businessobj=bobj, codigo=codigo).exists():
+                return {'error': f'Ya existe la cuenta {codigos.corto(codigo)}'}, args, kwargs
+            padre = None
+            if codigos.nivel(codigo) > 1:
+                padre = PlanCuenta.objects.filter(businessobj=bobj, codigo=codigos.padre(codigo)).first()
+                if not padre:
+                    return {'error': f'Primero cree la cuenta padre {codigos.corto(codigos.padre(codigo))}'}, args, kwargs
             tipo = padre.tipo if padre else f.get('tipo')
             if tipo not in dict(PlanCuenta.TIPOS):
                 return {'error': 'Una cuenta de primer nivel requiere el tipo'}, args, kwargs
@@ -213,9 +282,9 @@ class MContabilidad:
                     return {'error': f'{padre} está asignada a un rol o mapeo: reasígnelo antes de abrirle subcuentas'}, args, kwargs
                 PlanCuenta.objects.filter(pk=padre.pk).update(imputable=False)
             cuenta = PlanCuenta.objects.create(
-                businessobj=bobj, codigo=codigo, nombre=nombre, tipo=tipo, padreobj=padre, nivel=len(codigo.split('.')),
+                businessobj=bobj, codigo=codigo, nombre=nombre, tipo=tipo, padreobj=padre, nivel=codigos.nivel(codigo),
                 imputable=True, activo=activo, cargado_fecha=datetime.now(), cargado_usuario=user_label(userobj))
-        return {'success': f'Cuenta {cuenta} creada', 'record_id': cuenta.pk}, args, kwargs
+        return {'success': f'Cuenta {codigo} creada: {cuenta.get_ruta()}', 'record_id': cuenta.pk}, args, kwargs
 
     def delete_cuentas(self, *args, **kwargs) -> dict:
         bobj = get_active_business(kwargs.get('userobj'))

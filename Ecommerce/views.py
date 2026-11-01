@@ -1,12 +1,13 @@
 """Tienda publica: /tienda/<slug>/. Sin login; el carrito vive en la sesion."""
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
 from Ecommerce.carrito import Carrito, crear_pedido, validar_checkout
-from Ecommerce.models import Coleccion, Pedido, ProductoTienda, Tienda
+from Ecommerce.models import Coleccion, Pedido, ProductoTienda, PromoTienda, Tienda
+from Ecommerce.presets import PRESETS, get_preset
 
 POR_PAGINA = 24
 
@@ -15,9 +16,16 @@ def _contexto(request, slug):
     tienda = get_object_or_404(Tienda.objects.select_related('temaobj', 'businessobj'), slug=slug, activa=True)
     carrito = Carrito(request, tienda)
     tema = tienda.temaobj if tienda.temaobj_id and tienda.temaobj.activo else None
+    clave = tema.preset if tema else 'clasico'
+    # ?preset=<clave>: vista previa de otro estilo, solo para usuarios del sistema (no cambia nada)
+    if request.user.is_authenticated and request.GET.get('preset') in PRESETS:
+        clave = request.GET['preset']
+    preset = get_preset(clave)
+    colecciones = (Coleccion.objects.filter(tiendaobj=tienda, activa=True)
+                   .annotate(cantidad=Count('productotienda', filter=Q(productotienda__publicado=True, productotienda__productoobj__activo=True))))
     return tienda, carrito, {
-        'tienda': tienda, 'tema': tema, 'layout': tema.layout if tema else 'clasico', 'carrito_cantidad': carrito.cantidad_total,
-        'colecciones': Coleccion.objects.filter(tiendaobj=tienda, activa=True),
+        'tienda': tienda, 'tema': tema, 'preset': preset, 'preset_clave': clave, 'carrito_cantidad': carrito.cantidad_total,
+        'colecciones': colecciones, 'total_publicados': _publicados(tienda).count(),
     }
 
 
@@ -31,8 +39,11 @@ def home(request, slug):
     productos = _publicados(tienda)
     if q:
         productos = productos.filter(Q(titulo__icontains=q) | Q(descripcion_larga__icontains=q))
+    promos = PromoTienda.objects.filter(tiendaobj=tienda, activa=True)
     ctx.update({'q': q, 'destacados': [] if q else productos.filter(destacado=True)[:8],
-                'pagina': Paginator(productos, POR_PAGINA).get_page(request.GET.get('p'))})
+                'pagina': Paginator(productos, POR_PAGINA).get_page(request.GET.get('p')),
+                'promos_laterales': [] if q else promos.filter(posicion='lateral')[:2],
+                'promos_carrusel': [] if q else promos.filter(posicion='carrusel')[:8]})
     return render(request, 'Ecommerce/tienda/home.html', ctx)
 
 

@@ -1,0 +1,9 @@
+<aside class="tienda-sidebar">
+    <div class="sidebar-titulo">Categorías</div>
+    <ul class="sidebar-cats">
+        <li><a class="{% if not coleccion %}activa{% endif %}" href="{% url 'ecommerce_home' tienda.slug %}"><i class="bi bi-grid"></i><span>Todos los productos</span><em>{{ total_publicados }}</em></a></li>
+        {% for c in colecciones %}
+        <li><a class="{% if coleccion.pk == c.pk %}activa{% endif %}" href="{% url 'ecommerce_coleccion' tienda.slug c.slug %}"><i class="bi {{ c.icono|default:'bi-tag' }}"></i><span>{{ c.nombre }}</span><em>{{ c.cantidad }}</em></a></li>
+        {% endfor %}
+    </ul>
+</aside>

@@ -1,9 +1,18 @@
 {% extends "Ecommerce/tienda/base.html" %}
 {% block titulo %}{{ coleccion.nombre }} — {{ tienda.nombre }}{% endblock %}
 {% block contenido %}
-<div class="container py-4">
-    <h1 class="h3">{{ coleccion.nombre }}</h1>
-    {% if coleccion.descripcion %}<p class="text-muted">{{ coleccion.descripcion }}</p>{% endif %}
-    {% include "Ecommerce/tienda/_grilla.html" %}
+<div class="container tienda-cuerpo">
+    {% if preset.sidebar %}{% include "Ecommerce/tienda/_sidebar.html" %}{% endif %}
+    <div class="tienda-contenido">
+        <nav class="migas" aria-label="Ubicación"><a href="{% url 'ecommerce_home' tienda.slug %}">Inicio</a><span>›</span><b>{{ coleccion.nombre }}</b></nav>
+        <section class="seccion">
+            <div class="seccion-cabecera">
+                <div><h1 class="seccion-titulo seccion-titulo-xl">{{ coleccion.nombre }}</h1>
+                {% if coleccion.descripcion %}<p class="seccion-desc">{{ coleccion.descripcion }}</p>{% endif %}</div>
+                <span class="seccion-conteo">{{ pagina.paginator.count }} producto{{ pagina.paginator.count|pluralize }}</span>
+            </div>
+            {% include "Ecommerce/tienda/_grilla.html" %}
+        </section>
+    </div>
 </div>
 {% endblock %}

@@ -23,6 +23,20 @@
 <!-- AM CSS -->
 <link rel="stylesheet" href="{% static 'amui/amui.css' %}">
 
+<!-- Temas del sistema (Corp / Modern): tipografias, variables y componentes. am_theme.js fija el tema antes del primer pintado -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="{% static 'amui/am_themes.css' %}?v=20260918">
+<script>
+    window.AM_THEME_CONFIG = {
+        userTheme: '{% am_user_theme %}',
+        saveUrl: {% if request.user.is_authenticated %}'{% url "iom" %}'{% else %}''{% endif %},
+        csrf: function () { return (document.cookie.match(/(?:^|; )csrftoken=([^;]*)/) || [])[1] || ''; }
+    };
+</script>
+<script src="{% static 'amui/am_theme.js' %}?v=20260918"></script>
+
 <!-- Custom CSS -->
 <style>
     /* Loader */

@@ -26,6 +26,8 @@ class Command(BaseCommand):
         parser.add_argument('--classify_clients', action='store_true', help='Classify clients as B2B or B2C based on RUC')
         parser.add_argument('--consultar_cdcs', action='store_true', help='Consultar CDCs en SIFEN para documentos no aprobados en un rango de fechas')
         parser.add_argument('--dates', nargs='+', help='Rango de fechas: --dates YYYY-MM-DD YYYY-MM-DD')
+        parser.add_argument('--reconciliar_estados', action='store_true', help='Documentos con ek_estado/lote_estado/lote_msg inconsistentes: consultar el CDC en SIFEN y, si existe, marcar los tres como Aprobado')
+        parser.add_argument('--dry_run', action='store_true', help='Solo listar, sin consultar SIFEN ni modificar')
 
         parser.add_argument('--ruc', nargs='?')
         parser.add_argument('--dv', nargs='?')
@@ -204,6 +206,9 @@ class Command(BaseCommand):
 
         if options['consultar_cdcs']:
             self.consultar_cdcs(options.get('dates') or [])
+
+        if options['reconciliar_estados']:
+            self.reconciliar_estados(options.get('dates') or [], options.get('dry_run', False))
 
     def create_core_apps(self):
         """Create core apps entries if they don't exist"""
@@ -516,6 +521,60 @@ class Command(BaseCommand):
         self.stdout.write(f"  - Created: {created_count}")
         self.stdout.write(f"  - Already existed: {existing_count}")
         self.stdout.write(f"  - Total: {len(apps_core)}")
+
+    def reconciliar_estados(self, dates, dry_run=False):
+        """
+        Busca documentos donde ek_estado, lote_estado y lote_msg no coinciden
+        (ej: ek_estado='Aprobado' con lote_estado='Rechazado' por un reenvio
+        duplicado). Consulta cada CDC en SIFEN (qr_cdc) y, si SIFEN lo tiene,
+        deja los tres campos en 'Aprobado'. Si SIFEN no lo encuentra, no toca
+        el documento: solo lo informa.
+        """
+        aprobado = Q(ek_estado='Aprobado') | Q(lote_estado='Aprobado') | Q(lote_msg='Aprobado')
+        consistente = Q(ek_estado='Aprobado', lote_estado='Aprobado', lote_msg='Aprobado')
+        dobjs = (DocumentHeader.objects
+                 .filter(aprobado, ek_cdc__isnull=False)
+                 .exclude(consistente)
+                 .exclude(ek_estado='Cancelado')
+                 .exclude(lote_estado='Cancelado')
+                 .exclude(ek_cdc='')
+                 .order_by('doc_fecha', 'doc_numero'))
+        if len(dates) == 2:
+            dobjs = dobjs.filter(doc_fecha__gte=dates[0], doc_fecha__lte=dates[1])
+        count = dobjs.count()
+        self.stdout.write(self.style.SUCCESS(f'Documentos con estados inconsistentes: {count}'))
+        if count == 0:
+            return
+        for d in dobjs:
+            self.stdout.write(f'  - {d.doc_fecha} {d.doc_tipo} {d.doc_numero} ek_estado={d.ek_estado!r} lote_estado={d.lote_estado!r} lote_msg={d.lote_msg!r}')
+        if dry_run:
+            self.stdout.write(self.style.WARNING('dry_run: no se consulto SIFEN ni se modifico nada'))
+            return
+        soap = SoapSifen()
+        aprobados = 0
+        no_existen = 0
+        errores = 0
+        for docobj in tqdm(dobjs, desc='Consultando CDCs'):
+            try:
+                rsp = soap.qr_cdc(docobj.ek_cdc)
+                if rsp.get('exitos') == 'CDC encontrado':
+                    DocumentHeader.objects.filter(pk=docobj.pk).update(
+                        ek_estado='Aprobado',
+                        lote_estado='Aprobado',
+                        lote_msg='Aprobado',
+                    )
+                    aprobados += 1
+                else:
+                    no_existen += 1
+                    self.stdout.write(self.style.WARNING(f'  - {docobj.doc_numero}: SIFEN respondio {rsp.get("error")!r}; se deja como esta'))
+            except Exception as e:
+                errores += 1
+                self.stdout.write(self.style.ERROR(f'  - {docobj.doc_numero}: {e}'))
+        self.stdout.write('')
+        self.stdout.write(self.style.SUCCESS('Reconciliacion completada:'))
+        self.stdout.write(f'  - Marcados Aprobado: {aprobados}')
+        self.stdout.write(f'  - No encontrados en SIFEN (sin cambios): {no_existen}')
+        self.stdout.write(f'  - Errores: {errores}')
 
     def consultar_cdcs(self, dates):
         if len(dates) != 2:

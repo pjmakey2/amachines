@@ -65,6 +65,30 @@
                     <input type="text" name="banner_texto" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.banner_texto }}{% else %}{% endif %}' />
                 </div>
             </div>
+            <div class="col-md-4 mb-3" data-field="banner_cta_texto">
+                <label>Botón de portada (texto)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="banner_cta_texto" class="form-control" placeholder="Ver ofertas" value='{% if mobj %}{{ mobj.banner_cta_texto }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="banner_cta_url">
+                <label>Botón de portada (destino)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="banner_cta_url" class="form-control" placeholder="/tienda/mi-tienda/coleccion/ofertas/" value='{% if mobj %}{{ mobj.banner_cta_url }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-8 mb-3" data-field="anuncio_texto">
+                <label>Barra de anuncio</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="anuncio_texto" class="form-control" placeholder="Envío gratis desde Gs 300.000" value='{% if mobj %}{{ mobj.anuncio_texto }}{% else %}{% endif %}' />
+                </div>
+            </div>
+            <div class="col-md-4 mb-3" data-field="anuncio_url">
+                <label>Enlace del anuncio</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="anuncio_url" class="form-control" placeholder="" value='{% if mobj %}{{ mobj.anuncio_url }}{% else %}{% endif %}' />
+                </div>
+            </div>
             <div class="col-md-12" data-field="sec_contacto"><h6 class="border-bottom pb-1 mt-2">Contacto</h6></div>
             <div class="col-md-6 mb-3" data-field="email">
                 <label>Email</label>

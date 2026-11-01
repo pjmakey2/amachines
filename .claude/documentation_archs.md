@@ -70,7 +70,12 @@ oyente no importa modelos del emisor.
 
 ## Contabilidad
 
-- Plan de cuentas por **plantillas** (`Contabilidad/plantillas/planes.py`): idempotentes, combinables y extensibles a mano.
+- Códigos de cuenta de **largo fijo por niveles** (`Contabilidad/codigos.py`): el negocio fija el formato (dígitos por nivel, por defecto
+  `3.3.3.3.3.3`) antes de cargar el plan; las cuentas se cargan cortas (`3.1.3`) y se guardan completas (`003.001.003.000.000.000`).
+  Un nivel en cero = "no baja más"; el padre es el código con el último nivel con valor puesto en cero; `get_ruta()` da
+  "GASTOS - ... - Software". Ordenar por `codigo` ordena el plan.
+- Plan de cuentas por **plantillas** (`Contabilidad/plantillas/planes.py`, códigos cortos, jerarquía 1 Activo / 2 Pasivo y PN / 3 Gastos / 4 Ingresos):
+  idempotentes, combinables y extensibles a mano.
 - Los **formatos de asiento** (`plantillas/formatos.py` → `FormatoAsiento`, editables por negocio) hablan de **roles**
   (`clientes`, `iva_debito_10`, `banco`...) y de **claves de monto** que calcula el handler del evento. `CuentaRol` asigna
   la cuenta de cada rol; `MapeoCuenta` da cuenta propia a un banco, caja o categoría de gasto.
@@ -85,8 +90,12 @@ oyente no importa modelos del emisor.
   Para vender: `reservar` → `despachar` (picking → almacenaje → recepción) o `liberar_reservas`. `averiados` no es vendible.
 - `Ecommerce`: publica productos del maestro `Sifen.Producto` en una `Tienda`. El carrito vive en la sesión; precios y stock se validan
   siempre en el servidor. El seguimiento público del pedido usa un `token` UUID, nunca el número correlativo.
-- Temas: `TemaTienda` = layout base + variables de color/tipografía + archivo CSS propio + CSS rápido, cargados después de
-  `Ecommerce/static/Ecommerce/tienda.css`. Los valores del tema se validan/sanitizan antes de salir en un `<style>` público.
+- Temas: `TemaTienda` elige un **preset** (`Ecommerce/presets.py`: `clasico`, `minimal`, `bazaar`, `fresco`, `hogar`; cada uno
+  = rubro, paleta, fuente, sidebar y tipo de hero) y opcionalmente colores propios (`colores_propios`), CSS propio y CSS rápido.
+  Orden de carga: `tienda.css` (estructura + variables `--t-*`) → `temas/<preset>.css` (solo estructura del preset) → `<style>` con
+  las variables del preset o del tema. Un nuevo estilo = entrada en `PRESETS` + archivo en `static/Ecommerce/temas/`.
+  Vista previa sin guardar: `/tienda/<slug>/?preset=<clave>` (solo usuarios autenticados). Los valores del tema se
+  validan/sanitizan antes de salir en un `<style>` público. `PromoTienda` = banners laterales/carrusel del home.
 
 ## Directrices de código (resumen; el detalle está en `context.md` y `crud_patterm.md`)
 
@@ -99,6 +108,21 @@ oyente no importa modelos del emisor.
 - URLs siempre con `{% url %}`; nunca hardcodeadas.
 - No cambiar el comportamiento del CRUD genérico salvo pedido explícito.
 - Migraciones: no van a git, cada entorno genera las suyas.
+
+## Estilos del sistema (temas)
+
+- Dos temas: **Corp** (predefinido; monocromo, denso) y **Modern** (azul, aireado). El usuario los cambia con el botón
+  `.am-theme-toggle` del toolbar (vista launcher y vista sidebar).
+- `static/amui/am_themes.css`: cada tema es solo un bloque de variables `--am-*` bajo `html[data-am-theme="..."]`; los componentes
+  (sidebar, toolbar, launcher, tarjetas, formularios, select2, botones, badges, tablas/DataTables, offcanvas, modales) se escriben una
+  sola vez con esas variables. Todo va prefijado con `html[data-am-theme]` para ganarle a los `<style>` de los templates cargados por ajax.
+- `static/amui/am_theme.js` (cargado en `AMCSS.html`, antes del primer pintado): aplica el tema, lo recuerda en `localStorage`
+  (`amachine_theme`) y lo guarda en `UserProfile.preferences['theme']` vía `MUserProfile.set_preference`; al entrar manda la preferencia
+  del servidor (`{% am_user_theme %}`), así el tema sigue al usuario entre equipos.
+- **Pantallas nuevas: no fijar colores, tipografías ni radios propios.** Usar clases de Bootstrap (`btn-primary`, `card`, `badge bg-success`,
+  `form-control`, `table`) o las variables `var(--am-primary)`, `var(--am-border)`, `var(--am-muted)`...: así se ven bien en ambos temas.
+- Agregar un tema: un bloque de variables en `am_themes.css`, su nombre en `THEMES` de `am_theme.js`, en `PREFERENCIAS_PERMITIDAS`
+  (`OptsIO/mng_user_profile.py`) y en el tag `am_user_theme`.
 
 ## Generador de pantallas CRUD
 

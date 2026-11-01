@@ -187,6 +187,86 @@
     overflow: hidden;
 }
 
+/* Grupos colapsables (acordeon) */
+.am-sidebar-group-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px 20px;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.am-sidebar.collapsed .am-sidebar-group-toggle {
+    justify-content: center;
+    padding: 12px;
+}
+
+.am-sidebar-group-chevron {
+    margin-left: auto;
+    font-size: 1.1rem;
+    transition: transform 0.2s;
+}
+
+.am-sidebar-group.open > .am-sidebar-group-toggle .am-sidebar-group-chevron {
+    transform: rotate(180deg);
+}
+
+.am-sidebar.collapsed .am-sidebar-group-chevron {
+    display: none;
+}
+
+/* Alto animable sin conocer el contenido: 0fr -> 1fr */
+.am-sidebar-group-body {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.22s ease;
+}
+
+.am-sidebar-group-body > .am-sidebar-submenu {
+    overflow: hidden;
+    min-height: 0;
+}
+
+.am-sidebar-group.open > .am-sidebar-group-body {
+    grid-template-rows: 1fr;
+}
+
+/* En modo riel solo se ven los iconos de los grupos */
+.am-sidebar.collapsed .am-sidebar-group-body {
+    grid-template-rows: 0fr;
+}
+
+.am-sidebar-submenu .am-sidebar-menu-link {
+    padding-left: 44px;
+}
+
+.am-sidebar-submenu .am-sidebar-menu-icon {
+    display: none;
+}
+
+.am-sidebar-submenu .am-sidebar-menu-text {
+    margin-left: 0;
+}
+
+.am-sidebar-pin-btn {
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    color: #2d3748;
+    cursor: pointer;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
 /* Sidebar Footer */
 .am-sidebar-footer {
     padding: 16px;
@@ -734,6 +814,11 @@
                 <i class="mdi mdi-menu" style="font-size: 1.5rem; color: #2d3748;"></i>
             </button>
 
+            <!-- Fijar / colapsar el menu lateral -->
+            <button class="am-sidebar-pin-btn d-none d-md-inline-flex" id="sidebarPinToggle" type="button" title="Colapsar menú">
+                <i class="mdi mdi-dock-left"></i>
+            </button>
+
             <!-- Back Button (hidden by default) -->
             <button class="am-back-btn" id="sidebarBackBtn" style="display: none;" title="Volver">
                 <i class="mdi mdi-arrow-left"></i>
@@ -752,6 +837,10 @@
                     <div class="business-ruc" id="sidebarBusinessRuc">Cargando...</div>
                 </div>
 
+                <!-- Estilo del sistema: Corp / Modern -->
+                <button class="am-theme-toggle" type="button" title="Cambiar estilo">
+                    <i class="mdi mdi-palette-swatch-outline"></i><span class="am-theme-label"></span>
+                </button>
                 <!-- Task Notifications Bell -->
                 <div class="task-bell-container" id="taskNotificationBell">
                     <div class="dropdown">
@@ -844,6 +933,7 @@
         tooltip = document.getElementById('sidebarTooltip');
         overlay = document.getElementById('sidebarOverlay');
 
+        initSidebarPin();
         loadSidebarApps();
         initSidebarHover();
         initSidebarUserDropdown();
@@ -949,10 +1039,17 @@
         var container = document.getElementById('sidebarMenusContainer');
         var html = '';
 
-        sidebarMenusData.forEach(function(menu) {
-            html += '<div class="am-sidebar-section">';
-            html += '<div class="am-sidebar-section-title">' + escapeHtml(menu.name) + '</div>';
-            html += '<ul class="am-sidebar-menu">';
+        // Cada menu es un grupo colapsable (acordeon): cabecera con icono + flecha y sus apps adentro
+        var abiertos = getOpenGroups();
+        sidebarMenusData.forEach(function(menu, idx) {
+            var abierto = abiertos ? abiertos[menu.name] === true : idx === 0;
+            html += '<div class="am-sidebar-group' + (abierto ? ' open' : '') + '" data-menu="' + escapeHtml(menu.name) + '">';
+            html += '<button type="button" class="am-sidebar-group-toggle" aria-expanded="' + abierto + '">';
+            html += '<span class="am-sidebar-menu-icon"><i class="' + escapeHtml(menu.icon) + '"></i></span>';
+            html += '<span class="am-sidebar-menu-text">' + escapeHtml(menu.name) + '</span>';
+            html += '<i class="mdi mdi-chevron-down am-sidebar-group-chevron"></i>';
+            html += '</button>';
+            html += '<div class="am-sidebar-group-body"><ul class="am-sidebar-menu am-sidebar-submenu">';
 
             menu.apps.forEach(function(app) {
                 html += '<li class="am-sidebar-menu-item">';
@@ -963,11 +1060,27 @@
                 html += '</li>';
             });
 
-            html += '</ul>';
+            html += '</ul></div>';
             html += '</div>';
         });
 
         container.innerHTML = html;
+
+        // Abrir / cerrar grupos (se recuerda por navegador)
+        container.querySelectorAll('.am-sidebar-group-toggle').forEach(function(toggle) {
+            toggle.addEventListener('click', function() {
+                var group = this.parentElement;
+                var abierto = group.classList.toggle('open');
+                this.setAttribute('aria-expanded', abierto);
+                saveOpenGroups();
+            });
+            toggle.addEventListener('mouseenter', function() {
+                if (!sidebar.classList.contains('expanded')) {
+                    showTooltip(this.querySelector('.am-sidebar-menu-text').textContent, this);
+                }
+            });
+            toggle.addEventListener('mouseleave', hideTooltip);
+        });
 
         // Eventos
         var menuLinks = container.querySelectorAll('.am-sidebar-menu-link');
@@ -1001,6 +1114,38 @@
             });
 
             link.addEventListener('mouseleave', hideTooltip);
+        });
+    }
+
+    function getOpenGroups() {
+        var raw = localStorage.getItem('amachine_sidebar_groups');
+        return raw ? JSON.parse(raw) : null;
+    }
+
+    function saveOpenGroups() {
+        var estado = {};
+        document.querySelectorAll('#sidebarMenusContainer .am-sidebar-group').forEach(function(group) {
+            estado[group.dataset.menu] = group.classList.contains('open');
+        });
+        localStorage.setItem('amachine_sidebar_groups', JSON.stringify(estado));
+    }
+
+    // Fijar el sidebar abierto o dejarlo como riel de iconos que se expande al pasar el mouse
+    function applySidebarPinned() {
+        sidebar.classList.toggle('expanded', isSidebarPinned);
+        sidebar.classList.toggle('collapsed', !isSidebarPinned);
+        var btn = document.getElementById('sidebarPinToggle');
+        btn.title = isSidebarPinned ? 'Colapsar menú' : 'Fijar menú abierto';
+        btn.setAttribute('aria-pressed', isSidebarPinned);
+    }
+
+    function initSidebarPin() {
+        isSidebarPinned = localStorage.getItem('amachine_sidebar_pinned') !== '0';
+        applySidebarPinned();
+        document.getElementById('sidebarPinToggle').addEventListener('click', function() {
+            isSidebarPinned = !isSidebarPinned;
+            localStorage.setItem('amachine_sidebar_pinned', isSidebarPinned ? '1' : '0');
+            applySidebarPinned();
         });
     }
 

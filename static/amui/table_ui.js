@@ -28,6 +28,8 @@ Grid = {
         let default_opts = {
             dom: 'tp',
             fixedHeader: true,
+            // Sin autoWidth: DataTables no reparte el sobrante en una sola columna; el ancho lo da el contenido
+            autoWidth: false,
             responsive: { details: {type: 'column'} },
             select: {
                 style: 'single'

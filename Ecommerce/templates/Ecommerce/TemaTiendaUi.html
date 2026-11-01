@@ -3,6 +3,7 @@
         <div class="toolbar-buttons">
             <button id="btn_crear_tematienda" class="btn btn-primary me-2"><i class="mdi mdi-plus"></i> Crear</button>
             <button id="btn_borrar_tematienda" class="btn btn-danger"><i class="mdi mdi-delete"></i> Borrar</button>
+            <button id="btn_presets_tematienda" class="btn btn-outline-primary"><i class="mdi mdi-palette-swatch-outline"></i> Ver estilos disponibles</button>
         </div>
         <div class="toolbar-search">
             <input type="text" id="input_buscar_tematienda" class="form-control" placeholder="Buscar...">
@@ -48,15 +49,16 @@
           },
           columns: [
                { fdis: true, gre: false, btyp: 'loc', idx: null, tit: 'ACC', dtyp: 'str', dfl: '', nord: false,
-                dfcon: `<i title="Ver/Editar" class="tr-tematienda-query text fs-5 mdi mdi-archive-eye-outline"></i>` },
+                dfcon: `<i title="Ver/Editar" class="tr-tematienda-query text fs-5 mdi mdi-archive-eye-outline me-1"></i><i title="Vista previa en la tienda" class="tr-tematienda-preview text fs-5 mdi mdi-eye-outline text-primary cursor-pointer"></i>` },
               { fdis: true, gre: true, btyp: 'fdb', idx: 'nombre', tit: 'Tema', cls: 'align-left', dtyp: 'str', hide: false },
-              { fdis: true, gre: true, btyp: 'fdb', idx: 'layout', tit: 'Layout', cls: 'align-left', dtyp: 'str', hide: false },
-              { fdis: true, gre: true, btyp: 'fdb', idx: 'color_primario', tit: 'Primario', cls: 'align-left', dtyp: 'str', hide: false,
-                 render: (data, type, rowobj) => { return `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid #ccc;background:${data}"></span> ${data}`; } },
+              { fdis: true, gre: true, btyp: 'mdb', idx: 'get_preset_nombre', tit: 'Estilo base', cls: 'align-left', dtyp: 'str', hide: false },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'colores_propios', tit: 'Colores propios', cls: 'align-center', dtyp: 'bool', hide: false,
+                 render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
               { fdis: true, gre: true, btyp: 'fdb', idx: 'color_acento', tit: 'Acento', cls: 'align-left', dtyp: 'str', hide: false,
-                 render: (data, type, rowobj) => { return `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid #ccc;background:${data}"></span> ${data}`; } },
+                 render: (data, type, rowobj) => { return rowobj.colores_propios ? `<span style="display:inline-block;width:18px;height:18px;border-radius:4px;border:1px solid #ccc;background:${data}"></span> ${data}` : '<span class="text-muted">del estilo</span>'; } },
               { fdis: true, gre: true, btyp: 'fdb', idx: 'activo', tit: 'Activo', cls: 'align-center', dtyp: 'bool', hide: false,
                  render: (data, type, rowobj) => { return data ? 'Sí' : 'No'; } },
+              { fdis: true, gre: true, btyp: 'fdb', idx: 'preset', tit: 'preset', cls: 'align-left', dtyp: 'str', hide: true },
           ]
       })
 
@@ -118,6 +120,41 @@
             });
         });
     });
+
+    tematienda_post = (mname) => {
+        let gbe = new FormData();
+        gbe.append('module', 'Ecommerce');
+        gbe.append('package', 'mng_ecommerce');
+        gbe.append('attr', 'MEcommerce');
+        gbe.append('mname', mname);
+        gbe.append('dbcon', 'default');
+        return axios.post('{% url "iom" %}', gbe, { headers: {'X-CSRFToken': OptsIO.getCookie('csrftoken')} }).then((rsp) => rsp.data);
+    }
+    // Galeria de estilos base: muestra colores y estructura, y abre la tienda con ?preset= para verlo aplicado
+    qelem('#btn_presets_tematienda').addEventListener('click', () => {
+        tematienda_post('get_presets').then((d) => {
+            let esc = (v) => $('<span>').text(v == null ? '' : v).html();
+            let sw = (c) => `<span style="display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid #ccc;background:${c}"></span>`;
+            let cards = d.presets.map((p) => `
+                <div class="col-md-6"><div class="card h-100"><div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-0">${esc(p.nombre)}</h6><small class="text-muted">${esc(p.rubro)}</small></div>
+                    ${d.tienda_url ? `<a class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener" href="${d.tienda_url}?preset=${p.clave}"><i class="mdi mdi-eye-outline"></i> Ver</a>` : ''}</div>
+                    <p class="small mt-2 mb-2">${esc(p.descripcion)}</p>
+                    <div class="small">${sw(p.colores.primario)} ${sw(p.colores.acento)} ${sw(p.colores.fondo)} ${sw(p.colores.texto)}
+                    &nbsp; <span class="badge bg-secondary">${p.sidebar ? 'con sidebar' : 'sin sidebar'}</span> <span class="badge bg-secondary">portada ${esc(p.hero)}</span></div>
+                </div></div></div>`).join('');
+            $('#offcanvasGlobalUiLabel').html('Estilos base de tienda');
+            $('#offcanvasGlobalUiBody').html(`<p class="text-muted small">${d.tienda_url ? 'La vista previa abre tu tienda con ese estilo sin cambiar nada; solo vos lo ves mientras estés logueado.' : 'Creá una tienda activa para poder previsualizar.'}</p><div class="row g-3">${cards}</div>`);
+            new bootstrap.Offcanvas('#offcanvasGlobalUi').show();
+        });
+    });
+    $(`#${t_tematienda} tbody`).on('click', '.tr-tematienda-preview', function() {
+        let rowobj = $(`#${t_tematienda}`).DataTable().row($(this).closest('tr')).data();
+        tematienda_post('get_presets').then((d) => {
+            if (!d.tienda_url) { UiB.MsgInfo('Creá una tienda activa para previsualizar.'); return; }
+            window.open(`${d.tienda_url}?preset=${rowobj.preset}`, '_blank', 'noopener');
+        });
+    })
 
     qelem('#input_buscar_tematienda').onkeydown = (evt) => {
         if (evt.key === 'Enter') {

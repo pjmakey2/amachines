@@ -1,0 +1,7 @@
+/* Preset Clasico: cabecera oscura, portada centrada, grilla simple. */
+.tienda-preset-clasico { --t-radio: 10px; }
+.tienda-preset-clasico .hero-principal { min-height: 300px; justify-content: center; text-align: center; }
+.tienda-preset-clasico .hero-principal::before { background: rgba(0,0,0,.4); }
+.tienda-preset-clasico .hero-texto { max-width: 640px; }
+.tienda-preset-clasico .producto-card .agregar-rapido { display: none; }
+.tienda-preset-clasico .producto-card:hover .agregar-rapido { display: block; }

@@ -29,6 +29,13 @@
                 </div>
                 <small class="text-muted">{% if mobj and mobj.imagen %}<a href="{{ mobj.imagen.url }}" target="_blank">Ver archivo actual</a>{% endif %}</small>
             </div>
+            <div class="col-md-6 mb-3" data-field="icono">
+                <label>Ícono del menú lateral (Bootstrap Icons)</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="icono" class="form-control" placeholder="bi-basket" value='{% if mobj %}{{ mobj.icono }}{% else %}{% endif %}' />
+                </div>
+                <small class="text-muted">Nombre de un ícono de icons.getbootstrap.com</small>
+            </div>
             <div class="col-md-3 mb-3" data-field="orden">
                 <label>Orden</label>
                 <div class="input-group flex-nowrap am_focus_highlight">

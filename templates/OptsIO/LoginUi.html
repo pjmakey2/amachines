@@ -1,579 +1,235 @@
 {% load static io_tags %}
-<!doctype html>
-<html lang="es" dir="ltr">
+<!DOCTYPE html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    {% first_business_name as company_name %}
-    <title>{{ company_name }} - Iniciar Sesión</title>
-
+    <title>Iniciar sesión — Amachine ERP</title>
     {% include "AMCSS.html" %}
-
     <style>
-        /* Fondo con gradiente mejorado */
-        .login-content {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+        /* Paleta del login: cielo claro y fresco, cumbres en celeste/menta, acento verde agua */
+        :root {
+            --lg-accent: #0ea5a4;        /* verde agua: boton, enlaces, cotas */
+            --lg-accent-2: #14c8b8;      /* verde agua claro: brillos y foco */
+            --lg-accent-ink: #ffffff;    /* texto sobre el boton */
+            --lg-bg: #f3f7fb;            /* fondo base */
+            --lg-bg-2: #ffffff;          /* fondo alto (cielo) */
+            --lg-bg-3: #e6eef6;          /* fondo bajo */
+            --lg-card: rgba(255, 255, 255, .82);
+            --lg-text: #14213d; --lg-muted: #64748b; --lg-border: rgba(20, 33, 61, .10);
+            --lg-accent-rgb: 14, 165, 164;
         }
-
-        /* Card principal con mejor diseño */
+        html, body { height: 100%; }
+        body.login-body {
+            margin: 0; min-height: 100vh; position: relative; overflow-x: hidden;
+            display: flex; align-items: center; justify-content: center; padding: 24px;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            color: var(--lg-text); background: var(--lg-bg);
+        }
+        /* ---- Escena: "Alta" = cumbres, "Machines" = engranajes ---- */
+        .scene { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+            background: radial-gradient(1200px 700px at 70% -10%, rgba(var(--lg-accent-rgb), .14), transparent 60%), radial-gradient(900px 600px at 5% 40%, rgba(56, 189, 248, .14), transparent 60%), linear-gradient(180deg, var(--lg-bg-2) 0%, var(--lg-bg) 55%, var(--lg-bg-3) 100%); }
+        .scene .grid { position: absolute; inset: 0; opacity: .5;
+            background-image: linear-gradient(rgba(20,33,61,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(20,33,61,.05) 1px, transparent 1px);
+            background-size: 48px 48px;
+            -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 70%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 70%, transparent 100%); }
+        .scene svg.peaks { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 46vh; min-height: 260px; display: block; }
+        .scene .gear { position: absolute; color: rgba(var(--lg-accent-rgb), .22); animation: spin 90s linear infinite; }
+        .scene .gear svg { display: block; overflow: visible; }
+        .scene .gear-1 { width: 320px; height: 320px; right: -70px; top: -60px; }
+        .scene .gear-2 { width: 184px; height: 184px; right: 214px; top: 178px; color: rgba(56, 189, 248, .22); animation-direction: reverse; animation-duration: 60s; }
+        .scene .gear-3 { width: 240px; height: 240px; left: -90px; bottom: 34vh; color: rgba(20, 33, 61, .07); animation-duration: 120s; }
+        .scene .glow { position: absolute; left: 50%; top: 50%; width: 900px; height: 520px; transform: translate(-50%, -50%);
+            background: radial-gradient(closest-side, rgba(var(--lg-accent-rgb), .12), transparent); filter: blur(10px); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: reduce) { .scene .gear { animation: none; } }
+        /* ---- Tarjeta ---- */
         .login-card {
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 900px;
-            width: 100%;
+            position: relative; z-index: 1; width: 100%; max-width: 440px; padding: 40px 40px 32px;
+            background: var(--lg-card); border: 1px solid var(--lg-border); border-radius: 22px;
+            box-shadow: 0 24px 60px rgba(20, 33, 61, .12), inset 0 1px 0 rgba(255,255,255,.9);
+            -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
         }
-
-        /* Lado del formulario */
-        .form-side {
-            background: #ffffff;
-            padding: 50px 40px;
+        .login-card::before { content: ''; position: absolute; left: 24px; right: 24px; top: 0; height: 2px; border-radius: 2px;
+            background: linear-gradient(90deg, transparent, var(--lg-accent-2), transparent); }
+        .brand-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+        .brand-logo svg { width: 44px; height: 44px; flex-shrink: 0; }
+        .brand-logo .name { font-size: 1.35rem; font-weight: 700; letter-spacing: -.02em; line-height: 1; }
+        .brand-logo .name small { display: block; font-size: .68rem; font-weight: 600; letter-spacing: .34em; color: var(--lg-accent); margin-top: 5px; }
+            background: #f1f5f9; border: 1px solid var(--lg-border); font-size: .78rem; color: var(--lg-muted); max-width: 46%; }
+        .login-card h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -.02em; margin: 0 0 4px; }
+        .login-card .subtitle { color: var(--lg-muted); margin: 0 0 24px; font-size: .92rem; }
+        .form-group { margin-bottom: 16px; }
+        .login-body .form-label { font-weight: 500; font-size: .85rem; margin-bottom: 6px; color: var(--lg-text); }
+        .input-wrap { position: relative; }
+        .input-wrap > i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--lg-muted); font-size: 1.15rem; pointer-events: none; }
+        html[data-am-theme] .login-body .input-wrap .form-control { padding-left: 42px; padding-right: 44px; }
+        html[data-am-theme] .login-body .form-control {
+            min-height: 46px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: .95rem; color: var(--lg-text);
+            background: #ffffff; box-shadow: none; transition: border-color .15s, box-shadow .15s, background .15s;
         }
-
-        .form-side h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2d3748;
-            margin-bottom: 10px;
-        }
-
-        .form-side .subtitle {
-            color: #718096;
-            font-size: 0.95rem;
-            margin-bottom: 35px;
-        }
-
-        /* Inputs mejorados */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #4a5568;
-            font-size: 0.9rem;
-            margin-bottom: 8px;
-        }
-
-        .form-control {
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 0.95rem;
-            transition: all 0.3s;
-        }
-
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
-
-        /* Checkbox y enlace */
-        .form-check-label {
-            font-size: 0.9rem;
-            color: #4a5568;
-        }
-
-        .forgot-password {
-            color: #667eea;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .forgot-password:hover {
-            color: #764ba2;
-        }
-
-        /* Botón de login */
+        html[data-am-theme] .login-body .form-control::placeholder { color: #94a3b8; }
+        html[data-am-theme] .login-body .form-control:focus { background: #ffffff; border-color: var(--lg-accent); box-shadow: 0 0 0 4px rgba(var(--lg-accent-rgb), .2); color: var(--lg-text); }
+        html[data-am-theme] .login-body .form-control:-webkit-autofill { -webkit-text-fill-color: var(--lg-text); -webkit-box-shadow: 0 0 0 1000px #ffffff inset; caret-color: var(--lg-text); }
+        .toggle-pass { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: transparent; color: var(--lg-muted); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; }
+        .toggle-pass:hover { background: #f1f5f9; color: var(--lg-text); }
+        html[data-am-theme] .login-body .form-check-input { width: 1.05em; height: 1.05em; background-color: #ffffff; border-color: #cbd5e1; }
+        html[data-am-theme] .login-body .form-check-input:checked { background-color: var(--lg-accent); border-color: var(--lg-accent); }
+        html[data-am-theme] .login-body .form-check-input:focus { box-shadow: 0 0 0 4px rgba(var(--lg-accent-rgb), .2); border-color: var(--lg-accent); }
+        .form-check-label { font-size: .88rem; color: var(--lg-text); }
+        .link-teal { color: var(--lg-accent); font-weight: 500; text-decoration: none; font-size: .88rem; }
+        .link-teal:hover { text-decoration: underline; }
         .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 14px;
-            font-size: 1rem;
-            font-weight: 600;
-            color: white;
-            width: 100%;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            width: 100%; min-height: 48px; border: 0; border-radius: 10px; font-weight: 600; font-size: 1rem; color: var(--lg-accent-ink);
+            background: linear-gradient(135deg, var(--lg-accent-2) 0%, var(--lg-accent) 100%);
+            box-shadow: 0 10px 26px rgba(var(--lg-accent-rgb), .32); transition: transform .15s, box-shadow .15s, filter .15s;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
         }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-        }
-
-        /* Lado del carrusel */
-        .carousel-side {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 500px;
-            position: relative;
-        }
-
-        /* Controles del carrusel mejorados */
-        #loginCarousel .carousel-control-prev,
-        #loginCarousel .carousel-control-next {
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            opacity: 0.8;
-            transition: all 0.3s;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        #loginCarousel .carousel-control-prev {
-            left: 15px;
-        }
-
-        #loginCarousel .carousel-control-next {
-            right: 15px;
-        }
-
-        #loginCarousel .carousel-control-prev:hover,
-        #loginCarousel .carousel-control-next:hover {
-            opacity: 1;
-            background: rgba(255, 255, 255, 0.3);
-        }
-
-        #loginCarousel .carousel-control-prev-icon,
-        #loginCarousel .carousel-control-next-icon {
-            width: 20px;
-            height: 20px;
-        }
-
-        /* Indicadores del carrusel */
-        #loginCarousel .carousel-indicators {
-            bottom: 25px;
-            margin-bottom: 0;
-        }
-
-        #loginCarousel .carousel-indicators button {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.5);
-            border: none;
-            margin: 0 5px;
-            transition: all 0.3s;
-            padding: 0;
-        }
-
-        #loginCarousel .carousel-indicators button.active {
-            background-color: white;
-            width: 12px;
-            height: 12px;
-        }
-
-        /* Asegurar que solo el item activo sea visible */
-        #loginCarousel .carousel-item {
-            display: none;
-            height: 500px;
-        }
-
-        #loginCarousel .carousel-item.active {
-            display: flex !important;
-        }
-
-        /* Carousel item que ocupa toda la altura */
-        #loginCarousel .carousel-item-full {
-            height: 100% !important;
-        }
-
-        #loginCarousel .carousel-item-full.active {
-            display: block !important;
-        }
-
-        /* Contenido del carrusel */
-        .carousel-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: white;
-            padding: 40px;
-            text-align: center;
-        }
-
-        .carousel-content h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .carousel-content h4 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-
-        .carousel-content p {
-            font-size: 1.1rem;
-            opacity: 0.95;
-            line-height: 1.6;
-        }
-
-        .carousel-content img {
-            max-width: 100%;
-            max-height: 350px;
-            object-fit: contain;
-            margin-bottom: 20px;
-            filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.2));
-        }
-
-        /* Imagen que ocupa todo el carousel-content */
-        .carousel-content.full-image {
-            padding: 0;
-            height: 100% !important;
-            display: block !important;
-        }
-
-        .carousel-content.full-image img {
-            width: 100%;
-            height: 100%;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: cover;
-            margin: 0;
-            filter: none;
-            display: block;
-        }
-
-        .carousel-content .logo-main img {
-            /*width: 100px;*/
-            /*height: 100px;*/
-            margin-bottom: 25px;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .login-card {
-                border-radius: 16px;
-            }
-
-            .form-side {
-                padding: 30px 25px;
-            }
-
-            .carousel-side {
-                min-height: 400px;
-            }
-
-            #loginCarousel .carousel-item {
-                height: 400px;
-            }
-
-            .carousel-content h1 {
-                font-size: 2rem;
-            }
-
-            .carousel-content h4 {
-                font-size: 1.2rem;
-            }
-        }
-
-        /* Business Selection Styles */
-        .business-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .business-item {
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .business-item:hover {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.05);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-
-        .business-item.active {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .business-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            object-fit: cover;
-            background: #f7fafc;
-            border: 2px solid #e2e8f0;
-            flex-shrink: 0;
-        }
-
-        .business-logo-placeholder {
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .business-info {
-            flex: 1;
-        }
-
-        .business-name {
-            font-weight: 600;
-            color: #2d3748;
-            font-size: 1.1rem;
-            margin-bottom: 5px;
-        }
-
-        .business-ruc {
-            color: #718096;
-            font-size: 0.9rem;
-        }
-
-        .business-badge {
-            background: #48bb78;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            flex-shrink: 0;
-        }
-
-        .business-item-create {
-            border-style: dashed !important;
-            border-color: #667eea !important;
-            background: rgba(102, 126, 234, 0.02);
-        }
-
-        .business-item-create:hover {
-            background: rgba(102, 126, 234, 0.1);
-            border-color: #667eea !important;
-        }
-
-        .business-item-create .business-logo-placeholder {
-            background: rgba(102, 126, 234, 0.2);
-        }
-
-        .business-item-create .business-name {
-            color: #667eea;
-        }
+        .btn-login:hover { transform: translateY(-1px); filter: brightness(1.05); box-shadow: 0 14px 30px rgba(var(--lg-accent-rgb), .4); }
+        .btn-login:disabled { transform: none; opacity: .75; cursor: wait; }
+        #loginMessages .alert { border-radius: 10px; font-size: .9rem; padding: 10px 40px 10px 14px; }
+        .register-line { text-align: center; margin-top: 20px; color: var(--lg-muted); font-size: .88rem; }
+        .form-foot { margin-top: 26px; text-align: center; color: #94a3b8; font-size: .74rem; }
+        .form-foot b { color: var(--lg-muted); font-weight: 600; }
+        #loading { position: fixed; inset: 0; background: var(--lg-bg-2); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .loader { width: 44px; height: 44px; border: 4px solid var(--lg-accent); border-bottom-color: transparent; border-radius: 50%; animation: rotation 1s linear infinite; }
+        @keyframes rotation { to { transform: rotate(360deg); } }
+        /* El tema del sistema (am_themes.css) fija colores oscuros de texto: en el login mandan los claros */
+        html[data-am-theme] .login-body h2, html[data-am-theme] .login-body .form-label, html[data-am-theme] .login-body .form-check-label,
+        html[data-am-theme] .login-body .brand-logo .name { color: var(--lg-text); }
+        html[data-am-theme] .login-body .subtitle { color: var(--lg-muted); }
+        @media (max-width: 480px) { .login-card { padding: 30px 22px 24px; } }
     </style>
 </head>
+<body class="login-body">
+    <div id="loading"><div class="loader"></div></div>
 
-<body class="" data-bs-spy="scroll" data-bs-target="#elements-section" data-bs-offset="0" tabindex="0">
-    <!-- Loader Start -->
-    <div id="loading">
-        <div class="loader simple-loader">
-            <div class="loader-body"></div>
-        </div>
+    <div class="scene" aria-hidden="true">
+        <div class="grid"></div>
+        <div class="glow"></div>
+        <div class="gear gear-1"><svg viewBox="-160 -160 320 320"><path d="M150.0 0.0 L149.1 16.2 L121.6 24.2 L118.3 37.2 L138.6 57.4 L131.6 72.0 L103.1 68.9 L95.1 79.6 L106.1 106.1 L94.0 116.9 L68.9 103.1 L57.4 109.9 L57.4 138.6 L42.1 144.0 L24.2 121.6 L10.9 123.5 L0.0 150.0 L-16.2 149.1 L-24.2 121.6 L-37.2 118.3 L-57.4 138.6 L-72.0 131.6 L-68.9 103.1 L-79.6 95.1 L-106.1 106.1 L-116.9 94.0 L-103.1 68.9 L-109.9 57.4 L-138.6 57.4 L-144.0 42.1 L-121.6 24.2 L-123.5 10.9 L-150.0 0.0 L-149.1 -16.2 L-121.6 -24.2 L-118.3 -37.2 L-138.6 -57.4 L-131.6 -72.0 L-103.1 -68.9 L-95.1 -79.6 L-106.1 -106.1 L-94.0 -116.9 L-68.9 -103.1 L-57.4 -109.9 L-57.4 -138.6 L-42.1 -144.0 L-24.2 -121.6 L-10.9 -123.5 L-0.0 -150.0 L16.2 -149.1 L24.2 -121.6 L37.2 -118.3 L57.4 -138.6 L72.0 -131.6 L68.9 -103.1 L79.6 -95.1 L106.1 -106.1 L116.9 -94.0 L103.1 -68.9 L109.9 -57.4 L138.6 -57.4 L144.0 -42.1 L121.6 -24.2 L123.5 -10.9 Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="72" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="32" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+        <div class="gear gear-2"><svg viewBox="-92 -92 184 184"><path d="M86.0 0.0 L84.9 13.5 L67.2 19.7 L63.3 30.0 L72.3 46.5 L64.2 57.2 L45.8 52.9 L37.0 59.4 L35.7 78.2 L23.0 82.9 L10.0 69.3 L-1.0 70.0 L-12.2 85.1 L-25.4 82.2 L-29.1 63.7 L-38.7 58.3 L-56.3 65.0 L-65.8 55.4 L-58.9 37.8 L-64.1 28.2 L-82.5 24.2 L-85.3 11.0 L-70.0 0.0 L-69.1 -11.0 L-82.5 -24.2 L-77.7 -36.8 L-58.9 -37.8 L-52.2 -46.6 L-56.3 -65.0 L-45.5 -73.0 L-29.1 -63.7 L-18.8 -67.4 L-12.2 -85.1 L1.2 -86.0 L10.0 -69.3 L20.7 -66.9 L35.7 -78.2 L47.5 -71.7 L45.8 -52.9 L53.6 -45.1 L72.3 -46.5 L78.7 -34.6 L67.2 -19.7 L69.4 -9.0 Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="38" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="17" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+        <div class="gear gear-3"><svg viewBox="-160 -160 320 320"><path d="M150.0 0.0 L149.1 16.2 L121.6 24.2 L118.3 37.2 L138.6 57.4 L131.6 72.0 L103.1 68.9 L95.1 79.6 L106.1 106.1 L94.0 116.9 L68.9 103.1 L57.4 109.9 L57.4 138.6 L42.1 144.0 L24.2 121.6 L10.9 123.5 L0.0 150.0 L-16.2 149.1 L-24.2 121.6 L-37.2 118.3 L-57.4 138.6 L-72.0 131.6 L-68.9 103.1 L-79.6 95.1 L-106.1 106.1 L-116.9 94.0 L-103.1 68.9 L-109.9 57.4 L-138.6 57.4 L-144.0 42.1 L-121.6 24.2 L-123.5 10.9 L-150.0 0.0 L-149.1 -16.2 L-121.6 -24.2 L-118.3 -37.2 L-138.6 -57.4 L-131.6 -72.0 L-103.1 -68.9 L-95.1 -79.6 L-106.1 -106.1 L-94.0 -116.9 L-68.9 -103.1 L-57.4 -109.9 L-57.4 -138.6 L-42.1 -144.0 L-24.2 -121.6 L-10.9 -123.5 L-0.0 -150.0 L16.2 -149.1 L24.2 -121.6 L37.2 -118.3 L57.4 -138.6 L72.0 -131.6 L68.9 -103.1 L79.6 -95.1 L106.1 -106.1 L116.9 -94.0 L103.1 -68.9 L109.9 -57.4 L138.6 -57.4 L144.0 -42.1 L121.6 -24.2 L123.5 -10.9 Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="72" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="0" cy="0" r="32" fill="none" stroke="currentColor" stroke-width="2"/></svg></div>
+        <svg class="peaks" viewBox="0 0 1600 460" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="pk1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0ea5a4" stop-opacity=".22"/><stop offset="1" stop-color="#0ea5a4" stop-opacity="0"/></linearGradient>
+                <linearGradient id="pk2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe3f2"/><stop offset="1" stop-color="#e6eef6"/></linearGradient>
+                <linearGradient id="pk3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9d3e8"/><stop offset="1" stop-color="#dbe7f1"/></linearGradient>
+            </defs>
+            <polygon points="0,460 0,300 180,190 320,260 470,120 620,230 760,150 900,250 1040,90 1200,220 1330,160 1600,280 1600,460" fill="url(#pk1)"/>
+            <polyline points="0,300 180,190 320,260 470,120 620,230 760,150 900,250 1040,90 1200,220 1330,160 1600,280" fill="none" stroke="#0ea5a4" stroke-opacity=".7" stroke-width="2"/>
+            <polygon points="0,460 0,350 140,290 260,330 420,220 560,310 700,260 880,340 1000,210 1160,300 1300,250 1440,320 1600,240 1600,460" fill="url(#pk2)"/>
+            <polygon points="0,460 0,400 200,370 330,400 500,330 650,390 820,350 980,410 1120,340 1280,390 1420,360 1600,400 1600,460" fill="url(#pk3)"/>
+            <g fill="#0ea5a4" fill-opacity=".95"><circle cx="470" cy="120" r="3"/><circle cx="1040" cy="90" r="3"/><circle cx="760" cy="150" r="2.5"/></g>
+        </svg>
     </div>
-    <!-- Loader END -->
 
-    <div class="wrapper">
-        <section class="login-content">
-            <div class="login-card">
-                <div class="row g-0">
-                    <!-- Columna izquierda - Formulario -->
-                    <div class="col-md-6 form-side">
-                        <div class="text-center">
-                            <h2 id="login_title">Iniciar Sesión</h2>
-                            <p class="subtitle" id="login_subtitle">Ingresa tus credenciales para acceder al sistema.</p>
-                        </div>
+    <main class="login-card">
+        <div class="brand-logo">
+            <svg viewBox="0 0 100 100" role="img" aria-label="Alta Machines">
+                <path d="M20 84 L50 22" fill="none" stroke="#14213d" stroke-width="9" stroke-linecap="round"/>
+                <path d="M50 22 L80 84" fill="none" stroke="#0ea5a4" stroke-width="9" stroke-linecap="round"/>
+                <path d="M39 48 L50 33 L61 48" fill="none" stroke="#14213d" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/>
+                <path d="M35 63 H45 M55 63 H65" fill="none" stroke="#14213d" stroke-width="5.5" stroke-linecap="round"/>
+                <circle cx="50" cy="22" r="6.5" fill="#14c8b8"/>
+            </svg>
+            <div class="name">Alta<small>MACHINES</small></div>
+        </div>
 
-                        <form method="POST" id="loginForm" action="{% url 'glogin' %}">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                <label for="username" class="form-label">Usuario</label>
-                                <input type="text" class="form-control" id="username" name="username" placeholder="Ingresa tu usuario" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="password" class="form-label">Contraseña</label>
-                                <input type="password" class="form-control" id="password" name="password" placeholder="Ingresa tu contraseña" required>
-                            </div>
-                            <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
-                                    <label class="form-check-label" for="remember_me">Recordarme</label>
-                                </div>
-                                <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                            </div>
-                            <button type="submit" class="btn-login" id="loginBtn">Iniciar Sesión</button>
-                            <div id="loginMessages" class="mt-3"></div>
-                            <div class="text-center mt-3">
-                                <span class="text-muted">¿No tienes una cuenta?</span>
-                                <a href="{% url 'gregister' %}" class="forgot-password ms-2">Registrarse</a>
-                            </div>
-                        </form>
-                    </div>
+        <h2 id="login_title">Iniciar sesión</h2>
+        <p class="subtitle" id="login_subtitle">Ingresá tus credenciales para acceder al sistema.</p>
 
-                    <!-- Columna derecha - Carrusel -->
-                    <div class="col-md-6 carousel-side">
-                        <div id="loginCarousel" class="carousel slide h-100" data-bs-ride="carousel">
-                            {% first_business_logo as business_logo_url %}
-                            <div class="carousel-inner h-100">
-                                <!-- Slide 1 - Logo de la Empresa -->
-                                <div class="carousel-item active" >
-                                    <div class="carousel-content" style="margin-top: 60px; width: 100%;">
-                                        {% if business_logo_url %}
-                                        <div class="logo-main">
-                                            <img src="{{ business_logo_url }}" alt="{{ company_name }} Logo">
-                                        </div>
-                                        {% else %}
-                                        <div class="logo-main text-white">
-                                            <i class="mdi mdi-domain" style="font-size: 80px;"></i>
-                                        </div>
-                                        {% endif %}
-                                        <h4>{{ company_name }}</h4>
-                                    </div>
-                                </div>
-                                <!-- Slide 2 - Imagen de fondo opcional -->
-                                <div class="carousel-item carousel-item-full">
-                                    <div class="carousel-content" style="margin-top: 60px; width: 100%;">
-                                        <div class="text-white text-center">
-                                            <i class="mdi mdi-chart-line" style="font-size: 80px; margin-bottom: 20px;"></i>
-                                            <h4>Sistema de Gestión Empresarial</h4>
-                                            <p class="opacity-75">Facturación Electrónica - Inventario - Contabilidad</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Indicadores del carrusel -->
-                            <div class="carousel-indicators">
-                                <button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                                <button type="button" data-bs-target="#loginCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
-                            </div>
-                            <!-- Controles de navegación -->
-                        </div>
-                    </div>
+        <form method="POST" id="loginForm" action="{% url 'glogin' %}" novalidate>
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username" class="form-label">Usuario</label>
+                <div class="input-wrap">
+                    <i class="mdi mdi-account-outline"></i>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="tu.usuario" autocomplete="username" autofocus required>
                 </div>
             </div>
-        </section>
-    </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Contraseña</label>
+                <div class="input-wrap">
+                    <i class="mdi mdi-lock-outline"></i>
+                    <input type="password" class="form-control" id="password" name="password" placeholder="••••••••" autocomplete="current-password" required>
+                    <button type="button" class="toggle-pass" id="togglePassword" aria-label="Mostrar contraseña"><i class="mdi mdi-eye-outline"></i></button>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="remember_me" name="remember_me">
+                    <label class="form-check-label" for="remember_me">Recordarme</label>
+                </div>
+                <a href="#" class="link-teal">¿Olvidaste tu contraseña?</a>
+            </div>
+            <button type="submit" class="btn-login" id="loginBtn">Iniciar sesión <i class="mdi mdi-arrow-right"></i></button>
+            <div id="loginMessages" class="mt-3"></div>
+            <div class="register-line">¿No tenés una cuenta? <a href="{% url 'gregister' %}" class="link-teal ms-1">Registrate</a></div>
+        </form>
+        <div class="form-foot"><b>Amachine ERP</b> · Alta Machines &copy; {% now "Y" %}</div>
+    </main>
 
     {% include "AMJS.html" %}
-
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
     <script type="text/javascript">
-        // Auto-ocultar el loader cuando la página esté cargada
         window.addEventListener('load', function() {
-            const loader = document.getElementById('loading');
-            if (loader) {
-                loader.style.display = 'none';
-            }
+            var loader = document.getElementById('loading');
+            if (loader) loader.style.display = 'none';
         });
 
-        // Esperar a que el DOM esté completamente cargado
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar el carrusel automáticamente
-            var carouselElement = document.getElementById('loginCarousel');
-            if (carouselElement) {
-                var carousel = new bootstrap.Carousel(carouselElement, {
-                    interval: 5000,
-                    wrap: true,
-                    keyboard: true,
-                    pause: 'hover',
-                    ride: 'carousel'
-                });
+            var loginForm = document.getElementById('loginForm');
+            var loginBtn = document.getElementById('loginBtn');
+            var messagesDiv = document.getElementById('loginMessages');
+            var passwordInput = document.getElementById('password');
+            var botonTexto = loginBtn.innerHTML;
+
+            document.getElementById('togglePassword').addEventListener('click', function() {
+                var visible = passwordInput.type === 'text';
+                passwordInput.type = visible ? 'password' : 'text';
+                this.querySelector('i').className = visible ? 'mdi mdi-eye-outline' : 'mdi mdi-eye-off-outline';
+                this.setAttribute('aria-label', visible ? 'Mostrar contraseña' : 'Ocultar contraseña');
+            });
+
+            function mostrar(tipo, texto) {
+                messagesDiv.innerHTML = '<div class="alert alert-' + tipo + ' alert-dismissible fade show" role="alert">' + texto +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>';
             }
 
-            // Manejar el submit del formulario de login
-            document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            function restaurar() {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = botonTexto;
+            }
+
+            loginForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-
-                var loginBtn = document.getElementById('loginBtn');
-                var messagesDiv = document.getElementById('loginMessages');
-                var username = document.getElementById('username').value;
-                var password = document.getElementById('password').value;
-
-                // Deshabilitar botón y mostrar spinner
-                loginBtn.disabled = true;
-                loginBtn.style.opacity = '0.7';
-                loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Iniciando...';
-
-                // Limpiar mensajes anteriores
+                var username = document.getElementById('username').value.trim();
+                var password = passwordInput.value;
                 messagesDiv.innerHTML = '';
-
+                if (!username || !password) {
+                    mostrar('warning', 'Ingresá tu usuario y tu contraseña.');
+                    return;
+                }
+                loginBtn.disabled = true;
+                loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Ingresando...';
                 try {
-                    // Preparar datos del formulario
                     var formData = new FormData();
                     formData.append('username', username);
                     formData.append('password', password);
-
-                    // Obtener el CSRF token
                     var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-                    // Enviar petición de login (usar action del formulario)
-                    var loginUrl = document.getElementById('loginForm').action;
-                    var response = await axios.post(loginUrl, formData, {
-                        headers: {
-                            'X-CSRFToken': csrfToken
-                        }
-                    });
-
+                    var response = await axios.post(loginForm.action, formData, { headers: { 'X-CSRFToken': csrfToken } });
                     if (response.data.success) {
-                        // Login exitoso
-                        messagesDiv.innerHTML = `
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                Login exitoso! Redirigiendo...
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        `;
-
-                        // Redireccionar a la página principal de apps
-                        setTimeout(function() {
-                            window.location.href = '{% url "apps" %}';
-                        }, 1000);
-                    } else if (response.data.error) {
-                        // Error en el login
-                        messagesDiv.innerHTML = `
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                ${response.data.error}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        `;
-
-                        // Restaurar botón
-                        loginBtn.disabled = false;
-                        loginBtn.style.opacity = '1';
-                        loginBtn.innerHTML = 'Iniciar Sesión';
+                        mostrar('success', '¡Bienvenido! Redirigiendo...');
+                        setTimeout(function() { window.location.href = '{% url "apps" %}'; }, 600);
+                    } else {
+                        mostrar('danger', response.data.error || 'No se pudo iniciar sesión.');
+                        restaurar();
                     }
                 } catch (error) {
                     console.error('Error en login:', error);
-                    messagesDiv.innerHTML = `
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            Error al intentar iniciar sesión. Por favor, intenta de nuevo.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    `;
-
-                    // Restaurar botón
-                    loginBtn.disabled = false;
-                    loginBtn.style.opacity = '1';
-                    loginBtn.innerHTML = 'Iniciar Sesión';
+                    mostrar('danger', 'Error al intentar iniciar sesión. Por favor, intentá de nuevo.');
+                    restaurar();
                 }
             });
         });

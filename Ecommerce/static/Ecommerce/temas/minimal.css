@@ -1,0 +1,36 @@
+/* Preset Minimal (moda / diseno): blanco y negro, tipografia grande, anuncio rojo, filtros laterales. */
+.tienda-preset-minimal {
+    --t-radio: 14px; --t-superficie-2: #f5f5f5; --t-borde: rgba(0,0,0,.06);
+    --t-anuncio-bg: var(--t-acento); --t-anuncio-color: #fff;
+    --t-header-bg: #ffffff; --t-header-color: var(--t-texto); --t-oferta: var(--t-acento);
+}
+.tienda-preset-minimal .tienda-anuncio { font-weight: 600; }
+.tienda-preset-minimal .tienda-header { box-shadow: none; border-bottom: 1px solid var(--t-borde); }
+.tienda-preset-minimal .tienda-header-inner { padding: 1rem 0; }
+.tienda-preset-minimal .tienda-logo-texto { font-size: 1.6rem; }
+.tienda-preset-minimal .tienda-menu { justify-content: center; }
+.tienda-preset-minimal .tienda-menu a { font-weight: 600; opacity: .7; }
+.tienda-preset-minimal .tienda-menu a:hover, .tienda-preset-minimal .tienda-menu a.activa { opacity: 1; background: transparent; box-shadow: inset 0 0 0 1.5px var(--t-texto); }
+.tienda-preset-minimal .tienda-buscador input { border-radius: 10px; background: #fafafa; }
+.tienda-preset-minimal .tienda-accion { background: transparent; }
+.tienda-preset-minimal .tienda-accion:hover { background: var(--t-superficie-2); }
+.tienda-preset-minimal .hero-principal { min-height: 380px; background-color: #f5f5f5; color: var(--t-texto); align-items: flex-end; }
+.tienda-preset-minimal .hero-principal::before { background: linear-gradient(0deg, rgba(255,255,255,.92), rgba(255,255,255,.1)); }
+.tienda-preset-minimal .hero-texto h1 { font-size: 3.2rem; font-weight: 800; letter-spacing: -.04em; }
+.tienda-preset-minimal .hero-texto p { color: var(--t-muted); opacity: 1; }
+.tienda-preset-minimal .btn-tienda { background: var(--t-primario); border-color: var(--t-primario); border-radius: 999px; }
+.tienda-preset-minimal .seccion-titulo-xl { font-size: 2.6rem; font-weight: 800; letter-spacing: -.03em; }
+.tienda-preset-minimal .sidebar-cats a.activa { border-radius: 10px; }
+.tienda-preset-minimal .producto-card { border: 0; border-radius: 0; background: transparent; }
+.tienda-preset-minimal .producto-card:hover { box-shadow: none; transform: none; }
+.tienda-preset-minimal .producto-card .foto { border-radius: var(--t-radio); }
+.tienda-preset-minimal .producto-card .cuerpo { padding: .8rem 0 0; }
+.tienda-preset-minimal .producto-card .titulo { font-weight: 500; }
+.tienda-preset-minimal .producto-card .categoria { display: none; }
+.tienda-preset-minimal .badge-oferta, .tienda-preset-minimal .badge-etiqueta { font-size: .7rem; padding: .3rem .7rem; }
+.tienda-preset-minimal .agregar-rapido { position: absolute; top: 10px; right: 10px; margin: 0; opacity: 0; transition: opacity .15s; }
+.tienda-preset-minimal .producto-card:hover .agregar-rapido { opacity: 1; }
+.tienda-preset-minimal .agregar-rapido .btn-tienda { width: 38px; height: 38px; padding: 0; border-radius: 999px; background: #fff; color: var(--t-texto); border-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.tienda-preset-minimal .agregar-rapido .btn-tienda span { display: none; }
+.tienda-preset-minimal .tienda-footer { background: #fafafa; color: var(--t-muted); border-top: 1px solid var(--t-borde); }
+.tienda-preset-minimal .tienda-footer a, .tienda-preset-minimal .tienda-footer-marca { color: var(--t-texto); }

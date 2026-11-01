@@ -1,6 +1,6 @@
-<div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-    {% for pt in pagina %}<div class="col">{% include "Ecommerce/tienda/_producto_card.html" %}</div>
-    {% empty %}<div class="col-12 w-100 text-center text-muted py-5">No encontramos productos.</div>{% endfor %}
+<div class="grilla-productos">
+    {% for pt in pagina %}{% include "Ecommerce/tienda/_producto_card.html" %}
+    {% empty %}<div class="grilla-vacia">No encontramos productos.</div>{% endfor %}
 </div>
 {% if pagina.paginator.num_pages > 1 %}
 <nav class="mt-4" aria-label="Páginas"><ul class="pagination justify-content-center">

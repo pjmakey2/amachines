@@ -51,6 +51,13 @@
                     <input type="text" name="orden" class="form-control text-end" placeholder="" value='{% if mobj %}{{ mobj.orden|stringformat:"s" }}{% else %}0{% endif %}' />
                 </div>
             </div>
+            <div class="col-md-4 mb-3" data-field="etiqueta">
+                <label>Badge sobre la foto</label>
+                <div class="input-group flex-nowrap am_focus_highlight">
+                    <input type="text" name="etiqueta" class="form-control" placeholder="Nuevo / Más vendido" value='{% if mobj %}{{ mobj.etiqueta }}{% else %}{% endif %}' />
+                </div>
+                <small class="text-muted">Si hay precio tachado se muestra el % OFF en su lugar.</small>
+            </div>
             <div class="col-md-4 mb-3" data-field="destacado">
                 <label>Destacado en portada</label>
                 <div class="input-group flex-nowrap am_focus_highlight">
